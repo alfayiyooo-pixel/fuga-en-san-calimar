@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#ff7a3d">
+  <meta name="description" content="Endless runner con jetpack por San Calimar, una ciudad costera inventada.">
+  <title>Fuga en San Calimar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="game">
+    <div id="stage">
+      <canvas id="canvas" aria-label="Fuga en San Calimar"></canvas>
+
+      <div id="ui">
+        <!-- MENÚ PRINCIPAL -->
+        <section class="screen" id="screen-menu">
+          <h1 class="logo">
+            <span class="logo-top" data-i18n="game.titleTop"></span>
+            <span class="logo-main" data-i18n="game.titleMain"></span>
+          </h1>
+          <p class="tagline" data-i18n="menu.tagline"></p>
+          <button class="btn btn-primary" id="btn-play" data-i18n="menu.play"></button>
+          <div class="lang-switch" role="group" data-i18n-aria="menu.language">
+            <button class="lang-btn" data-lang="es">ES</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+          </div>
+          <p class="hint" data-i18n="menu.hint"></p>
+        </section>
+
+        <!-- PAUSA -->
+        <section class="screen hidden" id="screen-pause">
+          <h2 class="screen-title" data-i18n="pause.title"></h2>
+          <button class="btn btn-primary" id="btn-resume" data-i18n="pause.resume"></button>
+          <button class="btn" id="btn-to-menu" data-i18n="pause.menu"></button>
+        </section>
+
+        <!-- BOTONES DURANTE LA PARTIDA -->
+        <div id="hud-buttons" class="hidden">
+          <button class="icon-btn" id="btn-pause" data-i18n-aria="hud.pause">❚❚</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="rotate"><div class="rotate-icon">📱↻</div><p data-i18n="rotate"></p></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
