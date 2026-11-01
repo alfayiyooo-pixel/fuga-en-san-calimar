@@ -261,6 +261,68 @@ export const CONFIG = {
     slowmo: 0.9,         // s de cámara lenta al cogerlo
   },
 
+  // ---------------- NIVELES Y PRESTIGIO ----------------
+  progression: {
+    maxLevel: 30,
+    xpFirst: 100,         // XP para pasar del nivel 1 al 2
+    xpBase: 150,          // a partir del 2: xpBase + xpStep × (nivel − 1)
+    xpStep: 50,
+    metersPerXp: 10,      // 1 XP cada 10 m recorridos
+    levelBucks: 100,      // al subir a N: N × levelBucks pavos…
+    levelTickets: 1,      // …y fichas de ruleta
+    gemLevels: { 5: 10, 10: 20, 15: 10, 20: 20, 25: 10, 30: 50 }, // diamantes extra
+    voucherLevels: [10, 20], // vale de "artículo de pavos gratis"
+    prestigeMax: 10,
+    prestigeGems: [100, 150, 200, 250, 300, 300, 300, 300, 300, 300], // por rango I…X
+  },
+
+  // ---------------- MISIONES ----------------
+  missions: {
+    active: 3,
+    discardHours: 24,     // se puede descartar una misión gratis cada N horas
+    rewards: {
+      easy: { bucks: 200, xp: 40, tickets: 1 },
+      medium: { bucks: 500, xp: 80, tickets: 2 },
+      hard: { gems: 10, xp: 150, tickets: 3 },
+    },
+    // tipo → objetivo (las misiones son de una sola partida)
+    pool: [
+      { id: 'e_bucks', tier: 'easy', type: 'bucks', n: 150 },
+      { id: 'e_dist', tier: 'easy', type: 'distance', n: 500 },
+      { id: 'e_orbs', tier: 'easy', type: 'orbs', n: 12 },
+      { id: 'e_near', tier: 'easy', type: 'nearMisses', n: 3 },
+      { id: 'e_transform', tier: 'easy', type: 'transforms', n: 1 },
+      { id: 'e_case', tier: 'easy', type: 'cases', n: 1 },
+      { id: 'm_bucks', tier: 'medium', type: 'bucks', n: 400 },
+      { id: 'm_dist', tier: 'medium', type: 'distance', n: 1500 },
+      { id: 'm_air', tier: 'medium', type: 'air', n: 1000 },
+      { id: 'm_near', tier: 'medium', type: 'nearMisses', n: 10 },
+      { id: 'm_special', tier: 'medium', type: 'specials', n: 2 },
+      { id: 'm_gadgets', tier: 'medium', type: 'gadgets', n: 3 },
+      { id: 'm_mult', tier: 'medium', type: 'multiplier', n: 3 },
+      { id: 'h_stars', tier: 'hard', type: 'starsSurvive', n: 20, stars: 4 },
+      { id: 'h_dist', tier: 'hard', type: 'distance', n: 3000 },
+      { id: 'h_gem', tier: 'hard', type: 'gems', n: 1 },
+      { id: 'h_mult', tier: 'hard', type: 'multiplier', n: 5 },
+      { id: 'h_air', tier: 'hard', type: 'air', n: 2000 },
+      { id: 'h_respite', tier: 'hard', type: 'respites', n: 1 },
+    ],
+  },
+
+  // ---------------- RECOMPENSA DIARIA ----------------
+  // Ciclo de 7 días. Si un día no entras, la racha se PAUSA (no vuelve al día 1).
+  daily: {
+    rewards: [
+      { bucks: 200 },
+      { bucks: 300 },
+      { tickets: 2 },
+      { bucks: 500 },
+      { gems: 5 },
+      { bucks: 800 },
+      { gems: 15, tickets: 3 },
+    ],
+  },
+
   // ---------------- TIENDA ----------------
   shop: {
     // Mejoras permanentes (pavos). Coste del nivel 1→5:

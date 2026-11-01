@@ -19,6 +19,11 @@ const DEFAULTS = {
   loadout: { headstart: false, shield: false, transform: false, revive: false },
   vouchers: 0,        // vales de "artículo de pavos gratis"
   prestige: 0,        // rango de prestigio (0 = ninguno)
+  level: 1,
+  xp: 0,              // experiencia dentro del nivel actual
+  tickets: 0,         // fichas de la ruleta (solo se ganan jugando)
+  missions: { active: [], lastDiscard: 0 },
+  daily: { day: 0, last: '' }, // día del ciclo que toca cobrar y fecha del último cobro
   best: {
     distance: 0,
     bucks: 0,

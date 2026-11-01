@@ -251,6 +251,7 @@ export class Powers {
     const p = g.player;
     const def = this.def;
     const special = item === def.special;
+    if (g.stats) special ? g.stats.specials++ : g.stats.gadgets++;
     g.popups.add(t(`item.${item}`), special ? g.view.w / 2 : p.x - g.camera.x, special ? 190 : p.y - 64, { color: def.color, size: special ? 34 : 22, life: 1.4, rise: special ? 12 : 50 });
     g.particles.spawn({ x: p.x, y: p.y, life: 0.4, size: 10, sizeEnd: special ? 160 : 90, color: def.rgba, shape: 'ring', additive: true, important: true });
     g.particles.spawn({ x: p.x, y: p.y, life: 0.3, size: 14, sizeEnd: special ? 140 : 70, color: def.rgba, shape: 'glow', additive: true, important: true });

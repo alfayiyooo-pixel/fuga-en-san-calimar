@@ -9,13 +9,15 @@ export class Screens {
       over: document.getElementById('screen-over'),
       shop: document.getElementById('screen-shop'),
       wardrobe: document.getElementById('screen-wardrobe'),
+      missions: document.getElementById('screen-missions'),
+      daily: document.getElementById('screen-daily'),
       hudButtons: document.getElementById('hud-buttons'),
     };
   }
 
   /** Muestra una pantalla (o ninguna con null) y oculta el resto. */
   show(name) {
-    for (const key of ['menu', 'pause', 'over', 'shop', 'wardrobe', 'missions']) {
+    for (const key of ['menu', 'pause', 'over', 'shop', 'wardrobe', 'missions', 'daily']) {
       if (!this.el[key]) continue;
       this.el[key].classList.toggle('hidden', key !== name);
     }
@@ -29,11 +31,12 @@ export class Screens {
 
   /** Rellena la pantalla final con el resultado de la partida. */
   /** Actualiza todos los monederos visibles. */
-  refreshWallet(bucks, gems, fmt) {
+  refreshWallet(bucks, gems, fmt, tickets = 0) {
     document.querySelectorAll('.w-bucks').forEach((el) => {
       if (el.textContent !== fmt(bucks)) el.parentElement.classList.remove('bump'), void el.offsetWidth, el.parentElement.classList.add('bump');
       el.textContent = fmt(bucks);
     });
+    document.querySelectorAll('.w-tickets').forEach((el) => (el.textContent = fmt(tickets)));
     document.querySelectorAll('.w-gems').forEach((el) => {
       if (el.textContent !== fmt(gems)) el.parentElement.classList.remove('bump'), void el.offsetWidth, el.parentElement.classList.add('bump');
       el.textContent = fmt(gems);

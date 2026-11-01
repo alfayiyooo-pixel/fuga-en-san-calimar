@@ -117,6 +117,18 @@ class AudioFx {
     this.tone({ freq: 130, type: 'sine', dur: 0.8, vol: 0.2, slide: 0.5 });
   }
 
+  /** Misión completada. */
+  missionDone() {
+    [0, 4, 7, 12].forEach((s, i) => this.tone({ freq: 659 * 2 ** (s / 12), type: 'triangle', dur: 0.18, vol: 0.12, delay: i * 0.07 }));
+    this.tone({ freq: 1318, type: 'sine', dur: 0.6, vol: 0.08, delay: 0.3 });
+  }
+
+  /** Subida de nivel. */
+  levelUp() {
+    [0, 7, 12, 16, 19, 24].forEach((s, i) => this.tone({ freq: 392 * 2 ** (s / 12), type: 'square', dur: 0.2, vol: 0.08, delay: i * 0.06 }));
+    this.noise({ dur: 0.8, vol: 0.1, freq: 6000, type: 'highpass', delay: 0.3 });
+  }
+
   /** Billete dorado: arpegio brillante. */
   gold() {
     [0, 4, 7, 12].forEach((s, i) => this.tone({ freq: 1046 * 2 ** (s / 12), type: 'triangle', dur: 0.16, vol: 0.16, delay: i * 0.045 }));

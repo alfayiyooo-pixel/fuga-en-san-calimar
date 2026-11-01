@@ -2,6 +2,7 @@ import { CONFIG } from './config.js';
 import { Camera } from './core/camera.js';
 import { rand, clamp, approach, pick } from './core/rng.js';
 import { CHARACTER_IDS } from './characters/defs.js';
+import { Missions } from './meta/missions.js';
 import { t } from './core/i18n.js';
 import { Particles } from './fx/particles.js';
 import { Popups } from './fx/popups.js';
@@ -70,6 +71,9 @@ export class Game {
     this.pendingTransform = -1;
     this.xpRun = 0;   // experiencia ganada en esta partida (orbes, distancia, misiones)
     this.gemsRun = 0; // diamantes recogidos en esta partida
+    // estadísticas de la partida (para las misiones)
+    this.stats = { cases: 0, specials: 0, gadgets: 0, air: 0, airMax: 0, starCur: [0, 0, 0, 0, 0, 0], starTime: [0, 0, 0, 0, 0, 0] };
+    this.missionTimer = 0;
     this.orbsRun = 0;
     this.powers.applyMods(this.player);
     this.timeScale = 1;
@@ -204,6 +208,7 @@ export class Game {
       this.respite.update(dt, this);
       this.combo.update(dt);
       this.checkRecord();
+      this.trackStats(dt);
       Sound.music.setIntensity(this.wanted.stars / 5);
     }
 
@@ -243,6 +248,46 @@ export class Game {
       this.zoneIndex = this.zone.n;
       this.hud.banner(t('zone.enter'), t(this.zone.current.nameKey));
     }
+  }
+
+  /** Estadísticas para las misiones + aviso de misión completada. */
+  trackStats(dt) {
+    const S = this.stats;
+    const p = this.player;
+    S.air = p.onGround ? 0 : S.air + (this.speed * this.timeScale * dt) / CONFIG.world.pxPerMeter;
+    S.airMax = Math.max(S.airMax, S.air);
+    for (let k = 1; k <= 5; k++) {
+      S.starCur[k] = this.wanted.stars >= k ? S.starCur[k] + dt : 0;
+      S.starTime[k] = Math.max(S.starTime[k], S.starCur[k]);
+    }
+    this.missionTimer -= dt;
+    if (this.missionTimer <= 0) {
+      this.missionTimer = 0.5;
+      for (const def of Missions.check(this.missionStats())) {
+        Sound.missionDone();
+        this.popups.add(t('mission.done'), this.view.w / 2, 250, { color: '#9dffb5', size: 28, life: 2, rise: 10 });
+        this.popups.add(t(`mission.${def.type}`, { n: def.n, stars: def.stars }), this.view.w / 2, 290, { color: '#fff4dc', size: 16, life: 2, rise: 10 });
+      }
+    }
+  }
+
+  /** Resumen de la partida en el formato de las misiones. */
+  missionStats() {
+    return {
+      bucks: Math.floor(this.bucks),
+      distance: this.distance,
+      orbs: this.orbsRun,
+      nearMisses: this.combo.nearMisses,
+      transforms: Object.values(this.powers.uses).reduce((a, b) => a + b, 0),
+      cases: this.stats.cases,
+      airMax: this.stats.airMax,
+      specials: this.stats.specials,
+      gadgets: this.stats.gadgets,
+      maxMult: this.combo.maxLevel,
+      starTime: this.stats.starTime,
+      gems: this.gemsRun,
+      respites: this.respite.count ?? 0,
+    };
   }
 
   /** Bandera del récord: celebración al superarlo (una vez por partida). */

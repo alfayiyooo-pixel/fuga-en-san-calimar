@@ -308,6 +308,7 @@ export class Tokens {
       g.particles.burst(tk.x, tk.y, 16, { color: '#ffd23f', speed: 260, life: 0.5, size: 4, sizeEnd: 0, additive: true });
       g.particles.spawn({ x: tk.x, y: tk.y, life: 0.3, size: 10, sizeEnd: 50, color: 'rgba(255, 220, 90, 0.6)', additive: true });
     } else if (tk.kind === 'case') {
+      g.stats.cases++;
       Sound.briefcase();
       g.camera.addShake(0.2);
       g.popups.add(`+${value}`, sx, tk.y - 24, { color: '#ffd23f', size: 40, life: 1.4 });

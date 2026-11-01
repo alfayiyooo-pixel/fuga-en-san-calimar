@@ -15,6 +15,12 @@ import { createTuner } from './ui/tuner.js';
 import { Profile } from './meta/profile.js';
 import { Shop } from './ui/shop.js';
 import { Wardrobe } from './ui/wardrobe.js';
+import { ProgressScreen, rewardText, missionText } from './ui/progress.js';
+import { badgeHtml } from './ui/badge.js';
+import { Progression } from './meta/progression.js';
+import { Missions } from './meta/missions.js';
+import { Daily } from './meta/daily.js';
+import { CONFIG } from './config.js';
 
 // ---------- arranque ----------
 Save.load();
@@ -86,8 +92,19 @@ function toast(text) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
-const refreshWallet = () => screens.refreshWallet(Profile.bucks, Profile.gems, fmt);
+const refreshWallet = () => {
+  screens.refreshWallet(Profile.bucks, Profile.gems, fmt, Save.data.tickets);
+  renderLevelChip();
+};
+
+/** Chip de nivel del menú: insignia de prestigio, nivel y barra de XP. */
+function renderLevelChip() {
+  const el = document.getElementById('level-chip');
+  el.innerHTML = `${badgeHtml(Save.data.prestige)}<span>${t('progress.levelShort', { n: Save.data.level })}</span><span class="xpbar"><span style="width:${Math.round(Progression.fraction * 100)}%"></span></span>`;
+  document.getElementById('progress-dot').classList.toggle('hidden', !Progression.canPrestige);
+}
 Profile.onChange(refreshWallet);
+Missions.fill();
 refreshWallet();
 
 // Estados: 'menu' | 'playing' | 'paused' | 'over'
@@ -114,6 +131,51 @@ const wardrobe = new Wardrobe(document.getElementById('screen-wardrobe'), {
     openShop('items', { owner, slot, itemId });
   },
 });
+// ---------- misiones, nivel y prestigio ----------
+const progress = new ProgressScreen(document.getElementById('screen-missions'), {
+  onClose: () => toMenu(),
+  toast,
+  onPrestige: (res) => {
+    Sound.fanfare();
+    toast(`${t('progress.prestigeDone', { n: ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][res.rank] })}  +${res.gems} 💎`);
+  },
+});
+function openProgress() {
+  state = 'menu';
+  screens.show('missions');
+  applyToDom(document.getElementById('screen-missions'));
+  progress.open();
+  refreshWallet();
+}
+screens.on('btn-progress', () => {
+  Sound.click();
+  openProgress();
+});
+document.getElementById('level-chip').addEventListener('click', () => {
+  Sound.click();
+  openProgress();
+});
+
+// ---------- recompensa diaria ----------
+function maybeShowDaily() {
+  if (!Daily.available) return false;
+  const icon = (r) => (r.gems ? '💎' : r.tickets ? '🪙' : '💵');
+  document.getElementById('daily-track').innerHTML = CONFIG.daily.rewards
+    .map((r, i) => `<div class="daily-day ${i < Daily.day ? 'past' : ''} ${i === Daily.day ? 'today' : ''}">
+        <span>${t('daily.day', { n: i + 1 })}</span><span class="dd-icon">${icon(r)}</span><span>${rewardText(r)}</span></div>`)
+    .join('');
+  screens.show('daily');
+  return true;
+}
+screens.on('btn-daily', () => {
+  const r = Daily.claim();
+  if (r) {
+    Sound.briefcase();
+    toast(`${t('daily.title')}: ${rewardText(r)}`);
+  }
+  toMenu();
+});
+
 function openWardrobe(owner) {
   shop.close();
   state = 'menu';
@@ -157,6 +219,7 @@ Profile.onChange(renderLoadout);
 renderLoadout();
 
 function startRun() {
+  Missions.fill();
   // aspecto equipado, mejoras de la tienda y consumibles elegidos
   game.looks = Object.fromEntries(['base', 'veteran', 'pilot', 'wild'].map((o) => [o, Profile.look(o)]));
   game.player.looks = game.looks;
@@ -201,8 +264,9 @@ function toMenu() {
   input.enabled = false;
   input.clear();
   Sound.music.setMode('off');
-  screens.show('menu');
   screens.showHudButtons(false);
+  if (!maybeShowDaily()) screens.show('menu');
+  renderLevelChip();
 }
 
 /** Fin de la partida: guarda récord y estadísticas y muestra el resultado. */
@@ -225,6 +289,15 @@ function endRun() {
   const prevBucks = s.best.bucks;
   s.best.bucks = Math.max(s.best.bucks, game.bucks);
   for (const [id, n] of Object.entries(game.powers.uses)) s.stats.charUses[id] = (s.stats.charUses[id] ?? 0) + n;
+  // misiones: comprobación final, cobro y sustitución
+  Missions.check(game.missionStats());
+  const claimed = Missions.claimAndReplace();
+  // experiencia: distancia + orbes + misiones → niveles
+  const xpDist = Math.floor(d / CONFIG.progression.metersPerXp);
+  const xpMissions = claimed.reduce((a, c) => a + c.reward.xp, 0);
+  const xpTotal = xpDist + game.xpRun + xpMissions;
+  const ups = Progression.addXp(xpTotal);
+  if (ups.length) setTimeout(() => Sound.levelUp(), 600);
   Save.save();
   lastResult = {
     d,
@@ -237,6 +310,9 @@ function endRun() {
     near: game.combo.nearMisses,
     mult: game.combo.maxLevel,
     gems: game.gemsRun,
+    xp: { total: xpTotal, d: xpDist, o: game.xpRun, m: xpMissions },
+    ups,
+    claimed,
   };
   refreshWallet();
   fillOver(true);
@@ -266,6 +342,14 @@ function almostText(r) {
 function fillOver(animate = false) {
   if (!lastResult) return;
   const a = almostText(lastResult);
+  const r = lastResult;
+  document.getElementById('over-badge').innerHTML = badgeHtml(Save.data.prestige);
+  document.getElementById('over-progress').innerHTML = [
+    `<div class="xp-line">${t('over.xp', { n: fmt(r.xp.total) })} <span class="small">(${t('over.xpDetail', { d: fmt(r.xp.d), o: fmt(r.xp.o), m: fmt(r.xp.m) })})</span></div>`,
+    ...r.ups.map((u) => `<div class="lvl-up">${t('over.levelUp', { n: u.level })} ${rewardText(u.reward)}</div>`),
+    ...r.claimed.map((c) => `<div class="m-line">✔ ${missionText(c.def)} · ${rewardText(c.reward)}</div>`),
+    Progression.canPrestige ? `<div class="lvl-up">${t('over.prestigeReady')}</div>` : '',
+  ].join('');
   screens.fillGameOver({
     distance: lastResult.d,
     best: Save.data.best.distance,
@@ -301,6 +385,8 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
     screens.refreshLangButtons();
     refreshQualityBtn();
     renderLoadout();
+    renderLevelChip();
+    if (!document.getElementById('screen-missions').classList.contains('hidden')) progress.render();
     if (state === 'menu' && !document.getElementById('screen-shop').classList.contains('hidden')) shop.render();
     if (state === 'menu' && !document.getElementById('screen-wardrobe').classList.contains('hidden')) wardrobe.render();
     fillOver();
@@ -348,4 +434,8 @@ const loop = new Loop(
 if (hud.debug) window.__loopFps = () => loop.fps;
 
 // Esperamos a la fuente del HUD (sin bloquear si no carga)
-Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 1500))]).finally(() => loop.start());
+Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 1500))]).finally(() => {
+  loop.start();
+  applyToDom();
+  maybeShowDaily();
+});

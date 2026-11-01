@@ -54,6 +54,16 @@ Todo en el bloque `wanted` de [`src/config.js`](src/config.js).
 - **Pavos** 💵: moneda común; se ganan jugando. Sirven para mejoras, artículos normales y consumibles.
 - **Diamantes** 💎: moneda premium y escasa. Se ganan con misiones difíciles, subidas de nivel, recompensa diaria, prestigio y, muy raramente, en el recorrido (un diamante da 3-5 💎 con cámara lenta y destello). Bloque `gems` de `config.js`.
 
+## Niveles, prestigio, misiones y recompensa diaria
+
+- **Experiencia**: 1 XP cada 10 m, 2 XP por orbe y 40-150 XP por misión. El nivel 2 cuesta 100 XP; después, 150 + 50 × (nivel − 1). Cada nivel da pavos y una ficha; los niveles 5/10/15/20/25/30 dan diamantes y el 10 y el 20 un vale de artículo de pavos gratis.
+- **Prestigio** (nivel 30): vuelves al nivel 1 y ganas un rango I-X con insignia (en el menú y en la pantalla final), diamantes y artículos exclusivos. Se conservan compras, monedas y récord.
+- **Misiones**: siempre 3 activas (fácil, media y difícil), se completan durante la partida, se cobran al terminarla y se sustituyen. Se puede cambiar una gratis cada 24 h.
+- **Recompensa diaria**: ciclo de 7 días; si un día no entras, la racha se pausa (no vuelve al día 1).
+- **Fichas** 🪙: se ganan con niveles, misiones y la diaria; servirán para la ruleta (fase f). Nunca se compran con dinero.
+
+Ajustes en los bloques `progression`, `missions` y `daily` de `config.js`.
+
 ## Tienda
 
 - **Personajes**: trajes, accesorios, estelas y efectos de transformación para los tres personajes (y traje y estela para el atracador básico). Los normales con pavos; los legendarios animados con 💎 (piden confirmación con dos toques); los de prestigio no se compran. Vista previa animada antes de comprar.
