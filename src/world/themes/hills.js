@@ -1,10 +1,13 @@
-// Zona 4 — COLINAS BRISA
-// Colinas verdes, mansiones con piscina, cipreses y setos recortados.
+// Zona 4 — COLINAS BRISA (mañana despejada)
+// Montañas azuladas, colinas verdes, mansiones con piscina y jardines.
 
-import { cypress, tree } from './shapes.js';
+import { cypress, tree, INK } from './shapes.js';
 
-function hillLine(ctx, v, offset, base, amp, color) {
-  ctx.fillStyle = color;
+function hillLine(ctx, v, offset, base, amp, top, bottom) {
+  const g = ctx.createLinearGradient(0, base - amp, 0, v.groundY);
+  g.addColorStop(0, top);
+  g.addColorStop(1, bottom);
+  ctx.fillStyle = g;
   ctx.beginPath();
   ctx.moveTo(0, v.groundY);
   for (let x = 0; x <= v.w + 20; x += 20) {
@@ -22,26 +25,29 @@ const MANSION = ['#fff8ec', '#ffe8d1', '#f4f1ff', '#e9fff8'];
 export const hills = {
   id: 'hills',
   nameKey: 'zone.hills',
-  sky: ['#4fb0ff', '#a8e1ff', '#fff0c8'],
-  sun: { x: 0.85, y: 90, r: 42, color: '#fff8d8', glow: 'rgba(255, 236, 170, 0.5)' },
-  cloudColor: 'rgba(255, 255, 255, 0.9)',
-  ground: { top: '#d8d2c0', body: '#3d3a4a', line: '#2b2936', edge: '#2b2936', joint: 0, dashes: true },
+  sky: ['#2a7fe0', '#5fb0f5', '#9fd8ff', '#d8f0ff', '#fff1cc'],
+  celestial: { type: 'sun', x: 0.86, y: 84, r: 40, color: '#fff3c0', glow: 'rgba(255, 245, 200, 0.75)' },
+  clouds: { color: 'rgba(255, 255, 255, 0.95)', shade: 'rgba(160, 190, 230, 0.6)', rim: null },
+  haze: 'rgba(225, 242, 255, 0.45)',
+  skyline: { factor: 0.04, base: 0.6, min: 130, max: 230, color: '#9cc0e0', style: 'mountains' },
+  ground: { top: '#d8d2c0', body: '#3d3a4a', line: '#2b2936', edge: '#1e1c28', joint: 0, dashes: true },
 
   backdrop(ctx, v, camX) {
-    hillLine(ctx, v, camX * 0.06, v.h * 0.55, 120, '#a9dba0');
-    hillLine(ctx, v, camX * 0.14 + 500, v.h * 0.68, 110, '#7cc47d');
+    hillLine(ctx, v, camX * 0.07, v.h * 0.56, 120, '#a8dd9c', '#8acb85');
+    hillLine(ctx, v, camX * 0.15 + 500, v.h * 0.69, 110, '#7cc47d', '#5aa865');
   },
 
   layers: [
-    // villas pequeñas en la colina lejana
     {
       factor: 0.18,
       spacing: 170,
       draw(ctx, sx, r, v) {
         if (r(0) > 0.6) return;
-        const y = v.h * 0.68 - 40 - r(1) * 40;
+        const y = v.h * 0.69 - 40 - r(1) * 40;
         ctx.fillStyle = '#fff8ec';
         ctx.fillRect(sx, y, 34, 18);
+        ctx.fillStyle = 'rgba(80, 120, 160, 0.25)';
+        ctx.fillRect(sx, y, 8, 18);
         ctx.fillStyle = '#e07a4f';
         ctx.beginPath();
         ctx.moveTo(sx - 4, y);
@@ -51,7 +57,6 @@ export const hills = {
         cypress(ctx, sx + 46, y + 18, 34, '#4f9e62');
       },
     },
-    // mansiones con piscina
     {
       factor: 0.38,
       spacing: 300,
@@ -60,33 +65,46 @@ export const hills = {
         const w = 170 + r(0) * 50;
         const h = 70 + r(1) * 30;
         const color = MANSION[Math.floor(r(2) * MANSION.length)];
-        // terraza
         ctx.fillStyle = '#e6dcc6';
         ctx.fillRect(sx - 20, base, w + 90, 18);
-        // piscina
-        ctx.fillStyle = '#2fc6e6';
+        // piscina con ondas
+        ctx.fillStyle = '#1fb4dc';
         ctx.fillRect(sx + w + 4, base + 3, 60, 10);
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.fillRect(sx + w + 10 + ((t * 20) % 40), base + 6, 10, 2);
-        // planta baja
+        ctx.fillStyle = '#7fe6ff';
+        ctx.fillRect(sx + w + 4, base + 3, 60, 3);
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.fillRect(sx + w + 10 + ((t * 20) % 40), base + 7, 10, 2);
+        // sombra proyectada
+        ctx.fillStyle = 'rgba(40, 60, 90, 0.18)';
+        ctx.beginPath();
+        ctx.moveTo(sx, base);
+        ctx.lineTo(sx - 30, base + 16);
+        ctx.lineTo(sx + w - 30, base + 16);
+        ctx.lineTo(sx + w, base);
+        ctx.fill();
         ctx.fillStyle = color;
         ctx.fillRect(sx, base - h, w, h);
-        // primera planta en voladizo
         ctx.fillRect(sx + w * 0.3, base - h - 46, w * 0.8, 46);
-        ctx.fillStyle = '#1b1030';
+        // sombreado lateral
+        ctx.fillStyle = 'rgba(60, 80, 120, 0.16)';
+        ctx.fillRect(sx, base - h, 14, h);
+        ctx.fillRect(sx + w * 0.3, base - h - 46, 10, 46);
+        ctx.fillStyle = INK;
         ctx.fillRect(sx + w * 0.3, base - h - 50, w * 0.8, 5);
         ctx.fillRect(sx - 4, base - h - 4, w + 8, 5);
-        // ventanales
-        ctx.fillStyle = '#5fb3d9';
-        ctx.fillRect(sx + 12, base - h + 14, w * 0.45, h - 14);
+        // ventanales con reflejo del cielo
+        const gl = ctx.createLinearGradient(0, base - h, 0, base);
+        gl.addColorStop(0, '#9fdcff');
+        gl.addColorStop(1, '#3f8ec4');
+        ctx.fillStyle = gl;
+        ctx.fillRect(sx + 18, base - h + 14, w * 0.45, h - 14);
         ctx.fillRect(sx + w * 0.38, base - h - 38, w * 0.6, 28);
-        ctx.fillStyle = 'rgba(255,255,255,0.35)';
-        ctx.fillRect(sx + 18, base - h + 18, 10, h - 22);
-        // palmera enana o ciprés
-        if (r(3) < 0.6) cypress(ctx, sx - 12, base, 90);
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.fillRect(sx + 24, base - h + 18, 10, h - 22);
+        ctx.fillRect(sx + w * 0.42, base - h - 34, 8, 20);
+        if (r(3) < 0.6) cypress(ctx, sx - 12, base, 90, '#1f6b45', '#2f8e5a');
       },
     },
-    // setos, topiarios y verjas doradas
     {
       factor: 0.68,
       spacing: 200,
@@ -94,19 +112,31 @@ export const hills = {
         const base = v.groundY + 2;
         const k = r(0);
         if (k < 0.35) {
+          ctx.fillStyle = INK;
+          ctx.fillRect(sx - 2, base - 36, 154, 36);
           ctx.fillStyle = '#2e8b4e';
           ctx.fillRect(sx, base - 34, 150, 34);
-          ctx.fillStyle = '#3aa85f';
+          ctx.fillStyle = '#45b56c';
           ctx.fillRect(sx, base - 34, 150, 8);
+          ctx.fillStyle = 'rgba(0, 40, 20, 0.25)';
+          for (let x = sx + 8; x < sx + 150; x += 16) ctx.fillRect(x, base - 24, 6, 20);
         } else if (k < 0.6) {
-          ctx.fillStyle = '#7a6a58';
+          ctx.fillStyle = '#9a8670';
           ctx.fillRect(sx + 20, base - 20, 30, 20);
-          ctx.fillStyle = '#2e8b4e';
-          ctx.beginPath();
-          ctx.arc(sx + 35, base - 42, 22, 0, Math.PI * 2);
-          ctx.arc(sx + 35, base - 78, 15, 0, Math.PI * 2);
-          ctx.arc(sx + 35, base - 101, 9, 0, Math.PI * 2);
-          ctx.fill();
+          for (const [cy, rad] of [[42, 22], [78, 15], [101, 9]]) {
+            ctx.fillStyle = INK;
+            ctx.beginPath();
+            ctx.arc(sx + 35, base - cy, rad + 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2e8b4e';
+            ctx.beginPath();
+            ctx.arc(sx + 35, base - cy, rad, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#4fbf73';
+            ctx.beginPath();
+            ctx.arc(sx + 35 + rad * 0.3, base - cy - rad * 0.3, rad * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+          }
         } else if (k < 0.8) {
           ctx.fillStyle = '#d9b44a';
           for (let x = sx; x < sx + 120; x += 12) {
@@ -118,9 +148,14 @@ export const hills = {
             ctx.fill();
           }
           ctx.fillRect(sx, base - 50, 120, 4);
+          ctx.fillStyle = '#fff1a8';
+          for (let x = sx; x < sx + 120; x += 12) ctx.fillRect(x + 1, base - 70, 1.5, 70);
           ctx.fillStyle = '#e9e1cf';
           ctx.fillRect(sx - 14, base - 90, 16, 90);
           ctx.fillRect(sx + 120, base - 90, 16, 90);
+          ctx.fillStyle = 'rgba(80, 90, 120, 0.25)';
+          ctx.fillRect(sx - 14, base - 90, 5, 90);
+          ctx.fillRect(sx + 120, base - 90, 5, 90);
         } else {
           tree(ctx, sx + 40, base, 130, '#6b4224', '#3a9e5a', '#55c07a');
         }

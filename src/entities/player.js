@@ -1,5 +1,6 @@
 import { CONFIG } from '../config.js';
-import { clamp, rand } from '../core/rng.js';
+import { clamp, rand, approach } from '../core/rng.js';
+import { drawRobber } from '../characters/robber.js';
 
 /**
  * El fugitivo con el jetpack básico.
@@ -28,6 +29,8 @@ export class Player {
     this.dead = false;
     this.spin = 0;
     this.spinRate = 0;
+    this.tilt = 0;
+    this.pose = { run: 1, fly: 0, fall: 0 }; // mezcla de animaciones (0-1)
   }
 
   /** Caja de colisión, algo más pequeña que el dibujo. */
@@ -120,13 +123,26 @@ export class Player {
       this.groundTime = 0;
       this.anim += dt * 8;
     }
+    this.updatePose(dt);
     return events;
   }
 
-  /** Emite fuego y humo del jetpack. */
+  /** Mezcla suave entre las poses de correr, volar y caer. */
+  updatePose(dt) {
+    const pz = this.pose;
+    const flying = !this.onGround && this.thrust > 0.25;
+    const falling = !this.onGround && !flying && this.vy > 180;
+    pz.run = approach(pz.run, this.onGround ? 1 : 0, 18, dt);
+    pz.fly = approach(pz.fly, flying ? 1 : 0, 10, dt);
+    pz.fall = approach(pz.fall, falling ? 1 : 0, 7, dt);
+    const target = this.onGround ? 0 : clamp(this.vy / 1800, -0.2, 0.26);
+    this.tilt = approach(this.tilt, target, 12, dt);
+  }
+
+  /** Emite fuego, chispas y humo del jetpack. */
   emitExhaust(dt, particles) {
-    const nozzleX = this.x - 15;
-    const nozzleY = this.y + 14;
+    const nozzleX = this.x - 16;
+    const nozzleY = this.y + 22;
     if (this.thrust > 0.05) {
       this.exhaustAcc += dt * CONFIG.particles.exhaustRate * this.thrust;
       while (this.exhaustAcc >= 1) {
@@ -134,24 +150,38 @@ export class Player {
         particles.spawn({
           x: nozzleX + rand(-3, 3),
           y: nozzleY,
-          vx: rand(-60, 20),
+          vx: rand(-70, 10),
           vy: rand(380, 560),
-          life: rand(0.18, 0.32),
+          life: rand(0.14, 0.26),
           size: rand(5, 8),
           sizeEnd: 1,
           color: Math.random() < 0.5 ? '#ffd23f' : '#ff7a3d',
           additive: true,
         });
+        if (Math.random() < 0.25) {
+          particles.spawn({
+            x: nozzleX,
+            y: nozzleY + 6,
+            vx: rand(-200, 60),
+            vy: rand(200, 520),
+            life: rand(0.2, 0.4),
+            size: 1.6,
+            sizeEnd: 0.5,
+            color: '#fff6c2',
+            additive: true,
+            gravity: 900,
+          });
+        }
         if (Math.random() < 0.35) {
           particles.spawn({
             x: nozzleX,
-            y: nozzleY + 18,
+            y: nozzleY + 20,
             vx: rand(-40, 0),
             vy: rand(80, 160),
-            life: rand(0.4, 0.7),
+            life: rand(0.45, 0.8),
             size: rand(4, 6),
-            sizeEnd: 12,
-            color: 'rgba(240, 236, 255, 0.45)',
+            sizeEnd: 14,
+            color: 'rgba(235, 230, 250, 0.4)',
             drag: 3,
           });
         }
@@ -161,137 +191,27 @@ export class Player {
     }
   }
 
+  /** Sombra suave en el suelo: más pequeña y tenue cuanto más alto vuela. */
+  drawShadow(ctx, camX, groundY) {
+    const h = clamp((groundY - this.bottom) / 400, 0, 1);
+    const w = 22 * (1 - h * 0.6);
+    ctx.fillStyle = `rgba(15, 8, 35, ${0.32 * (1 - h * 0.75)})`;
+    ctx.beginPath();
+    ctx.ellipse(this.x - camX, groundY + 3, w, 5 * (1 - h * 0.5), 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   draw(ctx, camX, t) {
     const sx = this.x - camX;
-    const tilt = this.dead ? this.spin : this.onGround ? 0 : clamp(this.vy / 1800, -0.22, 0.28);
     ctx.save();
     ctx.translate(sx, this.y);
-    ctx.rotate(tilt);
+    ctx.rotate(this.dead ? this.spin : this.tilt);
     drawRobber(ctx, this, t);
     ctx.restore();
   }
 }
 
-/** Dibujo del atracador anónimo: pasamontañas, chándal y jetpack de bombona. */
-function drawRobber(ctx, p, t) {
-  const ink = '#1b1030';
-
-  // llama del jetpack (detrás de todo)
-  if (p.thrust > 0.05) {
-    const len = (16 + 22 * p.thrust) * (0.85 + Math.random() * 0.3);
-    const g = ctx.createLinearGradient(0, 16, 0, 16 + len);
-    g.addColorStop(0, '#fff6c2');
-    g.addColorStop(0.35, '#ffd23f');
-    g.addColorStop(1, 'rgba(255, 90, 40, 0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.moveTo(-21, 16);
-    ctx.quadraticCurveTo(-15, 16 + len * 1.1, -9, 16);
-    ctx.fill();
-  }
-
-  // bombona del jetpack
-  ctx.fillStyle = ink;
-  roundRect(ctx, -24, -20, 17, 36, 6);
-  ctx.fill();
-  const tank = ctx.createLinearGradient(-22, 0, -9, 0);
-  tank.addColorStop(0, '#9aa3b5');
-  tank.addColorStop(0.5, '#e6ebf5');
-  tank.addColorStop(1, '#7b8396');
-  ctx.fillStyle = tank;
-  roundRect(ctx, -22, -18, 13, 32, 5);
-  ctx.fill();
-  ctx.fillStyle = '#ff3d4f';
-  ctx.fillRect(-22, -6, 13, 6);
-  ctx.fillStyle = '#3a3150';
-  ctx.fillRect(-19, 13, 7, 5);
-
-  // piernas
-  const legColor = '#26355e';
-  ctx.strokeStyle = legColor;
-  ctx.lineWidth = 7;
-  ctx.lineCap = 'round';
-  let a1;
-  let a2;
-  if (p.dead) {
-    a1 = 0.9;
-    a2 = -0.6;
-  } else if (p.onGround) {
-    a1 = Math.sin(p.anim) * 0.75;
-    a2 = -a1;
-  } else {
-    a1 = 0.35 + Math.sin(p.anim) * 0.08;
-    a2 = 0.15 - Math.sin(p.anim) * 0.08;
-  }
-  drawLeg(ctx, -3, 10, a2, '#1d2a4c');
-  drawLeg(ctx, 3, 10, a1, legColor);
-
-  // torso (chaqueta de chándal turquesa)
-  ctx.fillStyle = ink;
-  roundRect(ctx, -11, -14, 22, 28, 7);
-  ctx.fill();
-  ctx.fillStyle = '#19c3b1';
-  roundRect(ctx, -9, -12, 18, 24, 6);
-  ctx.fill();
-  ctx.fillStyle = '#fff4dc';
-  ctx.fillRect(-1, -12, 2, 24);
-  ctx.fillRect(-9, 4, 18, 2);
-
-  // brazo (agarrado a la correa)
-  ctx.strokeStyle = '#139a8b';
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(4, -8);
-  ctx.lineTo(12, p.thrust > 0.3 ? -2 : 4);
-  ctx.stroke();
-  ctx.fillStyle = '#2b2b3a';
-  ctx.beginPath();
-  ctx.arc(12, p.thrust > 0.3 ? -2 : 4, 3.5, 0, Math.PI * 2);
-  ctx.fill();
-
-  // cabeza con pasamontañas
-  ctx.fillStyle = ink;
-  ctx.beginPath();
-  ctx.arc(2, -24, 12, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#3b2f58';
-  ctx.beginPath();
-  ctx.arc(2, -24, 10, 0, Math.PI * 2);
-  ctx.fill();
-  // abertura de los ojos
-  ctx.fillStyle = '#f1c27d';
-  roundRect(ctx, 0, -28, 12, 6, 3);
-  ctx.fill();
-  ctx.fillStyle = ink;
-  const blink = Math.sin(t * 0.9) > 0.97 ? 0.5 : 2;
-  ctx.fillRect(4, -26, 2, blink);
-  ctx.fillRect(9, -26, 2, blink);
-  // pompón
-  ctx.fillStyle = '#ff3d4f';
-  ctx.beginPath();
-  ctx.arc(-1, -36, 4, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.lineCap = 'butt';
-}
-
-function drawLeg(ctx, x, y, angle, color) {
-  const len = 16;
-  const kx = x + Math.sin(angle) * len;
-  const ky = y + Math.cos(angle) * len;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 7;
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(kx, ky);
-  ctx.stroke();
-  // zapatilla
-  ctx.fillStyle = '#fff4dc';
-  ctx.beginPath();
-  ctx.ellipse(kx + 3, ky + 1, 6, 3.5, 0, 0, Math.PI * 2);
-  ctx.fill();
-}
-
+/** Rectángulo redondeado (usado por otros módulos). */
 export function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);

@@ -5,6 +5,8 @@
 const cache = new Map();
 let renderScale = 1;
 
+export const getRenderScale = () => renderScale;
+
 /** Fija la escala de render (escala lógica × densidad de píxeles). */
 export function setSpriteScale(s) {
   if (Math.abs(s - renderScale) > 0.01) {
@@ -62,4 +64,50 @@ export function drawGlow(ctx, x, y, rx, color, alpha = 1, ry = rx) {
   ctx.drawImage(s.canvas, x - rx, y - ry, rx * 2, ry * 2);
   ctx.globalCompositeOperation = prevOp;
   ctx.globalAlpha = prevA;
+}
+
+// ---------------- VENTANAS (patrón repetido) ----------------
+// Un edificio entero se rellena con una sola llamada usando un patrón,
+// en lugar de dibujar cientos de ventanas una a una.
+
+const patternCache = new WeakMap();
+
+/**
+ * opts: { cw, ch, gx, gy, cols, rows, lit, colors: [lit...], off, seed }
+ * Devuelve un CanvasPattern para este contexto.
+ */
+export function windowPattern(ctx, key, opts) {
+  let map = patternCache.get(ctx);
+  if (!map) {
+    map = new Map();
+    patternCache.set(ctx, map);
+  }
+  const fullKey = `${key}@${renderScale.toFixed(2)}`;
+  let pat = map.get(fullKey);
+  if (!pat) {
+    const { cw, ch, gx, gy, cols = 6, rows = 8, lit = 0.4, colors, off, seed = 1 } = opts;
+    const tw = cols * (cw + gx);
+    const th = rows * (ch + gy);
+    const spr = sprite(`win:${key}`, tw, th, (c) => {
+      let s = seed * 9301;
+      const rnd = () => ((s = (s * 9301 + 49297) % 233280) / 233280);
+      for (let r = 0; r < rows; r++) {
+        for (let k = 0; k < cols; k++) {
+          const on = rnd() < lit;
+          c.fillStyle = on ? colors[Math.floor(rnd() * colors.length)] : off;
+          c.fillRect(k * (cw + gx) + gx / 2, r * (ch + gy) + gy / 2, cw, ch);
+        }
+      }
+    });
+    pat = ctx.createPattern(spr.canvas, 'repeat');
+    map.set(fullKey, pat);
+  }
+  return pat;
+}
+
+/** Rellena un rectángulo con un patrón de ventanas anclado a (ox, oy). */
+export function fillPattern(ctx, pat, x, y, w, h, ox = x, oy = y) {
+  if (pat.setTransform) pat.setTransform(new DOMMatrix([1 / renderScale, 0, 0, 1 / renderScale, ox, oy]));
+  ctx.fillStyle = pat;
+  ctx.fillRect(x, y, w, h);
 }

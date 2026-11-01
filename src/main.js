@@ -9,8 +9,11 @@ import { Screens } from './ui/screens.js';
 import { causeText } from './entities/obstacles.js';
 import { Sound } from './core/audio.js';
 import { setSpriteScale } from './fx/sprites.js';
+import { Quality } from './core/quality.js';
 
 // ---------- arranque ----------
+Save.load();
+Quality.set(Save.data.settings.quality);
 const canvas = document.getElementById('canvas');
 const stage = document.getElementById('stage');
 const view = new View(canvas, stage);
@@ -20,7 +23,6 @@ const game = new Game(view, hud);
 const screens = new Screens();
 if (hud.debug) window.game = game; // acceso desde la consola con ?debug
 
-Save.load();
 setLang(Save.data.settings.lang || detectLanguage());
 applyToDom();
 screens.refreshLangButtons();
@@ -44,6 +46,33 @@ document.querySelectorAll('.btn-mute').forEach((b) =>
     b.blur();
   }),
 );
+
+// ---------- calidad gráfica ----------
+const qualityBtn = document.getElementById('btn-quality');
+function refreshQualityBtn() {
+  const label = Quality.mode === 'auto' ? `${t('quality.auto')} (${t(`quality.${Quality.level}`)})` : t(`quality.${Quality.mode}`);
+  qualityBtn.textContent = `⚙ ${t('menu.quality')}: ${label}`;
+}
+qualityBtn.addEventListener('click', () => {
+  Save.data.settings.quality = Quality.cycle();
+  Save.save();
+  Sound.click();
+});
+Quality.onChange((level, auto) => {
+  view.resize();
+  refreshQualityBtn();
+  if (auto) toast(t('toast.lowQuality'));
+});
+refreshQualityBtn();
+
+let toastTimer = 0;
+function toast(text) {
+  const el = document.getElementById('toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+}
 
 // Estados: 'menu' | 'playing' | 'paused' | 'over'
 let state = 'menu';
@@ -134,6 +163,7 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
     Save.data.settings.lang = btn.dataset.lang;
     Save.save();
     screens.refreshLangButtons();
+    refreshQualityBtn();
     fillOver();
   });
 });
@@ -163,7 +193,8 @@ const loop = new Loop(
       game.updateIdle(dt);
     }
   },
-  () => {
+  (dt) => {
+    if (state === 'playing' || state === 'menu') Quality.monitor(dt, loop.fps);
     const ctx = view.ctx;
     setSpriteScale(view.scale * view.dpr);
     view.begin();
@@ -171,6 +202,8 @@ const loop = new Loop(
     if (state === 'playing' || state === 'paused') hud.draw(ctx, game, loop);
   },
 );
+
+if (hud.debug) window.__loopFps = () => loop.fps;
 
 // Esperamos a la fuente del HUD (sin bloquear si no carga)
 Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 1500))]).finally(() => loop.start());

@@ -51,6 +51,15 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 Todo se ajusta en el bloque `tokens` de [`src/config.js`](src/config.js).
 
+## Gráficos y rendimiento
+
+Todo el arte está **generado por código** (sin imágenes externas, así que no hay licencias de terceros que declarar):
+
+- Cada zona tiene su ambiente: atardecer en la playa, noche con neones en el centro financiero, anochecer con humo en la zona industrial, mañana despejada en las colinas y hora azul en el puerto.
+- 4 capas de parallax (silueta lejana + 3 capas de decorado) con bruma atmosférica entre ellas.
+- Brillos con sprites de halo precalculados, ventanas con patrones repetidos y caché del cielo y de los rascacielos para que vaya fluido en móvil.
+- **Calidad** en el menú: *Auto* (empieza en alta y baja sola si los FPS caen), *Alta* o *Baja* (resolución reducida, menos partículas y detalle).
+
 ## Ajustar dificultad
 
 Todos los valores están en [`src/config.js`](src/config.js). Los textos están en [`src/i18n/translations.js`](src/i18n/translations.js).

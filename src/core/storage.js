@@ -8,6 +8,7 @@ const DEFAULTS = {
   settings: {
     lang: null,     // null = detectar del navegador
     muted: false,
+    quality: 'auto', // 'auto' | 'high' | 'low'
   },
   wallet: 0,          // pavos disponibles para gastar (tienda, fase e)
   best: {

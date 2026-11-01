@@ -59,6 +59,7 @@ export class Game {
     this.deathTimer = 0;
     this.cause = null;
     this.flash = 0;
+    this.fadeIn = 1;
   }
 
   get distance() {
@@ -152,6 +153,7 @@ export class Game {
     this.particles.update(dt);
     this.popups.update(dt);
     this.flash = Math.max(0, this.flash - dt * 3);
+    this.fadeIn = Math.max(0, this.fadeIn - dt * 2.5);
   }
 
   updateZone() {
@@ -173,6 +175,8 @@ export class Game {
     this.camera.addShake(0.85);
     this.flash = 1;
     const { x, y } = this.player;
+    this.particles.spawn({ x, y, life: 0.35, size: 20, sizeEnd: 110, color: 'rgba(255, 220, 140, 0.95)', shape: 'glow', additive: true, important: true });
+    this.particles.spawn({ x, y, life: 0.45, size: 10, sizeEnd: 90, color: 'rgba(255, 244, 220, 0.9)', shape: 'ring', additive: true, important: true });
     this.particles.burst(x, y, 26, { color: '#ffd23f', speed: 420, life: 0.5, size: 5, sizeEnd: 1, additive: true });
     this.particles.burst(x, y, 14, { color: '#ff7a3d', speed: 260, life: 0.7, size: 7, sizeEnd: 2, additive: true });
     this.particles.burst(x, y, 12, { color: 'rgba(60, 50, 80, 0.6)', speed: 140, life: 1, size: 8, sizeEnd: 16, drag: 2 });
@@ -183,6 +187,7 @@ export class Game {
   /** Paso en el menú: el fondo se desplaza solo. */
   updateIdle(dt) {
     this.t += dt;
+    this.fadeIn = 0;
     this.camera.x += CONFIG.speed.menu * dt;
     this.particles.update(dt);
     this.camera.update(dt);
@@ -234,6 +239,7 @@ export class Game {
       ctx.restore();
     }
 
+    if (showPlayer) this.player.drawShadow(ctx, cam.x, v.groundY);
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
     if (!menu) this.tokens.draw(ctx, cam.x, this);
     this.particles.draw(ctx, cam.x);
@@ -242,6 +248,11 @@ export class Game {
     ctx.restore();
 
     this.popups.draw(ctx);
+    // fundido de entrada al empezar la partida
+    if (this.fadeIn > 0) {
+      ctx.fillStyle = `rgba(18, 11, 38, ${this.fadeIn})`;
+      ctx.fillRect(0, 0, v.w, v.h);
+    }
     if (this.flash > 0) {
       ctx.fillStyle = `rgba(255, 250, 235, ${this.flash * 0.7})`;
       ctx.fillRect(0, 0, v.w, v.h);

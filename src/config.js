@@ -10,7 +10,6 @@ export const CONFIG = {
     height: 540,        // alto lógico fijo
     minWidth: 760,      // ancho lógico mínimo (pantallas más estrechas → bandas negras)
     maxWidth: 1280,     // ancho lógico máximo (pantallas ultra anchas → bandas negras)
-    maxDpr: 2,          // límite de densidad de píxeles (rendimiento en móvil)
   },
 
   world: {
@@ -54,6 +53,15 @@ export const CONFIG = {
   particles: {
     max: 700,           // límite de partículas simultáneas
     exhaustRate: 70,    // partículas de fuego por segundo a empuje máximo
+  },
+
+  // Calidad gráfica (menú → Calidad). 'auto' baja a 'low' si va lento.
+  quality: {
+    default: 'auto',
+    autoMinFps: 48,     // por debajo de estos FPS…
+    autoWindow: 4,      // …durante estos segundos, pasa a calidad baja
+    high: { maxDpr: 2, particles: 1, detail: true },
+    low: { maxDpr: 0.8, particles: 0.5, detail: false }, // maxDpr < 1 = resolución reducida
   },
 
   // ---------------- FASE B ----------------

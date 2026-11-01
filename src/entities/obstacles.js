@@ -3,6 +3,8 @@ import { clamp, rand, approach, pick } from '../core/rng.js';
 import { t } from '../core/i18n.js';
 import { roundRect } from './player.js';
 import { Sound } from '../core/audio.js';
+import { drawGlow } from '../fx/sprites.js';
+import { Quality } from '../core/quality.js';
 
 /*
  * OBSTÁCULOS
@@ -63,8 +65,14 @@ export class Cable extends Obstacle {
     return this.x + this.len / 2 + 20;
   }
 
-  update(dt) {
+  update(dt, g) {
     this.angle += this.spin * dt;
+    // chispas ocasionales a lo largo del cable
+    if (Quality.settings.detail && Math.random() < dt * 5) {
+      const [x1, y1, x2, y2] = this.ends;
+      const k = Math.random();
+      g.particles.spawn({ x: x1 + (x2 - x1) * k, y: y1 + (y2 - y1) * k, vx: rand(-120, 120), vy: rand(-160, 40), life: rand(0.2, 0.4), size: 2, sizeEnd: 0.5, color: '#bff8ff', additive: true, gravity: 700 });
+    }
   }
 
   hits(box) {
@@ -84,14 +92,22 @@ export class Cable extends Obstacle {
     const [x1, y1, x2, y2] = this.ends;
     const ax = x1 - camX;
     const bx = x2 - camX;
-    // halo
+    // halo luminoso (aditivo)
+    const pulse = 0.75 + 0.25 * Math.sin(g.t * 14 + this.seed);
     ctx.lineCap = 'round';
-    ctx.strokeStyle = 'rgba(120, 240, 255, 0.28)';
-    ctx.lineWidth = this.th + 8;
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(60, 200, 255, ${0.16 * pulse})`;
+    ctx.lineWidth = this.th + 22;
     ctx.beginPath();
     ctx.moveTo(ax, y1);
     ctx.lineTo(bx, y2);
     ctx.stroke();
+    ctx.strokeStyle = `rgba(120, 240, 255, ${0.3 * pulse})`;
+    ctx.lineWidth = this.th + 8;
+    ctx.stroke();
+    ctx.globalCompositeOperation = 'source-over';
+    drawGlow(ctx, ax, y1, 30, 'rgba(95, 232, 255, 0.9)', 0.55 * pulse);
+    drawGlow(ctx, bx, y2, 30, 'rgba(95, 232, 255, 0.9)', 0.55 * pulse);
     // rayo en zigzag
     const segs = Math.max(4, Math.floor(this.len / 16));
     const nx = -(y2 - y1) / this.len;
@@ -189,6 +205,8 @@ export class Billboard extends Obstacle {
         this.rot = 0.06;
         g.camera.addShake(0.35);
         Sound.crash();
+        g.particles.spawn({ x: this.x + this.w / 2, y: gy - 10, life: 0.3, size: 20, sizeEnd: 90, color: 'rgba(255, 230, 160, 0.8)', shape: 'glow', additive: true });
+        g.particles.burst(this.x + this.w / 2, gy - 16, 10, { color: 'rgba(70, 60, 80, 0.55)', speed: 120, life: 1.1, size: 8, sizeEnd: 22, drag: 2.5, vy: -60 });
         g.particles.burst(this.x + this.w / 2, gy - 6, 18, { color: '#d8cbb0', speed: 260, life: 0.6, size: 4, sizeEnd: 1, gravity: 600 });
         g.particles.burst(this.x + this.w / 2, gy - 10, 10, { color: this.ad.bg, speed: 300, life: 0.8, size: 4, shape: 'rect', spin: 8, gravity: 900 });
         g.chaos(CONFIG.wanted.heat.billboardCrash, this.x + this.w / 2, gy - 60);
@@ -257,7 +275,9 @@ export class Billboard extends Obstacle {
       ctx.fillText(this.ad.text, 0, 2);
       // bombillas
       for (let i = 0; i < 6; i++) {
-        ctx.fillStyle = Math.sin(g.t * 6 + i) > 0 ? '#fff6c2' : '#a08850';
+        const lit = Math.sin(g.t * 6 + i) > 0;
+        if (lit) drawGlow(ctx, -w / 2 + 15 + i * ((w - 30) / 5), h / 2 - 2, 9, 'rgba(255, 240, 180, 0.9)', 0.8);
+        ctx.fillStyle = lit ? '#fff6c2' : '#a08850';
         ctx.beginPath();
         ctx.arc(-w / 2 + 15 + i * ((w - 30) / 5), h / 2 - 2, 3, 0, Math.PI * 2);
         ctx.fill();
@@ -312,6 +332,23 @@ export class PatrolCar extends Obstacle {
     const x = this.x - camX;
     const y = this.y;
     const w = this.w;
+    // sombra y haz de los faros
+    ctx.fillStyle = 'rgba(10, 5, 30, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(x + w / 2, y + 46, w / 2 + 6, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'lighter';
+    const beam = ctx.createLinearGradient(x, 0, x - 160, 0);
+    beam.addColorStop(0, 'rgba(255, 245, 200, 0.35)');
+    beam.addColorStop(1, 'rgba(255, 245, 200, 0)');
+    ctx.fillStyle = beam;
+    ctx.beginPath();
+    ctx.moveTo(x + 2, y + 20);
+    ctx.lineTo(x - 160, y + 4);
+    ctx.lineTo(x - 160, y + 46);
+    ctx.lineTo(x + 2, y + 25);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
     // carrocería (mira a la izquierda)
     ctx.fillStyle = INK;
     roundRect(ctx, x - 3, y + 13, w + 6, 26, 9);
@@ -363,13 +400,8 @@ export class PatrolCar extends Obstacle {
     ctx.fillRect(x + 46, y - 4, 13, 6);
     ctx.fillStyle = on ? '#1f5fff' : '#ff3d4f';
     ctx.fillRect(x + 59, y - 4, 13, 6);
-    ctx.globalCompositeOperation = 'lighter';
-    const glow = ctx.createRadialGradient(x + (on ? 52 : 66), y - 1, 2, x + (on ? 52 : 66), y - 1, 40);
-    glow.addColorStop(0, on ? 'rgba(255,60,80,0.6)' : 'rgba(40,100,255,0.6)');
-    glow.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(x + 10, y - 40, 100, 80);
-    ctx.globalCompositeOperation = 'source-over';
+    drawGlow(ctx, x + (on ? 52 : 66), y - 1, 46, on ? 'rgba(255, 60, 80, 0.95)' : 'rgba(50, 110, 255, 0.95)', 0.9);
+    drawGlow(ctx, x + 3, y + 21, 14, 'rgba(255, 250, 220, 0.9)', 0.9);
     // ruedas
     for (const wx of [x + 24, x + w - 24]) {
       ctx.fillStyle = INK;
@@ -519,7 +551,14 @@ export class Helicopter extends Obstacle {
       ctx.lineTo(ax, ay);
       ctx.lineTo(bx, by);
       ctx.closePath();
+      ctx.globalCompositeOperation = 'lighter';
       ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      // charco de luz en el suelo
+      if (ay > gy - 5) {
+        drawGlow(ctx, (ax + bx) / 2, gy, Math.abs(bx - ax) / 2 + 24, red ? 'rgba(255, 70, 90, 0.8)' : 'rgba(255, 244, 190, 0.8)', 0.55, 12);
+      }
+      drawGlow(ctx, lx, ly, 22, red ? 'rgba(255, 70, 90, 0.95)' : 'rgba(255, 250, 220, 0.95)', 0.9);
     }
 
     // cola (a la derecha, mira a la izquierda)
@@ -704,6 +743,8 @@ export class Missile extends Obstacle {
     if (this.state !== 'fly') return;
     const x = this.x - camX;
     const y = this.y;
+    drawGlow(ctx, x + 54, y, 26, 'rgba(255, 170, 60, 0.95)', 0.9);
+    drawGlow(ctx, x + 20, y, 46, 'rgba(255, 80, 90, 0.6)', 0.35, 18);
     // aletas
     ctx.fillStyle = '#ff3d4f';
     ctx.beginPath();
@@ -733,6 +774,7 @@ export class Missile extends Obstacle {
 /** Icono de aviso en el borde derecho de la pantalla. */
 function warningIcon(ctx, x, y, time, kind, visible = true, locked = false) {
   const pulse = 1 + Math.sin(time * 12) * 0.08;
+  if (visible) drawGlow(ctx, x, y, 40, locked ? 'rgba(255, 61, 79, 0.9)' : 'rgba(255, 210, 63, 0.9)', 0.6);
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(pulse, pulse);

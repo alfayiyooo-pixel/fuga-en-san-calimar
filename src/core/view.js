@@ -1,5 +1,6 @@
 import { CONFIG } from '../config.js';
 import { clamp } from './rng.js';
+import { Quality } from './quality.js';
 
 /**
  * Gestiona el tamaño del canvas: alto lógico fijo (540) y ancho lógico
@@ -26,7 +27,8 @@ export class View {
   resize() {
     const cw = window.innerWidth;
     const ch = window.innerHeight;
-    const { height, minWidth, maxWidth, maxDpr } = CONFIG.view;
+    const { height, minWidth, maxWidth } = CONFIG.view;
+    const maxDpr = Quality.settings.maxDpr;
     this.w = Math.round(clamp(height * (cw / ch), minWidth, maxWidth));
     this.scale = Math.min(cw / this.w, ch / this.h);
     this.dpr = Math.min(window.devicePixelRatio || 1, maxDpr);

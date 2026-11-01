@@ -72,8 +72,8 @@ export class Hud {
     const v = game.view;
     outlinedText(ctx, t('hud.distance', { n: fmt(game.distance) }), 18, 14, 32);
     this.drawBucks(ctx, game);
-    this.drawStars(ctx, game, v);
     this.drawBanner(ctx, v);
+    this.drawStars(ctx, game, v);
 
     if (this.debug) {
       const p = game.player;
@@ -171,7 +171,7 @@ export class Hud {
     const outT = Math.min(1, Math.max(0, (b.life - b.time) / 0.3));
     const k = Math.min(inT, outT);
     const ease = 1 - (1 - k) ** 3;
-    const y = 64 + (1 - ease) * -60;
+    const y = 92 + (1 - ease) * -40;
     ctx.save();
     ctx.globalAlpha = ease;
     ctx.translate(v.w / 2, y);

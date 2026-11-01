@@ -88,7 +88,9 @@ canvas {
 }
 .logo-main {
   font-size: calc(68px * var(--s));
-  background: linear-gradient(180deg, #ffe066 0%, var(--orange) 50%, var(--pink) 100%);
+  background: linear-gradient(100deg, #ffe066 0%, var(--orange) 34%, #fff6d0 44%, var(--orange) 54%, var(--pink) 100%);
+  background-size: 260% 100%;
+  animation: shine 3.6s ease-in-out infinite;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -169,6 +171,8 @@ canvas {
 
 /* BOTONES */
 .btn {
+  position: relative;
+  overflow: hidden;
   font-family: 'Bungee', Impact, sans-serif;
   font-size: calc(20px * var(--s));
   padding: calc(10px * var(--s)) calc(26px * var(--s));
@@ -181,12 +185,18 @@ canvas {
   cursor: pointer;
   transition: transform 0.08s, box-shadow 0.08s;
 }
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 52% 0;
+  background: linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
 .btn:hover { transform: translateY(calc(-2px * var(--s))); }
 .btn:active { transform: translateY(calc(4px * var(--s))); box-shadow: 0 calc(1px * var(--s)) 0 var(--ink); }
 .btn-primary {
   background: linear-gradient(180deg, #ffd23f 0%, var(--orange) 100%);
   font-size: calc(28px * var(--s));
-  animation: pulse 1.4s ease-in-out infinite;
 }
 @keyframes pulse {
   0%, 100% { transform: scale(1); }
@@ -261,4 +271,87 @@ canvas {
 .rotate-icon { font-size: 56px; margin-bottom: 12px; }
 @media (orientation: portrait) and (pointer: coarse) {
   #rotate { display: flex; }
+}
+
+/* ---------- ANIMACIONES DE PANTALLAS ---------- */
+.screen:not(.hidden) {
+  animation: screen-in 0.32s ease-out both;
+}
+.screen:not(.hidden) > * {
+  animation: rise-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+.screen:not(.hidden) > :nth-child(2) { animation-delay: 0.05s; }
+.screen:not(.hidden) > :nth-child(3) { animation-delay: 0.1s; }
+.screen:not(.hidden) > :nth-child(4) { animation-delay: 0.15s; }
+.screen:not(.hidden) > :nth-child(5) { animation-delay: 0.2s; }
+.screen:not(.hidden) > :nth-child(6) { animation-delay: 0.25s; }
+.screen:not(.hidden) > :nth-child(7) { animation-delay: 0.3s; }
+.screen:not(.hidden) > .btn-primary {
+  animation: rise-in 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.25) 0.15s both, pulse 1.4s ease-in-out 0.8s infinite;
+}
+.screen:not(.hidden) > .logo {
+  animation: logo-in 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.4) both, float 4s ease-in-out 0.7s infinite;
+}
+.row .btn-primary { animation: pulse 1.4s ease-in-out 0.8s infinite; }
+
+@keyframes screen-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(calc(22px * var(--s))) scale(0.9); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes logo-in {
+  from { opacity: 0; transform: translateY(calc(-40px * var(--s))) scale(0.6) rotate(-12deg); }
+  to { opacity: 1; transform: rotate(-3deg); }
+}
+@keyframes float {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50% { transform: rotate(-2deg) translateY(calc(-5px * var(--s))); }
+}
+@keyframes shine {
+  0% { background-position: 100% 0; }
+  55%, 100% { background-position: 0% 0; }
+}
+
+/* selector de calidad */
+.chip-btn {
+  font-family: 'Rubik', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: calc(13px * var(--s));
+  padding: calc(5px * var(--s)) calc(14px * var(--s));
+  border: calc(2px * var(--s)) solid var(--ink);
+  border-radius: 999px;
+  background: rgba(255, 244, 220, 0.85);
+  color: var(--ink);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* aviso breve */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 40px);
+  opacity: 0;
+  background: var(--ink);
+  color: var(--cream);
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 2px solid var(--cream);
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+  z-index: 20;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen:not(.hidden), .screen:not(.hidden) > *, .logo-main { animation: none !important; }
 }

@@ -1,4 +1,6 @@
 import { CONFIG } from '../config.js';
+import { Quality } from '../core/quality.js';
+import { glowSprite } from './sprites.js';
 
 /**
  * Sistema de partículas en coordenadas de mundo.
@@ -15,6 +17,8 @@ export class Particles {
   }
 
   spawn(p) {
+    // en calidad baja se omite parte de las partículas decorativas
+    if (!p.important && Math.random() > Quality.settings.particles) return;
     if (this.list.length >= CONFIG.particles.max) this.list.shift();
     this.list.push({
       x: p.x,
@@ -92,7 +96,15 @@ export class Particles {
       ctx.globalAlpha = Math.min(1, k * 1.4);
       ctx.fillStyle = p.color;
       const x = p.x - camX;
-      if (p.shape === 'rect') {
+      if (p.shape === 'glow') {
+        ctx.drawImage(glowSprite(p.color).canvas, x - size, p.y - size, size * 2, size * 2);
+      } else if (p.shape === 'ring') {
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = Math.max(1, 6 * k);
+        ctx.beginPath();
+        ctx.arc(x, p.y, size, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (p.shape === 'rect') {
         ctx.save();
         ctx.translate(x, p.y);
         ctx.rotate(p.rot);

@@ -42,6 +42,11 @@ export const TRANSLATIONS = {
     'popup.magnet': '¡IMÁN!',
     'over.bucks': 'Pavos',
     'menu.sound': 'Sonido',
+    'menu.quality': 'Calidad',
+    'quality.auto': 'Auto',
+    'quality.high': 'Alta',
+    'quality.low': 'Baja',
+    'toast.lowQuality': 'Calidad baja activada para ir más fluido',
 
     'over.title': '¡Te han pillado!',
     'over.distance': 'Distancia',
@@ -94,6 +99,11 @@ export const TRANSLATIONS = {
     'popup.magnet': 'MAGNET!',
     'over.bucks': 'Bucks',
     'menu.sound': 'Sound',
+    'menu.quality': 'Quality',
+    'quality.auto': 'Auto',
+    'quality.high': 'High',
+    'quality.low': 'Low',
+    'toast.lowQuality': 'Switched to low quality for smoother play',
 
     'over.title': 'Busted!',
     'over.distance': 'Distance',
