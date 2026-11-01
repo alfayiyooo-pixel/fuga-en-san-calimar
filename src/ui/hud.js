@@ -85,6 +85,8 @@ export class Hud {
     this.starFlash = Math.max(0, this.starFlash - dt);
     this.bump = Math.max(0, this.bump - dt * 5);
     this.party = Math.max(0, this.party - dt);
+    this.portraitPop = Math.max(0, (this.portraitPop ?? 0) - dt * 1.2);
+    this.specialPop = Math.max(0, (this.specialPop ?? 0) - dt * 1.5);
     for (const f of this.flyers) {
       f.t += dt;
       if (f.t >= f.dur && !f.done) {

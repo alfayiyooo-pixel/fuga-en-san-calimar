@@ -2,12 +2,13 @@ import { View } from './core/view.js';
 import { Input } from './core/input.js';
 import { Loop } from './core/loop.js';
 import { Save } from './core/storage.js';
-import { setLang, detectLanguage, applyToDom, fmt, t } from './core/i18n.js';
+import { setLang, detectLanguage, applyToDom, fmt, t, getLang } from './core/i18n.js';
 import { Game } from './game.js';
 import { Hud } from './ui/hud.js';
 import { Screens } from './ui/screens.js';
 import { causeText } from './entities/obstacles.js';
 import { Sound } from './core/audio.js';
+import { Voice } from './core/voice.js';
 import { setSpriteScale } from './fx/sprites.js';
 import { Quality } from './core/quality.js';
 import { createTuner } from './ui/tuner.js';
@@ -34,7 +35,11 @@ Sound.setMuted(Save.data.settings.muted);
 screens.setMuteIcon(Save.data.settings.muted);
 
 // el audio solo puede arrancar tras una interacción del jugador
-const unlockAudio = () => Sound.unlock();
+const unlockAudio = () => {
+  const first = !Sound.ctx;
+  Sound.unlock();
+  if (first && Sound.ctx) Voice.preload(getLang());
+};
 window.addEventListener('pointerdown', unlockAudio);
 window.addEventListener('keydown', unlockAudio);
 
@@ -211,6 +216,7 @@ screens.on('btn-over-menu', toMenu);
 document.querySelectorAll('.lang-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     setLang(btn.dataset.lang);
+    if (Sound.ctx) Voice.preload(btn.dataset.lang);
     Save.data.settings.lang = btn.dataset.lang;
     Save.save();
     screens.refreshLangButtons();

@@ -195,6 +195,13 @@ export const CONFIG = {
     musicVolume: 0.32,
     chaseTempo: 124,        // ppm de la música de persecución
     calmTempo: 84,          // ppm de la música tranquila (respiros)
+    voiceVolume: 1,         // volumen de las frases de los personajes
+    // voz del navegador (provisional): tono 0-2 y velocidad 0.1-10 por personaje
+    voices: {
+      veteran: { pitch: 0.6, rate: 0.82 },
+      pilot: { pitch: 1.55, rate: 1.25 },
+      wild: { pitch: 0.2, rate: 1.15 },
+    },
   },
 
   // ---------------- PERSONAJES ----------------
@@ -206,6 +213,8 @@ export const CONFIG = {
     itemCooldown: 5,        // s mínimos entre iconos
     specialWeight: 1,       // peso de la habilidad especial frente a…
     gadgetWeight: 1.3,      // …cada gadget al elegir icono
+    specialCharge: 45,      // pavos (valor base) para llenar la barra de la habilidad especial
+    startCharge: 0.35,      // la barra empieza con esta fracción al transformarte
     transformInvuln: 1.2,   // s invulnerable al transformarte
     detransformInvuln: 1.8, // s invulnerable al perder el personaje
     transformSlowmo: 0.35,  // s de cámara lenta en la transformación

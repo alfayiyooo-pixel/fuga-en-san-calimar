@@ -31,6 +31,18 @@ class AudioFx {
   setMuted(m) {
     this.muted = m;
     if (this.master) this.master.gain.value = m ? 0 : this.volume;
+    if (m && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+  }
+
+  /** Reproduce un audio ya decodificado (voces grabadas). */
+  playBuffer(buf, vol = 1) {
+    if (!this.ready) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    const g = this.ctx.createGain();
+    g.gain.value = vol / Math.max(0.01, this.volume); // independiente del volumen de efectos
+    src.connect(g).connect(this.master);
+    src.start();
   }
 
   get ready() {
@@ -221,6 +233,104 @@ class AudioFx {
       d += len * 0.9;
     }
     this.noise({ dur: 1.2, vol: 0.12, freq: 6000, type: 'highpass', delay: 0.3 });
+  }
+
+  // ---------- transformaciones con personalidad ----------
+  transformChar(id) {
+    this.noise({ dur: 0.35, vol: 0.18, freq: 4000, type: 'highpass' });
+    if (id === 'veteran') {
+      // elegante: campanas de cristal (arpegio mayor 7ª) + tic-tac
+      [0, 4, 7, 11, 14].forEach((s, i) => {
+        this.tone({ freq: 784 * 2 ** (s / 12), type: 'sine', dur: 0.9, vol: 0.1, delay: i * 0.08, attack: 0.005 });
+        this.tone({ freq: 784 * 2 * 2 ** (s / 12), type: 'sine', dur: 0.5, vol: 0.03, delay: i * 0.08 });
+      });
+      [0.55, 0.8].forEach((d) => this.tone({ freq: 2600, type: 'square', dur: 0.02, vol: 0.06, delay: d }));
+    } else if (id === 'pilot') {
+      // motor que sube de vueltas + derrape
+      this.engine();
+      this.skid(0.35);
+      this.tone({ freq: 1318, type: 'square', dur: 0.12, vol: 0.06, delay: 0.75 });
+    } else if (id === 'wild') {
+      // explosión + grito
+      this.bigBoom();
+      this.yell(0.15);
+    }
+  }
+
+  /** Motor revolucionándose (sierra con vibrato que sube). */
+  engine(delay = 0) {
+    if (!this.ready) return;
+    const t0 = this.ctx.currentTime + delay;
+    const o = this.ctx.createOscillator();
+    const lfo = this.ctx.createOscillator();
+    const lfoG = this.ctx.createGain();
+    const g = this.ctx.createGain();
+    const f = this.ctx.createBiquadFilter();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(70, t0);
+    o.frequency.exponentialRampToValueAtTime(260, t0 + 0.45);
+    o.frequency.exponentialRampToValueAtTime(180, t0 + 0.7);
+    lfo.frequency.value = 28;
+    lfoG.gain.value = 18;
+    lfo.connect(lfoG).connect(o.frequency);
+    f.type = 'lowpass';
+    f.frequency.value = 1400;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.16, t0 + 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.8);
+    o.connect(f).connect(g).connect(this.master);
+    o.start(t0);
+    lfo.start(t0);
+    o.stop(t0 + 0.85);
+    lfo.stop(t0 + 0.85);
+  }
+
+  /** Chirrido de neumáticos. */
+  skid(delay = 0) {
+    this.noise({ dur: 0.55, vol: 0.22, freq: 2200, type: 'bandpass', q: 6, slide: 0.7, delay });
+  }
+
+  /** Grito salvaje "¡YAAAH!" (dos sierras con filtro de vocal). */
+  yell(delay = 0) {
+    if (!this.ready) return;
+    const t0 = this.ctx.currentTime + delay;
+    for (const [fq, vol] of [[800, 0.12], [1250, 0.08]]) {
+      const o = this.ctx.createOscillator();
+      const vib = this.ctx.createOscillator();
+      const vibG = this.ctx.createGain();
+      const f = this.ctx.createBiquadFilter();
+      const g = this.ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(330, t0);
+      o.frequency.linearRampToValueAtTime(420, t0 + 0.15);
+      o.frequency.exponentialRampToValueAtTime(190, t0 + 0.75);
+      vib.frequency.value = 7;
+      vibG.gain.value = 14;
+      vib.connect(vibG).connect(o.frequency);
+      f.type = 'bandpass';
+      f.frequency.value = fq;
+      f.Q.value = 5;
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(vol * 2.5, t0 + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.8);
+      o.connect(f).connect(g).connect(this.master);
+      o.start(t0);
+      vib.start(t0);
+      o.stop(t0 + 0.85);
+      vib.stop(t0 + 0.85);
+    }
+  }
+
+  /** Tiempo bala: barrido grave que se "estira". */
+  bulletTime() {
+    this.tone({ freq: 600, type: 'sine', dur: 0.8, vol: 0.18, slide: 0.25 });
+    this.noise({ dur: 0.6, vol: 0.15, freq: 1500, type: 'bandpass', slide: 0.2 });
+  }
+
+  /** Amartillar la pistola. */
+  cock() {
+    this.noise({ dur: 0.04, vol: 0.25, freq: 3500, type: 'highpass' });
+    this.noise({ dur: 0.05, vol: 0.25, freq: 2500, type: 'highpass', delay: 0.12 });
   }
 
   /** Inicio de un respiro: campanillas suaves. */

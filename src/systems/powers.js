@@ -1,6 +1,7 @@
 import { CONFIG } from '../config.js';
 import { rand, chance, pick, clamp } from '../core/rng.js';
-import { t } from '../core/i18n.js';
+import { t, getLang } from '../core/i18n.js';
+import { Voice } from '../core/voice.js';
 import { Sound } from '../core/audio.js';
 import { CHARACTERS, CHARACTER_IDS, ITEM_OWNER } from '../characters/defs.js';
 import { capsuleSprite, itemSprite } from '../characters/icons.js';
@@ -38,6 +39,19 @@ export class Powers {
     this.tickTimer = 0;
     this.lastChar = null;
     this.uses = {};
+    this.charge = 0;      // carga de la habilidad especial (se llena con pavos)
+    this.readyFlash = 0;
+  }
+
+  /** Recoger pavos carga la habilidad especial; al llenarse se activa sola. */
+  addCharge(value, g) {
+    if (!this.def || this.has(this.def.special)) return;
+    this.charge += value;
+    if (this.charge >= CONFIG.characters.specialCharge) {
+      this.charge = 0;
+      this.readyFlash = 1;
+      this.activate(this.def.special, g);
+    }
   }
 
   get def() {
@@ -143,24 +157,51 @@ export class Powers {
     this.lastChar = id;
     this.effects = {};
     this.shields = [];
+    this.charge = C.specialCharge * C.startCharge;
     this.invuln = C.transformInvuln;
     this.slowmo = C.transformSlowmo;
     this.itemCd = 2;
     this.uses[id] = (this.uses[id] ?? 0) + 1;
     const p = g.player;
-    // efecto llamativo: destello, anillos, espiral de chispas
+    // efecto común: destello, anillos
     g.flash = Math.max(g.flash, 0.6);
-    g.camera.addShake(0.35);
-    g.particles.spawn({ x: p.x, y: p.y, life: 0.5, size: 20, sizeEnd: 160, color: def.rgba, shape: 'glow', additive: true, important: true });
+    g.particles.spawn({ x: p.x, y: p.y, life: 0.5, size: 20, sizeEnd: 170, color: def.rgba, shape: 'glow', additive: true, important: true });
     for (let k = 0; k < 3; k++) {
       g.particles.spawn({ x: p.x, y: p.y, life: 0.45 + k * 0.15, size: 8, sizeEnd: 80 + k * 40, color: k === 1 ? '#ffffff' : def.color, shape: 'ring', additive: true, important: true });
     }
-    for (let k = 0; k < 28; k++) {
-      const a = (k / 28) * Math.PI * 2;
-      const r = 50;
+    // efecto propio de cada personaje
+    if (id === 'veteran') {
+      // esfera de reloj dorada: 12 marcas girando y chispas elegantes
+      g.camera.addShake(0.2);
+      for (let k = 0; k < 12; k++) {
+        const a = (k / 12) * Math.PI * 2;
+        g.particles.spawn({ x: p.x + Math.cos(a) * 46, y: p.y + Math.sin(a) * 46, vx: -Math.sin(a) * 90, vy: Math.cos(a) * 90, life: 0.9, size: 4, sizeEnd: 1, color: '#ffd23f', shape: 'rect', rot: a, spin: 0, additive: true, important: true });
+      }
+      g.particles.burst(p.x, p.y, 16, { color: '#fff3c0', speed: 120, life: 1, size: 2.5, sizeEnd: 0, additive: true, drag: 1.5, important: true });
+    } else if (id === 'pilot') {
+      // derrape: rayas de velocidad, humo de neumático y chispas eléctricas
+      g.camera.addShake(0.35);
+      for (let k = 0; k < 14; k++) {
+        g.particles.spawn({ x: p.x + rand(-20, 40), y: p.y + rand(-30, 30), vx: rand(-900, -500), life: 0.35, size: 3, sizeEnd: 1, color: '#7ff7ff', shape: 'rect', additive: true, important: true });
+      }
+      g.particles.burst(p.x - 10, g.view.groundY - 6, 14, { color: 'rgba(220, 220, 235, 0.6)', speed: 160, life: 1, size: 8, sizeEnd: 22, drag: 2.5, vy: -40, important: true });
+      g.particles.burst(p.x, p.y, 12, { color: '#19e3d0', speed: 420, life: 0.3, size: 2, sizeEnd: 0, additive: true, important: true });
+    } else if (id === 'wild') {
+      // explosión: bola de fuego, onda roja, escombros y temblor fuerte
+      g.camera.addShake(0.75);
+      g.flash = 1;
+      g.particles.spawn({ x: p.x, y: p.y, life: 0.6, size: 30, sizeEnd: 230, color: 'rgba(255, 120, 40, 0.95)', shape: 'glow', additive: true, important: true });
+      g.particles.spawn({ x: p.x, y: p.y, life: 0.55, size: 10, sizeEnd: 220, color: '#ff3d4f', shape: 'ring', additive: true, important: true });
+      g.particles.burst(p.x, p.y, 26, { color: '#ffb627', speed: 480, life: 0.6, size: 5, sizeEnd: 0, additive: true, important: true });
+      g.particles.burst(p.x, p.y, 14, { color: 'rgba(60, 40, 50, 0.7)', speed: 200, life: 1.2, size: 10, sizeEnd: 26, drag: 2, important: true });
+      g.particles.burst(p.x, p.y, 10, { color: '#5a4a3a', speed: 380, life: 1.1, size: 4, shape: 'rect', spin: 14, gravity: 900, important: true });
+    }
+    // espiral de chispas en el color del personaje
+    for (let k = 0; k < 24; k++) {
+      const a = (k / 24) * Math.PI * 2;
       g.particles.spawn({
-        x: p.x + Math.cos(a) * r,
-        y: p.y + Math.sin(a) * r,
+        x: p.x + Math.cos(a) * 50,
+        y: p.y + Math.sin(a) * 50,
         vx: -Math.sin(a) * 260 - Math.cos(a) * 120,
         vy: Math.cos(a) * 260 - Math.sin(a) * 120,
         life: 0.6,
@@ -173,7 +214,11 @@ export class Powers {
       });
     }
     g.hud.banner(t(`char.${id}.alias`), t(`char.${id}.name`));
-    Sound.transform();
+    g.hud.portraitPop = 1;
+    Sound.transformChar(id);
+    // la frase se dice un instante después del efecto de sonido
+    const lang = getLang();
+    setTimeout(() => Voice.say(id, lang, t(`voice.${id}`)), 450);
   }
 
   detransform(g) {
@@ -183,6 +228,7 @@ export class Powers {
     this.effects = {};
     this.shields = [];
     this.invuln = CONFIG.characters.detransformInvuln;
+    this.charge = 0;
     this.itemCd = 0;
     g.camera.addShake(0.5);
     g.flash = Math.max(g.flash, 0.4);
@@ -198,25 +244,41 @@ export class Powers {
     const C = CONFIG.characters;
     const p = g.player;
     const def = this.def;
-    g.popups.add(t(`item.${item}`), p.x - g.camera.x, p.y - 64, { color: def.color, size: 22, life: 1.3 });
-    g.particles.spawn({ x: p.x, y: p.y, life: 0.4, size: 10, sizeEnd: 90, color: def.rgba, shape: 'ring', additive: true, important: true });
+    const special = item === def.special;
+    g.popups.add(t(`item.${item}`), special ? g.view.w / 2 : p.x - g.camera.x, special ? 190 : p.y - 64, { color: def.color, size: special ? 34 : 22, life: 1.4, rise: special ? 12 : 50 });
+    g.particles.spawn({ x: p.x, y: p.y, life: 0.4, size: 10, sizeEnd: special ? 160 : 90, color: def.rgba, shape: 'ring', additive: true, important: true });
+    g.particles.spawn({ x: p.x, y: p.y, life: 0.3, size: 14, sizeEnd: special ? 140 : 70, color: def.rgba, shape: 'glow', additive: true, important: true });
+    if (special) {
+      g.flash = Math.max(g.flash, 0.5);
+      g.camera.addShake(0.35);
+      g.hud.specialPop = 1;
+    }
     Sound.powerUp();
     switch (item) {
       case 'bullettime':
         this.effects.bullettime = C.veteran.bulletTime.duration;
+        Sound.bulletTime();
         break;
       case 'pistol':
         this.effects.pistol = C.veteran.pistol.duration;
+        Sound.cock();
         break;
       case 'vest':
         for (let k = 0; k < C.veteran.vest.hits; k++) this.shields.push('vest');
+        g.particles.spawn({ x: p.x, y: p.y, life: 0.5, size: 30, sizeEnd: 60, color: 'rgba(127, 247, 232, 0.9)', shape: 'ring', additive: true, important: true });
+        Sound.shield();
         break;
       case 'drive':
         this.effects.drive = C.pilot.drive.duration;
+        g.camera.addShake(0.3);
+        g.particles.burst(p.x - 20, g.view.groundY - 8, 16, { color: 'rgba(220, 220, 235, 0.6)', speed: 180, life: 1, size: 8, sizeEnd: 24, drag: 2.5, vy: -50, important: true });
+        Sound.skid();
         break;
       case 'nitro':
         this.effects.nitro = C.pilot.nitro.duration;
-        g.camera.addShake(0.3);
+        g.camera.addShake(0.45);
+        g.flash = Math.max(g.flash, 0.4);
+        g.particles.burst(p.x - 30, p.y, 24, { color: '#7ff7ff', speed: 500, life: 0.4, size: 4, sizeEnd: 0, additive: true, vx: -300, important: true });
         Sound.nitro();
         break;
       case 'ramp':
@@ -224,16 +286,20 @@ export class Powers {
         break;
       case 'rage':
         this.effects.rage = C.wild.rage.duration;
-        g.camera.addShake(0.5);
+        g.camera.addShake(0.7);
+        g.flash = 1;
+        g.particles.spawn({ x: p.x, y: p.y, life: 0.5, size: 10, sizeEnd: 260, color: '#ff3d4f', shape: 'ring', additive: true, important: true });
         Sound.rage();
         break;
       case 'rocket':
+        g.camera.addShake(0.3);
         this.shots.push({ kind: 'rocket', x: p.x + 20, y: p.y - 6, vx: g.speed + 900, vy: 0, life: C.wild.rocket.delay });
         Sound.launch();
         break;
       case 'bike':
         this.effects.bike = C.wild.bike.duration;
         if (!this.shields.includes('bike')) this.shields.push('bike');
+        Sound.engine();
         break;
     }
   }
@@ -293,6 +359,7 @@ export class Powers {
     const C = CONFIG.characters;
     const p = g.player;
     this.invuln = Math.max(0, this.invuln - dt);
+    this.readyFlash = Math.max(0, this.readyFlash - dt);
     this.slowmo = Math.max(0, this.slowmo - dt);
     this.capsuleCd = Math.max(0, this.capsuleCd - dt);
     this.itemCd = Math.max(0, this.itemCd - dt);
@@ -539,38 +606,83 @@ export class Powers {
     }
   }
 
-  /** Panel del personaje: retrato, habilidades activas y escudos. */
+  /**
+   * Panel del personaje (abajo a la izquierda): retrato grande, nombre,
+   * barra de la habilidad especial y gadgets/escudos activos.
+   */
   drawHud(ctx, g) {
     if (!this.def) return;
     const v = g.view;
-    const x = 14;
-    const y = v.h - 66;
     const def = this.def;
-    drawGlow(ctx, x + 26, y + 26, 40, def.rgba, 0.5);
-    drawSprite(ctx, capsuleSprite(def.id), x + 26, y + 26, 0.95, 0.95);
-    outlinedText(ctx, t(`char.${def.id}.alias`).toUpperCase(), x + 56, y + 2, 16, def.color);
-    let ix = x + 70;
-    const iy = y + 40;
+    const C = CONFIG.characters;
+    const pop = g.hud.portraitPop ?? 0;
+    const x = 14;
+    const y = v.h - 84;
+    const w = 206;
+    // fondo
+    ctx.fillStyle = 'rgba(20, 10, 40, 0.72)';
+    ctx.strokeStyle = def.color;
+    ctx.lineWidth = 3;
+    roundRectPath(ctx, x, y, w, 70, 14);
+    ctx.fill();
+    ctx.stroke();
+    // retrato
+    const s = 1.05 + pop * 0.35 * Math.abs(Math.sin(pop * 10));
+    drawGlow(ctx, x + 36, y + 35, 48 * s, def.rgba, 0.45 + pop * 0.5);
+    drawSprite(ctx, capsuleSprite(def.id), x + 36, y + 35, s, s);
+    // nombre
+    outlinedText(ctx, t(`char.${def.id}.alias`).toUpperCase(), x + 70, y + 8, 17, def.color);
+    // barra de la habilidad especial
+    const bx = x + 96;
+    const by = y + 40;
+    const bw = w - 108;
+    const active = this.has(def.special);
+    const frac = active ? this.effects[def.special] / this.totalFor(def.special) : this.charge / C.specialCharge;
+    drawSprite(ctx, itemSprite(def.special), x + 82, by + 6, 0.62, 0.62);
+    ctx.fillStyle = '#1b1030';
+    roundRectPath(ctx, bx - 2, by - 2, bw + 4, 16, 8);
+    ctx.fill();
+    if (active) drawGlow(ctx, bx + bw * frac / 2, by + 6, bw * 0.6, def.rgba, 0.5 + 0.3 * Math.sin(g.t * 12), 14);
+    ctx.fillStyle = def.color;
+    roundRectPath(ctx, bx, by, Math.max(6, bw * clamp(frac, 0, 1)), 12, 6);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+    ctx.fillRect(bx + 4, by + 2, Math.max(0, bw * clamp(frac, 0, 1) - 8), 3);
+    const label = active ? t(`item.${def.special}`) : t('hud.special');
+    const text = label.replace(/[¡!]/g, '');
+    let fs = 10;
+    ctx.font = `${fs}px 'Bungee', Impact, sans-serif`;
+    while (fs > 6 && ctx.measureText(text).width > bw - 10) {
+      fs -= 0.5;
+      ctx.font = `${fs}px 'Bungee', Impact, sans-serif`;
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#1b1030';
+    ctx.fillText(text, bx + bw / 2, by + 7);
+    // gadgets activos y escudos, en fila encima del panel
+    let ix = x + 22;
+    const iy = y - 26;
     for (const [k, left] of Object.entries(this.effects)) {
-      if (left <= 0) continue;
-      const total = this.totalFor(k);
-      drawSprite(ctx, itemSprite(k), ix, iy, 0.62, 0.62);
+      if (left <= 0 || k === def.special) continue;
+      drawSprite(ctx, itemSprite(k), ix, iy, 0.8, 0.8);
       ctx.strokeStyle = '#1b1030';
-      ctx.lineWidth = 5;
+      ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.arc(ix, iy, 16, 0, Math.PI * 2);
+      ctx.arc(ix, iy, 20, 0, Math.PI * 2);
       ctx.stroke();
       ctx.strokeStyle = def.color;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 3.5;
       ctx.beginPath();
-      ctx.arc(ix, iy, 16, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(left / total, 0, 1));
+      ctx.arc(ix, iy, 20, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(left / this.totalFor(k), 0, 1));
       ctx.stroke();
-      ix += 38;
+      ix += 48;
     }
-    for (const s of this.shields) {
-      if (s === 'bike') continue; // la moto ya aparece como efecto
-      drawSprite(ctx, itemSprite(s), ix, iy, 0.62, 0.62);
-      ix += 38;
+    for (const sh of this.shields) {
+      if (sh === 'bike') continue;
+      drawGlow(ctx, ix, iy, 26, 'rgba(127, 247, 232, 0.8)', 0.4);
+      drawSprite(ctx, itemSprite(sh), ix, iy, 0.8, 0.8);
+      ix += 48;
     }
   }
 
@@ -585,6 +697,16 @@ export class Powers {
       bike: C.wild.bike.duration,
     }[k] ?? 1;
   }
+}
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 function vignette(ctx, v, color) {

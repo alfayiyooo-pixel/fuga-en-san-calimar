@@ -67,7 +67,23 @@ Las **cápsulas** aparecen dentro de los grupos de pavos. Al cogerla te transfor
 | **Vera "Chispa" Rivas** — conductora callejera, bomber naranja y trenza | Rápida y nerviosa: acelera y frena al instante, caja más pequeña | **Conducción perfecta**: baja al suelo en su deportivo "Rayo" y esquiva sola | **Nitro** (invulnerable y atraviesa todo) · **Rampa** (salto hacia un arco de pavos en lo alto) |
 | **Bruno "Petardo" Tramuntana** — caótico, camisa hawaiana y barba pelirroja | Pesado: mucha inercia, empuje brutal y rebota en el suelo | **Modo furia**: atraviesa y destruye todo | **Lanzacohetes** (limpia la pantalla) · **Moto** "Jabalina" (rebota sola y aguanta un golpe) |
 
-Ajustes en el bloque `characters` de `config.js` (probabilidades, duraciones y física de cada uno).
+La **barra de habilidad especial** (panel abajo a la izquierda) se carga recogiendo pavos y la habilidad se activa sola al llenarse; también puede salir como icono. Cada personaje tiene su propia transformación (reloj dorado, derrape con chispas, explosión), su rastro y su sonido.
+
+Ajustes en el bloque `characters` de `config.js` (probabilidades, carga de la especial, duraciones y física de cada uno).
+
+### Voces de los personajes (añadir tus propios audios)
+
+Al transformarte, el personaje dice una frase en el idioma elegido. Por defecto se usa la **voz del navegador** (Web Speech API) con un tono y velocidad distintos para cada uno (`audio.voices` en `config.js`).
+
+Para usar grabaciones propias, copia archivos **MP3** en [`audio/voces/`](audio/voces/) con estos nombres:
+
+| Personaje | Español | Inglés |
+|---|---|---|
+| El Relojero | `veterano_es.mp3` | `veterano_en.mp3` |
+| Chispa | `chispa_es.mp3` | `chispa_en.mp3` |
+| Petardo | `petardo_es.mp3` | `petardo_en.mp3` |
+
+Si el archivo existe se reproduce ese audio; si no, la voz del navegador. Puedes poner solo algunos (por ejemplo, solo los de español). Haz commit y push de los archivos y GitHub Pages los servirá. Las frases sugeridas están en [`audio/voces/LEEME.md`](audio/voces/LEEME.md). El botón de silencio también silencia las voces. (En la consola del navegador verás un aviso 404 por cada archivo que falte: es normal.)
 
 ## Respiros
 
