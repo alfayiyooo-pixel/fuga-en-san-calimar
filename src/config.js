@@ -44,11 +44,15 @@ export const CONFIG = {
     hardLanding: 480,   // velocidad de caída a partir de la cual el aterrizaje tiembla
   },
 
-  // Velocidad de avance: sube de start a max de forma asintótica
+  // Velocidad de avance según la distancia recorrida:
+  //   0 → cruiseUntil m: constante (aprender el control)
+  //   después: sube suave hacia max (curva asintótica, nunca lo supera)
   speed: {
-    start: 340,         // px/s al empezar (~10,6 m/s)
-    max: 940,           // px/s máximo (~29 m/s)
-    rampTime: 90,       // s para recorrer ~63% del camino entre start y max
+    start: 350,         // px/s durante el tramo de aprendizaje (~11 m/s)
+    cruiseUntil: 1000,  // metros a velocidad constante
+    rampDistance: 2600, // metros para recorrer ~63% del camino entre start y max
+    max: 820,           // tope absoluto (~25,6 m/s)
+    smoothing: 1.5,     // suavizado de cambios de velocidad (más alto = cambia antes)
     menu: 140,          // desplazamiento del fondo en el menú
   },
 

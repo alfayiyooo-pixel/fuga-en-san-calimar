@@ -1,6 +1,6 @@
 import { CONFIG } from './config.js';
 import { Camera } from './core/camera.js';
-import { rand, clamp } from './core/rng.js';
+import { rand, clamp, approach } from './core/rng.js';
 import { t } from './core/i18n.js';
 import { Particles } from './fx/particles.js';
 import { Popups } from './fx/popups.js';
@@ -42,8 +42,8 @@ export class Game {
 
   reset() {
     this.runTime = 0;
-    this.speed = CONFIG.speed.start;
     this.player.reset(this.startAt * CONFIG.world.pxPerMeter, this.view.groundY);
+    this.speed = this.targetSpeed();
     this.camera.reset();
     this.camera.follow(this.player.x, this.view.w);
     this.particles.clear();
@@ -72,10 +72,12 @@ export class Game {
     return clamp(this.distance / CONFIG.difficulty.fullAt, 0, 1);
   }
 
-  /** Velocidad de avance: curva asintótica de start a max. */
-  computeSpeed() {
-    const { start, max, rampTime } = CONFIG.speed;
-    return (max - (max - start) * Math.exp(-this.runTime / rampTime)) * this.player.mods.speed;
+  /** Velocidad objetivo según la distancia (ver CONFIG.speed). */
+  targetSpeed() {
+    const { start, max, cruiseUntil, rampDistance } = CONFIG.speed;
+    const d = this.distance;
+    const base = d <= cruiseUntil ? start : start + (max - start) * (1 - Math.exp(-(d - cruiseUntil) / rampDistance));
+    return base * this.player.mods.speed * (this.speedMult ?? 1);
   }
 
   /** Configuración de policía para el nº de estrellas actual. */
@@ -149,7 +151,8 @@ export class Game {
       input.consumePresses();
     } else {
       this.runTime += dt;
-      this.speed = this.computeSpeed();
+      // se acerca suavemente a la velocidad objetivo: nunca hay saltos
+      this.speed = approach(this.speed, this.targetSpeed(), CONFIG.speed.smoothing, dt);
       const ev = p.update(dt, input.held, this.speed, this.view.groundY);
       input.consumePresses(); // las pulsaciones sueltas se usarán en fases posteriores
 
