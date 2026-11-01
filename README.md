@@ -63,6 +63,10 @@ Todo en el bloque `wanted` de [`src/config.js`](src/config.js).
 
 Precios en el bloque `shop` de `config.js`; artículos en [`src/meta/catalog.js`](src/meta/catalog.js).
 
+### Vestuario
+
+Pantalla propia desde el menú (👕 Vestuario): un apartado por personaje, con el personaje grande y animado. Se equipa lo comprado (traje, accesorio, estela y efecto de transformación, que se puede probar). Lo no comprado aparece con candado y un botón que lleva directo a ese artículo en la tienda.
+
 ### Pagos reales (pendiente)
 
 Ahora mismo **no se cobra nada**: `shop.payments.enabled` es `false` y al pulsar un pack aparece «Compras desactivadas (versión de prueba)». El punto de conexión es [`src/meta/payments.js`](src/meta/payments.js). Para activar pagos reales haría falta:

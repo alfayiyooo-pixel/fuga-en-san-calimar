@@ -8,6 +8,7 @@ export class Screens {
       pause: document.getElementById('screen-pause'),
       over: document.getElementById('screen-over'),
       shop: document.getElementById('screen-shop'),
+      wardrobe: document.getElementById('screen-wardrobe'),
       hudButtons: document.getElementById('hud-buttons'),
     };
   }

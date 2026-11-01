@@ -629,3 +629,60 @@ canvas {
   cursor: pointer;
 }
 .load-chip.on { background: #7ff7e8; color: var(--ink); box-shadow: 0 0 calc(10px * var(--s)) #7ff7e8; }
+
+/* vestuario */
+.wardrobe {
+  display: grid;
+  grid-template-columns: calc(300px * var(--s)) 1fr;
+  gap: calc(14px * var(--s));
+  flex: 1;
+  min-height: 0;
+}
+.wr-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(6px * var(--s));
+}
+.wr-canvas {
+  width: calc(290px * var(--s));
+  height: calc(290px * var(--s));
+  border-radius: calc(16px * var(--s));
+  border: calc(3px * var(--s)) solid var(--ink);
+  box-shadow: 0 calc(5px * var(--s)) 0 var(--ink);
+}
+.wr-name { font-family: 'Bungee', Impact, sans-serif; font-size: calc(15px * var(--s)); color: #ffd23f; text-align: center; }
+.wr-slots { display: flex; flex-direction: column; gap: calc(10px * var(--s)); padding-bottom: calc(10px * var(--s)); }
+.wr-slot h3 { margin: 0 0 calc(4px * var(--s)); font-family: 'Bungee', Impact, sans-serif; font-weight: 400; font-size: calc(15px * var(--s)); }
+.wr-items { display: flex; gap: calc(8px * var(--s)); flex-wrap: wrap; }
+.wr-item { display: flex; flex-direction: column; gap: calc(3px * var(--s)); }
+.wr-tile {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2px * var(--s));
+  min-width: calc(130px * var(--s));
+  padding: calc(7px * var(--s)) calc(10px * var(--s));
+  border-radius: calc(10px * var(--s));
+  border: calc(3px * var(--s)) solid var(--rc);
+  background: rgba(255, 244, 220, 0.08);
+  color: var(--cream);
+  cursor: pointer;
+  text-align: left;
+  font-family: 'Rubik', system-ui, sans-serif;
+}
+.wr-item.on .wr-tile { background: rgba(127, 247, 232, 0.2); box-shadow: 0 0 calc(10px * var(--s)) var(--rc); }
+.wr-item.locked .wr-tile { opacity: 0.6; }
+.wr-tile-name { font-weight: 800; font-size: calc(13px * var(--s)); }
+.wr-tile-state { font-size: calc(12px * var(--s)); font-weight: 700; color: #ffd23f; }
+.wr-item.on .wr-tile-state { color: #7ff7e8; }
+.wr-go {
+  font-family: 'Rubik', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: calc(11px * var(--s));
+  border: calc(2px * var(--s)) solid var(--ink);
+  border-radius: 999px;
+  background: #ffd23f;
+  color: var(--ink);
+  padding: calc(2px * var(--s)) calc(8px * var(--s));
+  cursor: pointer;
+}

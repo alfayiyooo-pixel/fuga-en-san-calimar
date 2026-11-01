@@ -1,4 +1,4 @@
-import { drawFugitive } from '../characters/fugitive.js';
+import { drawFugitive, STYLES } from '../characters/fugitive.js';
 import { emitTrail, DEFAULT_TRAIL } from '../characters/trails.js';
 import { playTransformFx, DEFAULT_FX } from '../characters/transformfx.js';
 import { CHARACTERS } from '../characters/defs.js';
@@ -81,8 +81,10 @@ export class Preview {
     ctx.fillRect(0, groundY, w, h - groundY);
 
     const style = this.owner === 'base' ? 'base' : CHARACTERS[this.owner].style;
+    // los personajes más grandes (Petardo) se reducen para que quepan
+    const k = this.scale / (STYLES[style]?.scale ?? 1);
     const cx = w * 0.5;
-    const cy = h * 0.48 + Math.sin(this.t * 2.2) * 6;
+    const cy = h * 0.54 + Math.sin(this.t * 2.2) * 6;
     // muñeco "volando" con empuje que respira
     const thrust = 0.55 + 0.45 * Math.sin(this.t * 3);
     const fake = { x: 0, y: cy, vy: -40, thrust, anim: this.t * 8, pose: { run: 0, fly: 1, fall: 0 }, riding: false, vest: false, aiming: false };
@@ -111,7 +113,7 @@ export class Preview {
     this.particles.draw(ctx, 0);
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.scale(this.scale, this.scale);
+    ctx.scale(k, k);
     ctx.rotate(-0.06);
     drawFugitive(ctx, fake, this.t, style, this.look);
     ctx.restore();

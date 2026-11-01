@@ -28,8 +28,8 @@ export class Powers {
 
   reset() {
     this.char = 'base';
-    this.effects = this.has('boost') ? { boost: this.effects.boost } : {};
-    this.shields = this.shields.filter((sh) => sh === 'bubble');
+    this.effects = {};
+    this.shields = [];
     this.invuln = 0;
     this.slowmo = 0;
     this.capsuleCd = 0;
@@ -691,7 +691,7 @@ export class Powers {
     let ix = x + 22;
     const iy = y - 26;
     for (const [k, left] of Object.entries(this.effects)) {
-      if (left <= 0 || k === def.special) continue;
+      if (left <= 0 || k === def.special || !ITEM_OWNER[k]) continue;
       drawSprite(ctx, itemSprite(k), ix, iy, 0.8, 0.8);
       ctx.strokeStyle = '#1b1030';
       ctx.lineWidth = 6;
@@ -707,6 +707,16 @@ export class Powers {
     }
     for (const sh of this.shields) {
       if (sh === 'bike') continue;
+      if (sh === 'bubble') {
+        drawGlow(ctx, ix, iy, 24, 'rgba(127, 247, 232, 0.8)', 0.5);
+        ctx.strokeStyle = '#bffff8';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(ix, iy, 15, 0, Math.PI * 2);
+        ctx.stroke();
+        ix += 48;
+        continue;
+      }
       drawGlow(ctx, ix, iy, 26, 'rgba(127, 247, 232, 0.8)', 0.4);
       drawSprite(ctx, itemSprite(sh), ix, iy, 0.8, 0.8);
       ix += 48;

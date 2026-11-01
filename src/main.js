@@ -14,6 +14,7 @@ import { Quality } from './core/quality.js';
 import { createTuner } from './ui/tuner.js';
 import { Profile } from './meta/profile.js';
 import { Shop } from './ui/shop.js';
+import { Wardrobe } from './ui/wardrobe.js';
 
 // ---------- arranque ----------
 Save.load();
@@ -100,8 +101,30 @@ const shop = new Shop(document.getElementById('screen-shop'), {
     shop.close();
     toMenu();
   },
-  onWardrobe: null,
+  onWardrobe: (owner) => openWardrobe(owner),
   toast,
+});
+const wardrobe = new Wardrobe(document.getElementById('screen-wardrobe'), {
+  onClose: () => {
+    wardrobe.close();
+    toMenu();
+  },
+  onShop: (owner, slot, itemId) => {
+    wardrobe.close();
+    openShop('items', { owner, slot, itemId });
+  },
+});
+function openWardrobe(owner) {
+  shop.close();
+  state = 'menu';
+  screens.show('wardrobe');
+  applyToDom(document.getElementById('screen-wardrobe'));
+  wardrobe.open(owner);
+  refreshWallet();
+}
+screens.on('btn-wardrobe', () => {
+  Sound.click();
+  openWardrobe();
 });
 function openShop(tab, opts) {
   state = 'menu';
@@ -279,6 +302,7 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
     refreshQualityBtn();
     renderLoadout();
     if (state === 'menu' && !document.getElementById('screen-shop').classList.contains('hidden')) shop.render();
+    if (state === 'menu' && !document.getElementById('screen-wardrobe').classList.contains('hidden')) wardrobe.render();
     fillOver();
   });
 });
