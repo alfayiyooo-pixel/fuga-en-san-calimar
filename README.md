@@ -41,6 +41,16 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 **Nivel de búsqueda (★1-5):** sube cuando la policía te ve (foco del helicóptero, patrullas) o causas caos, baja si pasas un rato tranquilo y aumenta la cantidad de policía. Cada 900 m sube la estrella mínima (hasta 3).
 
+## Pavos
+
+- Un grupo nuevo cada 2-4 s de recorrido, con patrones de **línea, onda, escalera, zigzag, bloque, flecha y palabras** ("PAVOS", "SAN CALIMAR"…).
+- Los grupos que caen junto a un obstáculo son más grandes y se pegan a él: tú decides si te la juegas.
+- **Billete dorado** (x10) y **maletín** (x50), con brillo y sonido propios.
+- **Imán**: power-up ocasional que atrae los pavos cercanos durante unos segundos.
+- Cada pavo seguido suena un poco más agudo; el contador salta y aparece la suma de la racha.
+
+Todo se ajusta en el bloque `tokens` de [`src/config.js`](src/config.js).
+
 ## Ajustar dificultad
 
 Todos los valores están en [`src/config.js`](src/config.js). Los textos están en [`src/i18n/translations.js`](src/i18n/translations.js).

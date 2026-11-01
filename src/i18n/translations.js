@@ -38,6 +38,10 @@ export const TRANSLATIONS = {
     'wanted.up': '¡BÚSQUEDA {n}★!',
     'popup.spotted': '¡TE HAN VISTO!',
     'popup.chaos': '¡CAOS!',
+    'popup.case': '¡MALETÍN!',
+    'popup.magnet': '¡IMÁN!',
+    'over.bucks': 'Pavos',
+    'menu.sound': 'Sonido',
 
     'over.title': '¡Te han pillado!',
     'over.distance': 'Distancia',
@@ -86,6 +90,10 @@ export const TRANSLATIONS = {
     'wanted.up': 'WANTED {n}★!',
     'popup.spotted': 'SPOTTED!',
     'popup.chaos': 'CHAOS!',
+    'popup.case': 'BRIEFCASE!',
+    'popup.magnet': 'MAGNET!',
+    'over.bucks': 'Bucks',
+    'menu.sound': 'Sound',
 
     'over.title': 'Busted!',
     'over.distance': 'Distance',

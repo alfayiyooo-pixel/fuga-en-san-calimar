@@ -9,6 +9,8 @@ import { Parallax } from './world/parallax.js';
 import { zoneAt } from './world/zones.js';
 import { Spawner } from './world/spawner.js';
 import { Wanted } from './systems/wanted.js';
+import { Tokens } from './entities/tokens.js';
+import { Sound } from './core/audio.js';
 
 /**
  * Estado de una partida: jugador, cámara, mundo, obstáculos y efectos.
@@ -27,6 +29,7 @@ export class Game {
     this.wanted = new Wanted();
     this.wanted.onChange = (stars, prev) => this.onStars(stars, prev);
     this.obstacles = [];
+    this.tokens = new Tokens();
     this.buffer = document.createElement('canvas');
     this.t = 0;
     // Opciones de prueba: ?god (invulnerable) y ?start=1500 (empezar en esos metros)
@@ -46,6 +49,8 @@ export class Game {
     this.popups.clear();
     this.obstacles.length = 0;
     this.spawner.reset(this.player.x);
+    this.tokens.reset(this.player.x);
+    this.bucks = 0;
     this.wanted.reset();
     this.zone = zoneAt(this.distance);
     this.zoneIndex = this.zone.n;
@@ -133,6 +138,7 @@ export class Game {
     this.camera.update(dt);
     this.updateZone();
     if (!this.dead) this.spawner.update(this);
+    this.tokens.update(dt, this);
 
     // obstáculos
     const box = p.hitbox;
@@ -159,6 +165,7 @@ export class Game {
   /** Te han dado. En la fase d los personajes absorberán este golpe. */
   hit(obstacle) {
     if (this.god) return;
+    Sound.hit();
     this.dead = true;
     this.cause = obstacle.type;
     this.player.kill();
@@ -228,6 +235,7 @@ export class Game {
     }
 
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
+    if (!menu) this.tokens.draw(ctx, cam.x, this);
     this.particles.draw(ctx, cam.x);
     if (showPlayer) this.player.draw(ctx, cam.x, this.t);
     for (const o of this.obstacles) o.overlay(ctx, this);

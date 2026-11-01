@@ -122,6 +122,39 @@ export const CONFIG = {
     },
   },
 
+  // ---------------- PAVOS (tokens) ----------------
+  tokens: {
+    firstAt: 10,          // metros del primer grupo
+    groupEvery: [2, 4],   // segundos de recorrido entre el inicio de un grupo y el siguiente
+    minGap: 90,           // px mínimos entre el final de un grupo y el siguiente
+    spacing: 34,          // px entre pavos dentro de un grupo
+    size: [7, 13],        // nº de pavos por grupo al empezar [mín, máx]…
+    sizeAtMax: [10, 18],  // …y con dificultad máxima
+    riskSizeMult: 1.6,    // grupos junto a obstáculos: este multiplicador de tamaño
+    obstacleMargin: 10,   // px de margen entre un pavo y un cable (menos = más arriesgado)
+    radius: 13,           // radio de recogida de cada pavo
+    // probabilidad relativa de cada patrón
+    patterns: { line: 3, wave: 3, stairs: 2, zigzag: 2, block: 1.4, arrow: 1.1, word: 0.5 },
+    wordFrom: 150,        // metros a partir de los que aparecen palabras
+    words: {
+      es: ['PAVOS', 'SAN CALIMAR', 'FUGA'],
+      en: ['BUCKS', 'SAN CALIMAR', 'CASH'],
+    },
+    values: { bill: 1, gold: 10, case: 50 },
+    goldChance: 0.22,     // prob. de que un grupo lleve un billete dorado
+    caseChance: 0.05,     // prob. de maletín en un grupo normal…
+    caseRiskChance: 0.16, // …y en un grupo junto a un obstáculo
+    caseFrom: 200,        // metros a partir de los que puede salir un maletín
+    chainWindow: 0.7,     // s máximos entre pavos para encadenar (sube el tono)
+    magnet: {
+      chance: 0.06,       // prob. por grupo de que aparezca un imán
+      from: 250,          // metros a partir de los que puede salir
+      duration: 8,        // segundos de efecto
+      radius: 260,        // alcance en px
+      pullSpeed: 900,     // velocidad a la que vuelan los pavos hacia ti
+    },
+  },
+
   death: {
     slowdown: 2.2,      // frenada tras el golpe
     overDelay: 1.5,     // s hasta la pantalla final

@@ -19,6 +19,9 @@
       <div id="ui">
         <!-- MENÚ PRINCIPAL -->
         <section class="screen" id="screen-menu">
+          <div class="corner-buttons">
+            <button class="icon-btn btn-mute" data-i18n-aria="menu.sound">🔊</button>
+          </div>
           <h1 class="logo">
             <span class="logo-top" data-i18n="game.titleTop"></span>
             <span class="logo-main" data-i18n="game.titleMain"></span>
@@ -46,6 +49,7 @@
           <div class="new-best hidden" id="over-newbest" data-i18n="over.newBest"></div>
           <div class="stats">
             <div class="stat"><span class="stat-label" data-i18n="over.distance"></span><span class="stat-value" id="over-distance"></span></div>
+            <div class="stat"><span class="stat-label" data-i18n="over.bucks"></span><span class="stat-value bucks" id="over-bucks"></span></div>
             <div class="stat"><span class="stat-label" data-i18n="over.best"></span><span class="stat-value" id="over-best"></span></div>
             <div class="stat"><span class="stat-label" data-i18n="over.stars"></span><span class="stat-value stars" id="over-stars"></span></div>
           </div>
@@ -57,6 +61,7 @@
 
         <!-- BOTONES DURANTE LA PARTIDA -->
         <div id="hud-buttons" class="hidden">
+          <button class="icon-btn btn-mute" data-i18n-aria="menu.sound">🔊</button>
           <button class="icon-btn" id="btn-pause" data-i18n-aria="hud.pause">❚❚</button>
         </div>
       </div>

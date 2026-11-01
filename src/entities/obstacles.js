@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import { clamp, rand, approach, pick } from '../core/rng.js';
 import { t } from '../core/i18n.js';
 import { roundRect } from './player.js';
+import { Sound } from '../core/audio.js';
 
 /*
  * OBSTÁCULOS
@@ -187,6 +188,7 @@ export class Billboard extends Obstacle {
         this.y = gy - this.h;
         this.rot = 0.06;
         g.camera.addShake(0.35);
+        Sound.crash();
         g.particles.burst(this.x + this.w / 2, gy - 6, 18, { color: '#d8cbb0', speed: 260, life: 0.6, size: 4, sizeEnd: 1, gravity: 600 });
         g.particles.burst(this.x + this.w / 2, gy - 10, 10, { color: this.ad.bg, speed: 300, life: 0.8, size: 4, shape: 'rect', spin: 8, gravity: 900 });
         g.chaos(CONFIG.wanted.heat.billboardCrash, this.x + this.w / 2, gy - 60);

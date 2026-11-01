@@ -11,7 +11,7 @@ export class Popups {
   }
 
   add(text, x, y, opts = {}) {
-    this.list.push({
+    const p = {
       text,
       x,
       y,
@@ -20,8 +20,10 @@ export class Popups {
       life: opts.life ?? 1,
       maxLife: opts.life ?? 1,
       rise: opts.rise ?? 50,
-    });
+    };
+    this.list.push(p);
     if (this.list.length > 30) this.list.shift();
+    return p;
   }
 
   update(dt) {

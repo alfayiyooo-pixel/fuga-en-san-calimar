@@ -25,7 +25,8 @@ export class Screens {
   }
 
   /** Rellena la pantalla final con el resultado de la partida. */
-  fillGameOver({ distance, best, stars, cause, newBest }) {
+  fillGameOver({ distance, best, stars, cause, newBest, bucks }) {
+    document.getElementById('over-bucks').textContent = bucks;
     document.getElementById('over-distance').textContent = `${distance} m`;
     document.getElementById('over-best').textContent = `${best} m`;
     document.getElementById('over-stars').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars);
@@ -37,6 +38,13 @@ export class Screens {
     document.getElementById(id).addEventListener('click', (e) => {
       e.preventDefault();
       fn();
+    });
+  }
+
+  setMuteIcon(muted) {
+    document.querySelectorAll('.btn-mute').forEach((b) => {
+      b.textContent = muted ? '🔇' : '🔊';
+      b.setAttribute('aria-pressed', String(muted));
     });
   }
 

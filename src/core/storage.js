@@ -9,12 +9,15 @@ const DEFAULTS = {
     lang: null,     // null = detectar del navegador
     muted: false,
   },
+  wallet: 0,          // pavos disponibles para gastar (tienda, fase e)
   best: {
     distance: 0,
+    bucks: 0,
   },
   stats: {
     runs: 0,
     totalDistance: 0,
+    totalBucks: 0,
   },
 };
 

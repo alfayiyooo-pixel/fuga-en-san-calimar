@@ -14,7 +14,8 @@ export class Spawner {
   }
 
   update(g) {
-    const ahead = g.camera.x + g.view.w + 80;
+    // se genera bastante por delante para que los pavos puedan colocarse alrededor
+    const ahead = g.camera.x + g.view.w + 700;
     while (this.nextX < ahead) {
       const type = this.choose(g);
       const len = this.spawn(type, g, this.nextX);
