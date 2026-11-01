@@ -134,6 +134,68 @@ class AudioFx {
     this.tone({ freq: 587, type: 'triangle', dur: 0.25, vol: 0.12, delay: 0.12 });
   }
 
+  // ---------- personajes ----------
+  transform() {
+    this.tone({ freq: 220, type: 'sawtooth', dur: 0.5, vol: 0.12, slide: 4 });
+    [0, 4, 7, 12, 16].forEach((s, i) => this.tone({ freq: 523 * 2 ** (s / 12), type: 'square', dur: 0.2, vol: 0.08, delay: 0.25 + i * 0.05 }));
+    this.noise({ dur: 0.5, vol: 0.2, freq: 4000, type: 'highpass', delay: 0.2 });
+  }
+
+  detransform() {
+    this.noise({ dur: 0.4, vol: 0.35, freq: 800, slide: 0.3 });
+    this.tone({ freq: 660, type: 'square', dur: 0.4, vol: 0.1, slide: 0.3 });
+  }
+
+  powerUp() {
+    [0, 7, 12].forEach((s, i) => this.tone({ freq: 660 * 2 ** (s / 12), type: 'triangle', dur: 0.15, vol: 0.13, delay: i * 0.05 }));
+  }
+
+  shot() {
+    this.noise({ dur: 0.06, vol: 0.18, freq: 2500, type: 'bandpass', q: 2 });
+    this.tone({ freq: 900, type: 'square', dur: 0.05, vol: 0.05, slide: 0.4 });
+  }
+
+  clank() {
+    this.tone({ freq: 1800, type: 'square', dur: 0.06, vol: 0.06, slide: 0.7 });
+  }
+
+  boom() {
+    this.noise({ dur: 0.45, vol: 0.4, freq: 700, slide: 0.2 });
+    this.tone({ freq: 120, type: 'sine', dur: 0.35, vol: 0.3, slide: 0.4 });
+  }
+
+  bigBoom() {
+    this.noise({ dur: 1.1, vol: 0.55, freq: 1200, slide: 0.08 });
+    this.tone({ freq: 90, type: 'sine', dur: 0.9, vol: 0.4, slide: 0.35 });
+  }
+
+  launch() {
+    this.noise({ dur: 0.4, vol: 0.25, freq: 600, type: 'bandpass', slide: 4 });
+    this.tone({ freq: 200, type: 'sawtooth', dur: 0.35, vol: 0.08, slide: 3 });
+  }
+
+  nitro() {
+    this.noise({ dur: 0.7, vol: 0.3, freq: 300, type: 'bandpass', slide: 6 });
+  }
+
+  rage() {
+    this.tone({ freq: 110, type: 'sawtooth', dur: 0.6, vol: 0.18, slide: 0.6 });
+    this.noise({ dur: 0.5, vol: 0.3, freq: 500 });
+  }
+
+  shield() {
+    this.tone({ freq: 1200, type: 'triangle', dur: 0.25, vol: 0.14, slide: 0.5 });
+    this.noise({ dur: 0.15, vol: 0.2, freq: 3000, type: 'highpass' });
+  }
+
+  hop() {
+    this.tone({ freq: 300, type: 'square', dur: 0.1, vol: 0.06, slide: 1.8 });
+  }
+
+  tick() {
+    this.tone({ freq: 2400, type: 'square', dur: 0.02, vol: 0.06 });
+  }
+
   /** Inicio de un respiro: campanillas suaves. */
   respite() {
     [12, 7, 4, 0, 4, 7, 12, 16].forEach((st, i) =>

@@ -1,6 +1,7 @@
 import { CONFIG } from '../config.js';
 import { clamp, rand, approach } from '../core/rng.js';
-import { drawRobber } from '../characters/robber.js';
+import { drawFugitive } from '../characters/fugitive.js';
+import { drawCar, drawBike } from '../characters/vehicles.js';
 
 /**
  * El fugitivo con el jetpack básico.
@@ -31,11 +32,14 @@ export class Player {
     this.spinRate = 0;
     this.tilt = 0;
     this.pose = { run: 1, fly: 0, fall: 0 }; // mezcla de animaciones (0-1)
+    this.launchT = 0;   // tras la rampa se permite subir más rápido
+    this.style = 'base';
+    this.vehicle = null;
   }
 
   /** Caja de colisión, algo más pequeña que el dibujo. */
   get hitbox() {
-    const k = CONFIG.obstacles.hitboxShrink;
+    const k = CONFIG.obstacles.hitboxShrink * (this.mods.hitbox ?? 1);
     const hw = (this.w * k) / 2;
     const hh = (this.h * (k + 0.12)) / 2;
     return { l: this.x - hw, r: this.x + hw, t: this.y - hh, b: this.y + hh };
@@ -88,7 +92,7 @@ export class Player {
     const m = this.mods;
     const events = { landed: false, impact: 0, bonk: false };
 
-    if (held) this.thrust = Math.min(1, this.thrust + dt / P.thrustRampUp);
+    if (held) this.thrust = Math.min(1, this.thrust + dt / (P.thrustRampUp * (m.ramp ?? 1)));
     else this.thrust = Math.max(0, this.thrust - dt / P.thrustRampDown);
 
     const topLimit = CONFIG.world.ceiling + this.h / 2;
@@ -101,7 +105,9 @@ export class Player {
     let gravity = P.gravity * m.gravity;
     if (!held && this.vy < 0) gravity *= P.riseCut;                 // cortar la subida
 
-    this.vy = clamp(this.vy + (gravity - thrust) * dt, -P.maxRise * m.maxRise, P.maxFall * m.maxFall);
+    this.launchT = Math.max(0, this.launchT - dt);
+    const riseCap = P.maxRise * m.maxRise * (this.launchT > 0 ? 3 : 1);
+    this.vy = clamp(this.vy + (gravity - thrust) * dt, -riseCap, P.maxFall * m.maxFall);
     this.y += this.vy * dt;
     this.x += speed * dt;
 
@@ -159,7 +165,7 @@ export class Player {
   emitExhaust(dt, particles) {
     const nozzleX = this.x - 16;
     const nozzleY = this.y + 22;
-    if (this.thrust > 0.05) {
+    if (this.thrust > 0.05 && !this.vehicle) {
       this.exhaustAcc += dt * CONFIG.particles.exhaustRate * this.thrust;
       while (this.exhaustAcc >= 1) {
         this.exhaustAcc -= 1;
@@ -220,9 +226,26 @@ export class Player {
   draw(ctx, camX, t) {
     const sx = this.x - camX;
     ctx.save();
+    // parpadeo mientras eres invulnerable tras un golpe
+    if (this.blink && Math.floor(t * 14) % 2 === 0) ctx.globalAlpha = 0.4;
     ctx.translate(sx, this.y);
-    ctx.rotate(this.dead ? this.spin : this.tilt);
-    drawRobber(ctx, this, t);
+    if (this.vehicle === 'car') {
+      ctx.rotate(this.onGround ? 0 : clamp(this.vy / 2400, -0.15, 0.15));
+      ctx.translate(0, -6);
+      drawCar(ctx, this, t, this.boost);
+    } else if (this.vehicle === 'bike') {
+      ctx.rotate(clamp(this.vy / 2000, -0.25, 0.25));
+      ctx.translate(0, -8);
+      ctx.save();
+      ctx.scale(1.15, 1.15);
+      drawBike(ctx, this, t);
+      ctx.restore();
+      ctx.translate(-4, -9);
+      drawFugitive(ctx, this, t, this.style);
+    } else {
+      ctx.rotate(this.dead ? this.spin : this.tilt);
+      drawFugitive(ctx, this, t, this.style);
+    }
     ctx.restore();
   }
 }

@@ -72,6 +72,7 @@ export class Hud {
     const v = game.view;
     outlinedText(ctx, t('hud.distance', { n: fmt(game.distance) }), 18, 14, 32);
     this.drawBucks(ctx, game);
+    game.powers.drawHud(ctx, game);
     this.drawBanner(ctx, v);
     if (game.respite.active) this.drawRespite(ctx, game, v);
     this.drawStars(ctx, game, v);

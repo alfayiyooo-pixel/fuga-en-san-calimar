@@ -104,16 +104,23 @@ export function hand(ctx, x, y, color) {
  * Llama del jetpack: capas exterior/media/núcleo con parpadeo y halo.
  * (x, y) = boquilla; la llama apunta hacia abajo.
  */
-export function flame(ctx, x, y, power, t, scale = 1) {
+const FLAMES = {
+  fire: ['rgba(255, 90, 40, 0.9)', 'rgba(255, 190, 60, 0.95)', 'rgba(255, 252, 225, 1)', 'rgba(255, 150, 60, 0.85)'],
+  cyan: ['rgba(60, 120, 255, 0.9)', 'rgba(80, 230, 255, 0.95)', 'rgba(235, 255, 255, 1)', 'rgba(70, 200, 255, 0.85)'],
+  rocket: ['rgba(255, 50, 30, 0.95)', 'rgba(255, 140, 30, 0.95)', 'rgba(255, 240, 160, 1)', 'rgba(255, 90, 40, 0.9)'],
+};
+
+export function flame(ctx, x, y, power, t, scale = 1, kind = 'fire') {
+  const F = FLAMES[kind] || FLAMES.fire;
   if (power < 0.04) return;
   const n = Math.sin(t * 61) * 0.5 + Math.sin(t * 37 + 1) * 0.5;
   const L = (12 + 30 * power) * (0.9 + 0.15 * n) * scale;
   const W = (6 + 3 * power) * scale;
-  drawGlow(ctx, x, y + L * 0.45, 26 * scale * (0.7 + power * 0.5), 'rgba(255, 150, 60, 0.85)', 0.7 * power + 0.2);
+  drawGlow(ctx, x, y + L * 0.45, 26 * scale * (0.7 + power * 0.5), F[3], 0.7 * power + 0.2);
   const layers = [
-    [1, 1, 'rgba(255, 90, 40, 0.9)'],
-    [0.72, 0.68, 'rgba(255, 190, 60, 0.95)'],
-    [0.42, 0.38, 'rgba(255, 252, 225, 1)'],
+    [1, 1, F[0]],
+    [0.72, 0.68, F[1]],
+    [0.42, 0.38, F[2]],
   ];
   const prev = ctx.globalCompositeOperation;
   ctx.globalCompositeOperation = 'lighter';

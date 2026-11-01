@@ -4,6 +4,8 @@ import { getLang, t } from '../core/i18n.js';
 import { Sound } from '../core/audio.js';
 import { PATTERNS, patternSize } from '../world/patterns.js';
 import { sprite, drawSprite, drawGlow } from '../fx/sprites.js';
+import { capsuleSprite, itemSprite } from '../characters/icons.js';
+import { CHARACTERS, ITEM_OWNER } from '../characters/defs.js';
 
 /*
  * PAVOS (fajos de billetes), billetes dorados, maletines e imán.
@@ -123,6 +125,13 @@ export class Tokens {
     const caseP = risky ? T.caseRiskChance : T.caseChance;
     if (g.distance > T.caseFrom && chance(caseP)) riskiest.kind = 'case';
 
+    // cápsula de personaje o icono de habilidad/gadget, integrado en el grupo
+    const place = g.powers.choosePlacement(g);
+    if (place) {
+      const host = risky ? riskiest : placed[Math.floor(placed.length / 2)];
+      Object.assign(host, place);
+    }
+
     // imán ocasional después del grupo
     const M = T.magnet;
     if (!this.magnetActive && g.distance > M.from && chance(M.chance)) {
@@ -163,11 +172,9 @@ export class Tokens {
     }
 
     const p = g.player;
-    const pl = p.left - T.radius;
-    const pr = p.right + T.radius;
-    const pt = p.top - T.radius;
-    const pb = p.bottom + T.radius;
-    const R2 = T.magnet.radius ** 2;
+    const big = 12; // las cápsulas e iconos se cogen desde un poco más lejos
+    const R = this.magnetActive ? T.magnet.radius : g.powers.magnetRadius;
+    const R2 = R * R;
 
     for (const tk of this.list) {
       if (!tk.alive) continue;
@@ -184,7 +191,7 @@ export class Tokens {
           tk.falling = false;
         }
       }
-      if (!g.dead && this.magnetActive && tk.kind !== 'magnet') {
+      if (!g.dead && R > 0 && (tk.kind === 'bill' || tk.kind === 'gold' || tk.kind === 'case')) {
         const dx = p.x - tk.x;
         const dy = p.y - tk.y;
         const d2 = dx * dx + dy * dy;
@@ -201,7 +208,8 @@ export class Tokens {
           }
         }
       }
-      if (!g.dead && tk.x > pl && tk.x < pr && tk.y > pt && tk.y < pb) this.collect(tk, g);
+      const r = T.radius + (tk.kind === 'capsule' || tk.kind === 'item' ? big : 0);
+      if (!g.dead && tk.x > p.left - r && tk.x < p.right + r && tk.y > p.top - r && tk.y < p.bottom + r) this.collect(tk, g);
     }
     this.list = this.list.filter((tk) => tk.alive);
   }
@@ -210,6 +218,11 @@ export class Tokens {
     const T = CONFIG.tokens;
     tk.alive = false;
     const sx = tk.x - g.camera.x;
+
+    if (tk.kind === 'capsule' || tk.kind === 'item') {
+      g.powers.collect(tk, g);
+      return;
+    }
 
     if (tk.kind === 'magnet') {
       this.magnetTime = T.magnet.duration;
@@ -285,6 +298,22 @@ export class Tokens {
         ctx.restore();
         sparkle(ctx, x - 16, y - 16, time * 6, 6);
         sparkle(ctx, x + 18, y + 6, time * 7 + 2, 4);
+      } else if (tk.kind === 'capsule') {
+        const c = CHARACTERS[tk.char];
+        drawGlow(ctx, x, y, 60, c.rgba, 0.65 + 0.3 * Math.sin(time * 6));
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(Math.sin(time * 3 + tk.phase) * 0.15);
+        const s = 1 + Math.sin(time * 7) * 0.05;
+        drawSprite(ctx, capsuleSprite(tk.char), 0, 0, s, s);
+        ctx.restore();
+        sparkle(ctx, x + 18, y - 22, time * 7, 6);
+        sparkle(ctx, x - 20, y + 10, time * 6 + 2, 5);
+      } else if (tk.kind === 'item') {
+        const c = CHARACTERS[ITEM_OWNER[tk.item]];
+        drawGlow(ctx, x, y, 46, c.rgba, 0.55 + 0.3 * Math.sin(time * 6 + tk.phase));
+        const s = 1 + Math.sin(time * 5 + tk.phase) * 0.07;
+        drawSprite(ctx, itemSprite(tk.item), x, y, s, s);
       } else if (tk.kind === 'magnet') {
         drawGlow(ctx, x, y, 44, 'rgba(255, 90, 120, 0.9)', 0.5 + 0.3 * Math.sin(time * 6));
         const s = 1 + Math.sin(time * 5) * 0.06;

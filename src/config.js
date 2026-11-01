@@ -187,6 +187,41 @@ export const CONFIG = {
     calmTempo: 84,          // ppm de la música tranquila (respiros)
   },
 
+  // ---------------- PERSONAJES ----------------
+  characters: {
+    capsuleChance: 0.14,    // prob. por grupo de pavos de que lleve una cápsula (con el jetpack básico)
+    capsuleFrom: 100,       // metros a partir de los que aparecen cápsulas
+    capsuleCooldown: 14,    // s mínimos entre cápsulas
+    itemChance: 0.32,       // prob. por grupo de un icono de habilidad/gadget (con personaje)
+    itemCooldown: 5,        // s mínimos entre iconos
+    specialWeight: 1,       // peso de la habilidad especial frente a…
+    gadgetWeight: 1.3,      // …cada gadget al elegir icono
+    transformInvuln: 1.2,   // s invulnerable al transformarte
+    detransformInvuln: 1.8, // s invulnerable al perder el personaje
+    transformSlowmo: 0.35,  // s de cámara lenta en la transformación
+    hitPoliceHeat: true,    // chocar con policía protegido sube la búsqueda
+
+    // multiplicadores de física (1 = jetpack básico); ramp = inercia del empuje
+    veteran: {
+      physics: { gravity: 0.82, thrust: 0.86, maxRise: 0.85, maxFall: 0.75, speed: 0.95, ramp: 1, hitbox: 0.95 },
+      bulletTime: { duration: 5, timeScale: 0.4, shotCooldown: 0.12 },
+      pistol: { duration: 9, range: 560, fireRate: 0.42 },
+      vest: { hits: 1 },
+    },
+    pilot: {
+      physics: { gravity: 1.25, thrust: 1.28, maxRise: 1.2, maxFall: 1.18, speed: 1.12, ramp: 0.6, hitbox: 0.85 },
+      drive: { duration: 6, speedMult: 1.35, hop: 640, magnet: 170 },
+      nitro: { duration: 3, speedMult: 1.6 },
+      ramp: { launch: 900, tokens: 14, distance: 1.3 },
+    },
+    wild: {
+      physics: { gravity: 1.18, thrust: 1.32, maxRise: 1.15, maxFall: 1.25, speed: 1.05, ramp: 3, hitbox: 1.1, bounce: 0.55 },
+      rage: { duration: 6, speedMult: 1.25 },
+      rocket: { delay: 0.45 },
+      bike: { duration: 10, bounce: 620 },
+    },
+  },
+
   // ---------------- PAVOS (tokens) ----------------
   tokens: {
     firstAt: 10,          // metros del primer grupo

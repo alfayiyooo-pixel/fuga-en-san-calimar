@@ -19,6 +19,7 @@ const DEFAULTS = {
     runs: 0,
     totalDistance: 0,
     totalBucks: 0,
+    charUses: { veteran: 0, pilot: 0, wild: 0 }, // para el "personaje favorito"
   },
 };
 

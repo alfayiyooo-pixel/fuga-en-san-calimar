@@ -49,6 +49,18 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 Todo en el bloque `wanted` de [`src/config.js`](src/config.js).
 
+## Personajes
+
+Las **cápsulas** aparecen dentro de los grupos de pavos. Al cogerla te transformas; si te golpean vuelves al jetpack básico en lugar de morir. Mientras llevas un personaje aparecen sus **iconos de habilidad y gadgets** (solo los suyos) junto a los pavos.
+
+| Personaje | Cómo se juega | Habilidad especial | Gadgets |
+|---|---|---|---|
+| **Don Aurelio Vega, "El Relojero"** — atracador retirado, traje, bigote y gafas doradas | Flota: caída suave y lenta, preciso | **Tiempo bala**: todo se ralentiza y cada toque dispara hacia donde apuntas | **Pistola** con silenciador (dispara sola a lo que tienes delante) · **Chaleco** (aguanta un golpe) |
+| **Vera "Chispa" Rivas** — conductora callejera, bomber naranja y trenza | Rápida y nerviosa: acelera y frena al instante, caja más pequeña | **Conducción perfecta**: baja al suelo en su deportivo "Rayo" y esquiva sola | **Nitro** (invulnerable y atraviesa todo) · **Rampa** (salto hacia un arco de pavos en lo alto) |
+| **Bruno "Petardo" Tramuntana** — caótico, camisa hawaiana y barba pelirroja | Pesado: mucha inercia, empuje brutal y rebota en el suelo | **Modo furia**: atraviesa y destruye todo | **Lanzacohetes** (limpia la pantalla) · **Moto** "Jabalina" (rebota sola y aguanta un golpe) |
+
+Ajustes en el bloque `characters` de `config.js` (probabilidades, duraciones y física de cada uno).
+
 ## Respiros
 
 Cuando la partida va muy rápida y tienes 4+ estrellas, tras un intervalo aleatorio (22-45 s) llega un **respiro** de 5-8 s: la policía pierde el rastro, baja la velocidad y la búsqueda, cambia la música a una más tranquila y llueven pavos. Después la tensión vuelve poco a poco. Ajustes en el bloque `respite` de `config.js`.

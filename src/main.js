@@ -139,6 +139,7 @@ function endRun() {
   s.wallet += game.bucks;
   s.stats.totalBucks += game.bucks;
   s.best.bucks = Math.max(s.best.bucks, game.bucks);
+  for (const [id, n] of Object.entries(game.powers.uses)) s.stats.charUses[id] = (s.stats.charUses[id] ?? 0) + n;
   Save.save();
   lastResult = { d, newBest, stars: game.wanted.peak, cause: game.cause, bucks: game.bucks };
   fillOver();
@@ -208,7 +209,10 @@ const loop = new Loop(
     setSpriteScale(view.scale * view.dpr);
     view.begin();
     game.render(ctx, { showPlayer: state !== 'menu', menu: state === 'menu' });
-    if (state === 'playing' || state === 'paused') hud.draw(ctx, game, loop);
+    if (state === 'playing' || state === 'paused') {
+      game.powers.drawOverlay(ctx, game, input);
+      hud.draw(ctx, game, loop);
+    }
   },
 );
 

@@ -12,6 +12,7 @@ import { Wanted } from './systems/wanted.js';
 import { Tokens } from './entities/tokens.js';
 import { Sound } from './core/audio.js';
 import { Respite } from './systems/respite.js';
+import { Powers } from './systems/powers.js';
 
 /**
  * Estado de una partida: jugador, cámara, mundo, obstáculos y efectos.
@@ -33,6 +34,7 @@ export class Game {
     this.obstacles = [];
     this.tokens = new Tokens();
     this.respite = new Respite();
+    this.powers = new Powers();
     this.buffer = document.createElement('canvas');
     this.t = 0;
     // Opciones de prueba: ?god (invulnerable) y ?start=1500 (empezar en esos metros)
@@ -56,6 +58,10 @@ export class Game {
     this.bucks = 0;
     this.wanted.reset();
     this.respite.reset();
+    this.powers.reset();
+    this.powers.applyMods(this.player);
+    this.timeScale = 1;
+    this.inputHeld = false;
     this.zone = zoneAt(this.distance);
     this.zoneIndex = this.zone.n;
     this.dead = false;
@@ -160,10 +166,15 @@ export class Game {
       input.consumePresses();
     } else {
       this.runTime += dt;
+      // cámara lenta (tiempo bala, transformación): el mundo va más despacio
+      this.timeScale = approach(this.timeScale, this.powers.timeScale, 10, dt);
+      this.powers.applyMods(p);
       // se acerca suavemente a la velocidad objetivo: nunca hay saltos
       this.speed = approach(this.speed, this.targetSpeed(), CONFIG.speed.smoothing, dt);
-      const ev = p.update(dt, input.held, this.speed, this.view.groundY);
-      input.consumePresses(); // las pulsaciones sueltas se usarán en fases posteriores
+      // en la conducción perfecta el coche va por el suelo (no se vuela)
+      this.inputHeld = input.held && !this.powers.has('drive');
+      const ev = p.update(dt, this.inputHeld, this.speed * this.timeScale, this.view.groundY);
+      this.powers.update(dt, this, input.consumePresses());
 
       if (ev.landed && ev.impact > CONFIG.player.hardLanding) {
         this.camera.addShake(0.25);
@@ -181,18 +192,19 @@ export class Game {
     this.camera.update(dt);
     this.updateZone();
     if (!this.dead) this.spawner.update(this);
-    this.tokens.update(dt, this);
+    const wdt = dt * (this.dead ? 1 : this.timeScale);
+    this.tokens.update(wdt, this);
 
     // obstáculos
     const box = p.hitbox;
     for (const o of this.obstacles) {
-      o.update(dt, this);
+      o.update(wdt, this);
       if (!this.dead && o.alive && o.hits(box)) this.hit(o);
       o.cull(this.camera.x);
     }
     this.obstacles = this.obstacles.filter((o) => o.alive);
 
-    this.particles.update(dt);
+    this.particles.update(wdt);
     this.popups.update(dt);
     this.flash = Math.max(0, this.flash - dt * 3);
     this.fadeIn = Math.max(0, this.fadeIn - dt * 2.5);
@@ -206,10 +218,43 @@ export class Game {
     }
   }
 
-  /** Te han dado. En la fase d los personajes absorberán este golpe. */
+  /** Centro aproximado de un obstáculo (para apuntar y explosiones). */
+  centerOf(o) {
+    switch (o.type) {
+      case 'billboard':
+      case 'car':
+        return { x: o.x + o.w / 2, y: o.y + o.h / 2 };
+      case 'missile':
+        return { x: o.x + o.w / 2, y: o.y };
+      default:
+        return { x: o.x, y: o.y };
+    }
+  }
+
+  /** Destruye un obstáculo con explosión (disparos, furia, nitro, cohete…). */
+  destroyObstacle(o, quiet = false) {
+    if (!o.alive) return;
+    o.alive = false;
+    const { x, y } = this.centerOf(o);
+    const big = o.type === 'heli' || o.type === 'car';
+    this.particles.spawn({ x, y, life: 0.35, size: 16, sizeEnd: big ? 130 : 80, color: 'rgba(255, 190, 90, 0.95)', shape: 'glow', additive: true, important: true });
+    this.particles.burst(x, y, big ? 22 : 12, { color: '#ffb627', speed: 340, life: 0.5, size: 5, sizeEnd: 0, additive: true });
+    this.particles.burst(x, y, big ? 12 : 6, { color: 'rgba(70, 60, 80, 0.6)', speed: 130, life: 1, size: 8, sizeEnd: 22, drag: 2.5, vy: -50 });
+    this.particles.burst(x, y, big ? 10 : 5, { color: '#4a4f5e', speed: 300, life: 1, size: 4, shape: 'rect', spin: 12, gravity: 900 });
+    if (!quiet) {
+      this.camera.addShake(big ? 0.45 : 0.25);
+      Sound.boom();
+      if (Math.random() < 0.5) this.popAt(t('popup.boom'), x, y - 30, '#ff7a3d', 26);
+    }
+  }
+
+  /** Te han dado: los personajes, escudos e invulnerabilidad absorben el golpe. */
   hit(obstacle) {
     if (this.god) return;
+    if (this.powers.absorbHit(obstacle, this)) return;
     Sound.hit();
+    this.powers.effects = {};
+    this.powers.applyMods(this.player);
     this.dead = true;
     this.cause = obstacle.type;
     this.player.kill();
@@ -282,6 +327,7 @@ export class Game {
     }
 
     if (showPlayer) this.player.drawShadow(ctx, cam.x, v.groundY);
+    if (!menu) this.powers.draw(ctx, cam.x, this);
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
     if (!menu) this.tokens.draw(ctx, cam.x, this);
     this.particles.draw(ctx, cam.x);
