@@ -64,7 +64,7 @@ canvas {
   background: radial-gradient(ellipse at center, rgba(27, 16, 48, 0.15) 0%, rgba(27, 16, 48, 0.65) 100%);
 }
 
-#screen-pause {
+#screen-pause, #screen-over {
   background: rgba(18, 11, 38, 0.72);
   backdrop-filter: blur(3px);
 }
@@ -116,6 +116,55 @@ canvas {
   font-size: calc(48px * var(--s));
   color: #ffe066;
   text-shadow: calc(3px * var(--s)) calc(3px * var(--s)) 0 var(--ink);
+}
+
+/* PANTALLA FINAL */
+.cause {
+  margin: 0;
+  font-weight: 700;
+  opacity: 0.9;
+}
+.stats {
+  display: flex;
+  gap: calc(14px * var(--s));
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  min-width: calc(150px * var(--s));
+  padding: calc(10px * var(--s)) calc(14px * var(--s));
+  background: var(--cream);
+  color: var(--ink);
+  border: calc(3px * var(--s)) solid var(--ink);
+  border-radius: calc(12px * var(--s));
+  box-shadow: 0 calc(4px * var(--s)) 0 var(--ink);
+}
+.stat-label {
+  font-size: calc(13px * var(--s));
+  font-weight: 800;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.stat-value {
+  font-family: 'Bungee', Impact, sans-serif;
+  font-size: calc(26px * var(--s));
+}
+.stat-value.stars { color: #e8a800; letter-spacing: 0.05em; }
+.new-best {
+  font-family: 'Bungee', Impact, sans-serif;
+  font-size: calc(24px * var(--s));
+  color: var(--ink);
+  background: #ffd23f;
+  padding: calc(4px * var(--s)) calc(16px * var(--s));
+  border: calc(3px * var(--s)) solid var(--ink);
+  border-radius: calc(10px * var(--s));
+  transform: rotate(-4deg);
+  animation: pulse 0.8s ease-in-out infinite;
+}
+.row {
+  display: flex;
+  gap: calc(12px * var(--s));
+  margin-top: calc(6px * var(--s));
 }
 
 /* BOTONES */

@@ -1,6 +1,8 @@
 // Zona 1 — PLAYA CORAL
 // Mar y velas al fondo, sombrillas y casetas en la arena, palmeras delante.
 
+import { sea, streetLamp } from './shapes.js';
+
 const HORIZON = 0.6;   // fracción del alto donde está el horizonte
 const SAND_TOP = 0.74; // fracción del alto donde empieza la arena
 
@@ -18,31 +20,13 @@ export const beach = {
   sky: ['#2b9be8', '#7fd0ff', '#ffe2a8'],
   sun: { x: 0.8, y: 110, r: 44, color: '#fff6d0', glow: 'rgba(255, 214, 120, 0.55)' },
   cloudColor: 'rgba(255, 255, 255, 0.85)',
-  ground: { top: '#e0a868', body: '#b06f3e', line: '#7c4826', edge: '#5a3018' },
+  ground: { top: '#e0a868', body: '#b06f3e', line: '#7c4826', edge: '#5a3018', joint: 48, beams: true },
 
   /** Fondo fijo (mar + arena), por detrás de todas las capas. */
   backdrop(ctx, v, camX, t) {
     const hy = v.h * HORIZON;
     const sy = v.h * SAND_TOP;
-    const sea = ctx.createLinearGradient(0, hy, 0, sy);
-    sea.addColorStop(0, '#2cb5d6');
-    sea.addColorStop(1, '#0d7ea8');
-    ctx.fillStyle = sea;
-    ctx.fillRect(0, hy, v.w, sy - hy);
-
-    // destellos del agua (se desplazan muy despacio)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
-    const off = (camX * 0.1) % 90;
-    for (let row = 0; row < 5; row++) {
-      const y = hy + 8 + row * ((sy - hy - 16) / 5);
-      for (let x = -off - (row * 37) % 90; x < v.w; x += 90) {
-        const w = 14 + ((row * 7 + Math.floor(x)) % 5) * 4;
-        const a = 0.5 + 0.5 * Math.sin(t * 2 + x * 0.05 + row);
-        ctx.globalAlpha = 0.25 + a * 0.5;
-        ctx.fillRect(x, y, w, 2);
-      }
-    }
-    ctx.globalAlpha = 1;
+    sea(ctx, v, camX, t, hy, sy, '#2cb5d6', '#0d7ea8');
 
     // espuma de la orilla
     ctx.fillStyle = 'rgba(255,255,255,0.8)';
@@ -124,7 +108,7 @@ export const beach = {
         if (r(0) < 0.72) {
           drawPalm(ctx, sx + r(1) * 120, base, 170 + r(2) * 90, (r(3) - 0.5) * 70, t, i);
         } else if (r(0) < 0.9) {
-          drawLamp(ctx, sx + 60, base);
+          streetLamp(ctx, sx + 60, base);
         }
       },
     },
@@ -269,14 +253,4 @@ function drawPalm(ctx, x, base, height, lean, t, i) {
     ctx.fill();
   }
   ctx.lineCap = 'butt';
-}
-
-function drawLamp(ctx, x, base) {
-  ctx.fillStyle = '#2a2140';
-  ctx.fillRect(x - 3, base - 150, 6, 150);
-  ctx.fillRect(x - 3, base - 150, 28, 5);
-  ctx.fillStyle = '#ffe9a8';
-  ctx.beginPath();
-  ctx.arc(x + 24, base - 140, 7, 0, Math.PI * 2);
-  ctx.fill();
 }

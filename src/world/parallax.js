@@ -71,10 +71,11 @@ export class Parallax {
     }
   }
 
-  /** Suelo: paseo marítimo de tablones que se mueve a la velocidad real. */
+  /** Suelo de la zona; se mueve a la velocidad real (factor 1). */
   drawGround(ctx, v, camX, theme) {
     const g = theme.ground;
     const gy = v.groundY;
+    const mod = (a, n) => ((a % n) + n) % n;
     ctx.fillStyle = g.body;
     ctx.fillRect(0, gy, v.w, v.h - gy);
     ctx.fillStyle = g.top;
@@ -82,20 +83,57 @@ export class Parallax {
     ctx.fillStyle = g.edge;
     ctx.fillRect(0, gy + 12, v.w, 3);
 
-    // juntas de los tablones
-    ctx.fillStyle = g.line;
-    const plank = 48;
-    const off = camX % plank;
-    for (let x = -off; x < v.w; x += plank) {
-      ctx.fillRect(x, gy, 3, 12);
+    // juntas (tablones, baldosas...)
+    if (g.joint) {
+      ctx.fillStyle = g.line;
+      for (let x = -mod(camX, g.joint); x < v.w; x += g.joint) ctx.fillRect(x, gy, 3, 12);
     }
-    // vigas inferiores
-    const beam = 160;
-    const boff = camX % beam;
-    ctx.globalAlpha = 0.35;
-    for (let x = -boff; x < v.w; x += beam) {
-      ctx.fillRect(x, gy + 15, 10, v.h - gy);
+    // vigas del paseo marítimo
+    if (g.beams) {
+      ctx.fillStyle = g.line;
+      ctx.globalAlpha = 0.35;
+      for (let x = -mod(camX, 160); x < v.w; x += 160) ctx.fillRect(x, gy + 15, 10, v.h - gy);
+      ctx.globalAlpha = 1;
     }
-    ctx.globalAlpha = 1;
+    // bordillo pintado
+    if (g.curb) {
+      ctx.fillStyle = g.curb;
+      for (let x = -mod(camX, 80); x < v.w; x += 80) ctx.fillRect(x, gy + 12, 40, 3);
+    }
+    // franjas de peligro amarillas y negras
+    if (g.hazard) {
+      const off = mod(camX, 40);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, gy + 15, v.w, 10);
+      ctx.clip();
+      ctx.fillStyle = '#f0b429';
+      ctx.fillRect(0, gy + 15, v.w, 10);
+      ctx.fillStyle = '#1b1030';
+      for (let x = -off - 40; x < v.w + 40; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, gy + 25);
+        ctx.lineTo(x + 20, gy + 15);
+        ctx.lineTo(x + 30, gy + 15);
+        ctx.lineTo(x + 10, gy + 25);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+    // línea discontinua de carretera
+    if (g.dashes) {
+      ctx.fillStyle = '#fff4dc';
+      const y = gy + (v.h - gy) / 2 + 4;
+      for (let x = -mod(camX, 90); x < v.w; x += 90) ctx.fillRect(x, y, 46, 4);
+    }
+    // defensas de neumático del muelle
+    if (g.bumpers) {
+      ctx.fillStyle = '#1b1620';
+      for (let x = -mod(camX, 200); x < v.w; x += 200) {
+        ctx.beginPath();
+        ctx.arc(x + 100, gy + 30, 11, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
   }
 }

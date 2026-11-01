@@ -33,6 +33,26 @@ export const TRANSLATIONS = {
     'zone.industrial': 'Las Chimeneas',
     'zone.hills': 'Colinas Brisa',
     'zone.port': 'Puerto Ancla',
+
+    'zone.enter': 'Entrando en',
+    'wanted.up': '¡BÚSQUEDA {n}★!',
+    'popup.spotted': '¡TE HAN VISTO!',
+    'popup.chaos': '¡CAOS!',
+
+    'over.title': '¡Te han pillado!',
+    'over.distance': 'Distancia',
+    'over.best': 'Récord',
+    'over.stars': 'Búsqueda máx.',
+    'over.newBest': '¡NUEVO RÉCORD!',
+    'over.retry': 'Otra vez',
+    'over.menu': 'Menú',
+
+    'cause.cable': 'Electrocutado por un cable de alta tensión.',
+    'cause.billboard': 'Aplastado por un cartel de un banco. Irónico.',
+    'cause.car': 'Atropellado por una patrulla de la PSC.',
+    'cause.heli': 'Te estampaste contra el helicóptero. Valiente.',
+    'cause.bullet': 'Abatido desde el helicóptero de la PSC.',
+    'cause.missile': 'Alcanzado por un misil "no letal" de la PSC.',
   },
 
   en: {
@@ -61,5 +81,25 @@ export const TRANSLATIONS = {
     'zone.industrial': 'The Smokestacks',
     'zone.hills': 'Breeze Hills',
     'zone.port': 'Anchor Harbor',
+
+    'zone.enter': 'Now entering',
+    'wanted.up': 'WANTED {n}★!',
+    'popup.spotted': 'SPOTTED!',
+    'popup.chaos': 'CHAOS!',
+
+    'over.title': 'Busted!',
+    'over.distance': 'Distance',
+    'over.best': 'Best',
+    'over.stars': 'Max wanted',
+    'over.newBest': 'NEW RECORD!',
+    'over.retry': 'Try again',
+    'over.menu': 'Menu',
+
+    'cause.cable': 'Zapped by a high-voltage line.',
+    'cause.billboard': 'Crushed by a bank billboard. Ironic.',
+    'cause.car': 'Run over by an SCPD patrol car.',
+    'cause.heli': 'You flew into the helicopter. Bold.',
+    'cause.bullet': 'Shot down by the SCPD chopper.',
+    'cause.missile': 'Hit by an SCPD "non-lethal" missile.',
   },
 };

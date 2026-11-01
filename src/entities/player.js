@@ -25,6 +25,46 @@ export class Player {
     this.airTime = 0;
     this.groundTime = 0;
     this.exhaustAcc = 0;
+    this.dead = false;
+    this.spin = 0;
+    this.spinRate = 0;
+  }
+
+  /** Caja de colisión, algo más pequeña que el dibujo. */
+  get hitbox() {
+    const k = CONFIG.obstacles.hitboxShrink;
+    const hw = (this.w * k) / 2;
+    const hh = (this.h * (k + 0.12)) / 2;
+    return { l: this.x - hw, r: this.x + hw, t: this.y - hh, b: this.y + hh };
+  }
+
+  /** Golpe mortal: sale despedido girando. */
+  kill() {
+    this.dead = true;
+    this.thrust = 0;
+    this.vy = -520;
+    this.spinRate = 9;
+  }
+
+  /** Física del cuerpo tras el golpe: rebota y rueda hasta pararse. */
+  updateDead(dt, speed, groundY) {
+    this.vy += CONFIG.player.gravity * dt;
+    this.y += this.vy * dt;
+    this.x += speed * dt;
+    this.spin += this.spinRate * dt;
+    const bottom = groundY - this.h / 2 + 8;
+    if (this.y > bottom) {
+      this.y = bottom;
+      if (this.vy > 160) {
+        this.vy *= -0.38;
+        this.spinRate *= 0.6;
+        return true; // rebote
+      }
+      this.vy = 0;
+      this.spinRate *= Math.exp(-6 * dt);
+      this.onGround = true;
+    }
+    return false;
   }
 
   get left() { return this.x - this.w / 2; }
@@ -123,7 +163,7 @@ export class Player {
 
   draw(ctx, camX, t) {
     const sx = this.x - camX;
-    const tilt = this.onGround ? 0 : clamp(this.vy / 1800, -0.22, 0.28);
+    const tilt = this.dead ? this.spin : this.onGround ? 0 : clamp(this.vy / 1800, -0.22, 0.28);
     ctx.save();
     ctx.translate(sx, this.y);
     ctx.rotate(tilt);
@@ -173,7 +213,10 @@ function drawRobber(ctx, p, t) {
   ctx.lineCap = 'round';
   let a1;
   let a2;
-  if (p.onGround) {
+  if (p.dead) {
+    a1 = 0.9;
+    a2 = -0.6;
+  } else if (p.onGround) {
     a1 = Math.sin(p.anim) * 0.75;
     a2 = -a1;
   } else {

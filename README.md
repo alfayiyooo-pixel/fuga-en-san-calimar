@@ -14,7 +14,17 @@ Los módulos ES necesitan un servidor (no funciona abriendo `index.html` con dob
 python3 -m http.server 8000
 ```
 
-Abre <http://localhost:8000>. Añade `?debug` a la URL para ver FPS, velocidad y física.
+Abre <http://localhost:8000>.
+
+### Opciones de prueba (en la URL)
+
+| Parámetro | Efecto |
+|---|---|
+| `?debug` | Muestra FPS, velocidad, física, calor de búsqueda y zona |
+| `?god` | Invulnerable (para recorrer todas las zonas) |
+| `?start=1500` | Empieza la partida en esos metros |
+
+Se combinan: `?debug&god&start=2000`.
 
 ## Controles
 
@@ -22,6 +32,14 @@ Abre <http://localhost:8000>. Añade `?debug` a la URL para ver FPS, velocidad y
 |---|---|---|
 | Volar (mantener) / caer (soltar) | Espacio, ↑, W o clic | Mantener el dedo en pantalla |
 | Pausa | Esc o P | Botón ❚❚ |
+
+## La ciudad
+
+Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito Lingote → Las Chimeneas → Colinas Brisa → Puerto Ancla**.
+
+**Obstáculos:** cables eléctricos (fijos, dobles, en puerta o giratorios), carteles que caen, patrullas que vienen de frente, helicópteros con foco que disparan si te detectan y misiles con aviso previo.
+
+**Nivel de búsqueda (★1-5):** sube cuando la policía te ve (foco del helicóptero, patrullas) o causas caos, baja si pasas un rato tranquilo y aumenta la cantidad de policía. Cada 900 m sube la estrella mínima (hasta 3).
 
 ## Ajustar dificultad
 

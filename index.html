@@ -39,6 +39,22 @@
           <button class="btn" id="btn-to-menu" data-i18n="pause.menu"></button>
         </section>
 
+        <!-- PANTALLA FINAL -->
+        <section class="screen hidden" id="screen-over">
+          <h2 class="screen-title" data-i18n="over.title"></h2>
+          <p class="cause" id="over-cause"></p>
+          <div class="new-best hidden" id="over-newbest" data-i18n="over.newBest"></div>
+          <div class="stats">
+            <div class="stat"><span class="stat-label" data-i18n="over.distance"></span><span class="stat-value" id="over-distance"></span></div>
+            <div class="stat"><span class="stat-label" data-i18n="over.best"></span><span class="stat-value" id="over-best"></span></div>
+            <div class="stat"><span class="stat-label" data-i18n="over.stars"></span><span class="stat-value stars" id="over-stars"></span></div>
+          </div>
+          <div class="row">
+            <button class="btn btn-primary" id="btn-retry" data-i18n="over.retry"></button>
+            <button class="btn" id="btn-over-menu" data-i18n="over.menu"></button>
+          </div>
+        </section>
+
         <!-- BOTONES DURANTE LA PARTIDA -->
         <div id="hud-buttons" class="hidden">
           <button class="icon-btn" id="btn-pause" data-i18n-aria="hud.pause">❚❚</button>
