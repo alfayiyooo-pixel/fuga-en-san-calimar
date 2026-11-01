@@ -28,6 +28,7 @@ export class Game {
     this.spawner = new Spawner();
     this.wanted = new Wanted();
     this.wanted.onChange = (stars, prev) => this.onStars(stars, prev);
+    this.wanted.onWarn = (first) => this.onWantedWarn(first);
     this.obstacles = [];
     this.tokens = new Tokens();
     this.buffer = document.createElement('canvas');
@@ -77,6 +78,28 @@ export class Game {
     return (max - (max - start) * Math.exp(-this.runTime / rampTime)) * this.player.mods.speed;
   }
 
+  /** Configuración de policía para el nº de estrellas actual. */
+  get policeLevel() {
+    const L = CONFIG.wanted.levels;
+    return L[Math.min(this.wanted.stars, L.length - 1)];
+  }
+
+  /** Recoger pavos llama la atención de la policía. */
+  onCollect(kind) {
+    const H = CONFIG.wanted.heat;
+    if (kind === 'bill') this.wanted.add(H.tokenBill);
+    else if (kind === 'gold') this.wanted.add(H.tokenGold);
+    else if (kind === 'case') this.wanted.add(H.tokenCase);
+  }
+
+  onWantedWarn(first) {
+    if (this.dead) return;
+    Sound.warn();
+    if (first) {
+      this.popups.add(t('wanted.warn'), this.view.w / 2, 112, { color: '#ff6b7d', size: 20, life: 1.6, rise: 10 });
+    }
+  }
+
   addObstacle(o) {
     this.obstacles.push(o);
   }
@@ -84,7 +107,7 @@ export class Game {
   /** La policía te ha visto: sube la búsqueda. */
   spotted(heat, wx, wy) {
     this.wanted.add(heat);
-    if (heat >= 10) this.popAt(t('popup.spotted'), wx, wy, '#ff6b7d');
+    if (heat >= 4) this.popAt(t('popup.spotted'), wx, wy, '#ff6b7d');
   }
 
   /** Caos en la ciudad: sube la búsqueda. */
@@ -98,10 +121,15 @@ export class Game {
   }
 
   onStars(stars, prev) {
-    if (stars > prev && !this.dead) {
+    if (this.dead) return;
+    if (stars > prev) {
       this.hud.flashStars();
       this.camera.addShake(0.2);
-      this.popups.add(t('wanted.up', { n: stars }), this.view.w / 2, 90, { color: '#ffd23f', size: 30, life: 1.5, rise: 20 });
+      Sound.starUp();
+      this.popups.add(t('wanted.up', { n: stars }), this.view.w / 2, 112, { color: '#ffd23f', size: 30, life: 1.6, rise: 16 });
+    } else {
+      Sound.starDown();
+      this.popups.add(t('wanted.lost'), this.view.w / 2, 112, { color: '#7ff7e8', size: 24, life: 1.6, rise: 16 });
     }
   }
 
@@ -132,7 +160,7 @@ export class Game {
       if (ev.bonk) this.camera.addShake(0.15);
       if (p.onGround && Math.random() < dt * 14) this.dust(p.x - 6, p.bottom, 1);
       p.emitExhaust(dt, this.particles);
-      this.wanted.update(dt, this.distance);
+      this.wanted.update(dt);
     }
 
     this.camera.follow(p.x, this.view.w);

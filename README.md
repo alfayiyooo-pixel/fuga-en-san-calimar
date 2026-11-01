@@ -39,7 +39,15 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 **Obstáculos:** cables eléctricos (fijos, dobles, en puerta o giratorios), carteles que caen, patrullas que vienen de frente, helicópteros con foco que disparan si te detectan y misiles con aviso previo.
 
-**Nivel de búsqueda (★1-5):** sube cuando la policía te ve (foco del helicóptero, patrullas) o causas caos, baja si pasas un rato tranquilo y aumenta la cantidad de policía. Cada 900 m sube la estrella mínima (hasta 3).
+**Nivel de búsqueda (★1-5):**
+
+- Cada estrella es una barra que se llena **poco a poco**; cada una cuesta más que la anterior (1ª fácil, 5ª muy difícil).
+- La suben: recoger pavos (¡estás robando!), maletines y billetes dorados, carteles que se estrellan, patrullas que te ven y el foco del helicóptero.
+- Al 80% de una estrella: aviso visual (estrella roja/azul) y sonoro. Al completarla se ilumina.
+- Si pasas unos segundos sin incidentes, bajan despacio: puedes **despistar a la policía** dejando de recoger.
+- Cada nivel añade policía de forma escalonada: 0★ nada · 1★ patrullas · 2★ misiles · 3★ helicóptero · 4-5★ persecución intensa (salvas, patrullas dobles, luces de sirena en pantalla).
+
+Todo en el bloque `wanted` de [`src/config.js`](src/config.js).
 
 ## Pavos
 

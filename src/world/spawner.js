@@ -26,28 +26,32 @@ export class Spawner {
 
   gap(g) {
     const S = CONFIG.spawner;
-    const base = lerp(S.gapStart, S.gapEnd, g.difficulty) * (1 - S.starGapFactor * g.wanted.stars);
+    const base = lerp(S.gapStart, S.gapEnd, g.difficulty) * g.policeLevel.gapMult;
     const jittered = base * (1 + rand(-S.gapJitter, S.gapJitter));
     return Math.max(jittered, g.speed * S.minGapTime);
   }
 
   choose(g) {
     const O = CONFIG.obstacles;
-    const dist = g.distance;
+    const lvl = g.policeLevel;
     const zoneMods = O.zoneWeights[g.zone.current.id] || {};
-    const policeMult = 1 + O.policeBonusPerStar * g.wanted.stars;
     const active = (type) => g.obstacles.filter((o) => o.type === type && o.alive).length;
 
     const entries = [];
-    for (const [type, w] of Object.entries(O.weights)) {
-      if (dist < O.unlockAt[type]) continue;
-      if (type === 'heli' && active('heli') > 0) continue;
-      if (type === 'missile' && active('missile') > 1) continue;
+    const consider = (type, w) => {
+      if (w <= 0 || g.distance < O.unlockAt[type]) return;
+      if (type === 'heli' && active('heli') > 0) return;
+      if (type === 'missile' && active('missile') > 2) return;
       let weight = w * (zoneMods[type] ?? 1);
-      if (type === 'car' || type === 'missile' || type === 'heli') weight *= policeMult;
       if (type === this.lastType && type !== 'cable') weight *= 0.4; // menos repeticiones
       entries.push([type, weight]);
-    }
+    };
+    for (const [type, w] of Object.entries(O.weights)) consider(type, w);
+    // policía según el nivel de búsqueda
+    consider('car', lvl.car);
+    consider('missile', lvl.missile);
+    consider('heli', lvl.heli);
+
     const total = entries.reduce((s, [, w]) => s + w, 0);
     let roll = Math.random() * total;
     for (const [type, w] of entries) {
@@ -65,13 +69,14 @@ export class Spawner {
         return 150;
       case 'car': {
         g.addObstacle(new PatrolCar(g));
-        if (g.wanted.stars >= CONFIG.obstacles.car.doubleFromStars && chance(0.5)) {
+        if (chance(g.policeLevel.carPair)) {
           g.addObstacle(new PatrolCar(g, 0.9));
         }
         return 160;
       }
       case 'missile': {
-        const volley = g.wanted.stars >= CONFIG.obstacles.missile.volleyFromStars ? (chance(0.5) ? 3 : 2) : 1;
+        const max = g.policeLevel.volley;
+        const volley = max <= 1 ? 1 : chance(0.5) ? max : max - 1;
         const offsets = volley === 1 ? [0] : volley === 2 ? [0, pick([-90, 90])] : [0, -110, 110];
         offsets.forEach((off, i) => g.addObstacle(new Missile(g, i * 0.4, off)));
         return 120;

@@ -81,14 +81,14 @@ export const CONFIG = {
     gapEnd: 260,        // separación con dificultad máxima (px)
     gapJitter: 0.35,    // variación aleatoria de la separación (±35%)
     minGapTime: 0.42,   // separación mínima en segundos de reacción
-    starGapFactor: 0.06, // cada estrella reduce la separación un 6%
   },
 
   obstacles: {
-    // probabilidad relativa de cada tipo
-    weights: { cable: 5, billboard: 2, car: 2, missile: 1.6, heli: 0.9 },
+    // probabilidad relativa de los obstáculos civiles (la policía depende
+    // de las estrellas: ver wanted.levels)
+    weights: { cable: 5, billboard: 2 },
     // metros a partir de los que aparece cada tipo
-    unlockAt: { cable: 0, billboard: 70, car: 140, missile: 240, heli: 400 },
+    unlockAt: { cable: 0, billboard: 70, car: 0, missile: 0, heli: 0 },
     // multiplicador de peso por zona
     zoneWeights: {
       beach: {},
@@ -97,37 +97,58 @@ export const CONFIG = {
       hills: { car: 1.7 },
       port: { missile: 1.6, heli: 1.3 },
     },
-    policeBonusPerStar: 0.45, // cada estrella multiplica el peso policial (+45%)
     hitboxShrink: 0.72,  // caja del jugador más pequeña que el dibujo (perdona roces)
 
     cable: { minLen: 110, maxLen: 230, thickness: 10, spinFrom: 0.35, spinChance: 0.3 },
     billboard: { gravity: 2100, triggerTime: 0.75, wobble: 0.28 },
-    car: { minSpeed: 200, maxSpeed: 380, warnTime: 1.0, doubleFromStars: 3 },
-    missile: { warnTime: 1.25, lockTime: 0.45, speed: 980, volleyFromStars: 3 },
+    car: { minSpeed: 200, maxSpeed: 380, warnTime: 1.0 },
+    missile: { warnTime: 1.25, lockTime: 0.45, speed: 980 },
     heli: {
       life: 8.5,         // segundos que patrulla
       detectTime: 0.45,  // segundos dentro del foco hasta detectarte
       windup: 0.4,       // aviso antes de disparar
-      burst: 3,          // disparos por ráfaga (+1 con 4-5 estrellas)
+      burst: 3,          // disparos por ráfaga (+ heliShots del nivel de estrellas)
       shotInterval: 0.2,
       bulletSpeed: 560,
       cooldown: 1.4,
     },
   },
 
+  // ---------------- NIVEL DE BÚSQUEDA (estrellas) ----------------
   wanted: {
-    thresholds: [12, 32, 52, 72, 92], // "calor" necesario para cada estrella
-    max: 100,
-    decayDelay: 8,      // s sin incidentes antes de que baje
-    decayRate: 1.5,     // calor que se pierde por segundo
-    floorEvery: 900,    // cada X metros sube la estrella mínima garantizada…
-    maxFloor: 3,        // …hasta este máximo
+    // calor necesario para llenar cada estrella: 1ª fácil … 5ª muy difícil
+    starCost: [16, 28, 45, 70, 110],
+    fillSpeed: 9,         // calor/s máximo que entra en la barra (se llena poco a poco)
+    carryOver: 0.25,      // parte del calor sobrante que pasa a la siguiente estrella
+    starPause: 1.5,       // s sin llenarse tras ganar una estrella
+    decayDelay: 6,        // s sin incidentes para empezar a "despistar" a la policía
+    decayRate: 2.0,       // calor/s que se pierde al despistarlos (puede quitar estrellas)
+    dropBuffer: 0.35,     // para perder una estrella hay que bajar este % de su coste por debajo
+    warnAt: 0.8,          // al 80% de una estrella: aviso visual y sonoro
+    warnBeepEvery: 0.7,   // s entre pitidos de aviso
+    // qué sube la búsqueda
     heat: {
-      heliSpotted: 22,  // un helicóptero te detecta
-      carPass: 6,       // una patrulla te ve pasar
-      billboardCrash: 4, // un cartel se estrella (caos)
-      hitPolice: 25,    // chocar con policía con escudo (fase d)
+      tokenBill: 0.3,     // cada pavo (robar llama la atención)
+      tokenGold: 2.5,     // billete dorado
+      tokenCase: 9,       // maletín
+      billboardCrash: 4,  // un cartel se estrella (caos)
+      carPass: 4,         // una patrulla te ve pasar
+      heliSpotted: 9,     // el foco del helicóptero te detecta
+      hitPolice: 12,      // chocar con policía con escudo (fase d)
     },
+    // policía que aparece en cada nivel (índice = nº de estrellas)
+    //   car/missile/heli: peso relativo de cada obstáculo policial (0 = no aparece)
+    //   gapMult: multiplicador de la separación entre obstáculos
+    //   carPair: prob. de que vengan dos patrullas seguidas
+    //   volley: misiles por salva   heliShots: disparos extra por ráfaga
+    levels: [
+      { car: 0, missile: 0, heli: 0, gapMult: 1.0, carPair: 0, volley: 1, heliShots: 0 },     // 0★ sin policía
+      { car: 1.2, missile: 0, heli: 0, gapMult: 0.97, carPair: 0, volley: 1, heliShots: 0 },  // 1★ alguna patrulla
+      { car: 1.8, missile: 1.0, heli: 0, gapMult: 0.93, carPair: 0.15, volley: 1, heliShots: 0 }, // 2★ + misiles
+      { car: 2.0, missile: 1.3, heli: 1.0, gapMult: 0.88, carPair: 0.3, volley: 2, heliShots: 0 }, // 3★ + helicóptero
+      { car: 2.4, missile: 1.7, heli: 1.2, gapMult: 0.83, carPair: 0.45, volley: 2, heliShots: 1 }, // 4★
+      { car: 3.0, missile: 2.2, heli: 1.6, gapMult: 0.76, carPair: 0.6, volley: 3, heliShots: 2 },  // 5★ persecución intensa
+    ],
   },
 
   // ---------------- PAVOS (tokens) ----------------

@@ -82,7 +82,7 @@ export class Hud {
         `speed ${game.speed.toFixed(0)} px/s`,
         `vy ${p.vy.toFixed(0)}  thrust ${p.thrust.toFixed(2)}`,
         `t ${game.runTime.toFixed(1)} s  diff ${game.difficulty.toFixed(2)}`,
-        `heat ${game.wanted.heat.toFixed(0)}  obst ${game.obstacles.length}`,
+        `heat ${game.wanted.heat.toFixed(1)} (+${game.wanted.pending.toFixed(1)})  obst ${game.obstacles.length}`,
         `zone ${game.zone.current.id}  tokens ${game.tokens.list.length}`,
       ];
       ctx.font = '13px monospace';
@@ -131,37 +131,85 @@ export class Hud {
   drawStars(ctx, game, v) {
     const W = game.wanted;
     const n = 5;
-    const gap = 32;
+    const gap = 34;
     const x0 = v.w / 2 - ((n - 1) * gap) / 2;
     const y = 30;
-    const pop = 1 + this.starFlash * 0.35 * Math.abs(Math.sin(this.starFlash * 12));
+    const t = game.t;
+    const warn = W.warning && !W.cooling;
+
+    // persecución intensa: bordes de la pantalla con luces de sirena
+    if (W.stars >= 4) this.drawSirenEdges(ctx, v, t, W.stars === 5 ? 0.32 : 0.18);
+
     for (let i = 0; i < n; i++) {
       const x = x0 + i * gap;
       const filled = i < W.stars;
-      const next = i === W.stars;
-      const r = 13 * (filled ? pop : 1);
+      const filling = i === W.stars;
+      const justLit = filled && i === W.stars - 1 && W.flash > 0;
+      const losing = filled && i === W.stars - 1 && W.cooling;
+      let r = 13;
+      if (justLit) r *= 1 + 0.45 * Math.sin((1.2 - W.flash) * 9) * (W.flash / 1.2);
+      if (filling && warn) r *= 1 + 0.12 * Math.abs(Math.sin(t * 9));
+
+      // halo de las estrellas encendidas
+      if (filled) drawGlow(ctx, x, y, 26 + (justLit ? 20 * W.flash : 0), 'rgba(255, 210, 63, 0.8)', justLit ? 1 : 0.45);
+      if (filling && warn) {
+        const red = Math.floor(t * 6) % 2 === 0;
+        drawGlow(ctx, x, y, 30, red ? 'rgba(255, 61, 79, 0.9)' : 'rgba(60, 110, 255, 0.9)', 0.8);
+      }
+
       starPath(ctx, x, y, r + 3);
       ctx.fillStyle = INK;
       ctx.fill();
       starPath(ctx, x, y, r);
       if (filled) {
-        // con muchas estrellas, parpadean en rojo/azul como una sirena
-        const siren = W.stars >= 4 && Math.floor(game.t * 6 + i) % 2 === 0;
-        ctx.fillStyle = siren ? '#ff6b7d' : '#ffd23f';
+        // al despistar a la policía, la última estrella parpadea
+        ctx.fillStyle = losing && Math.floor(t * 4) % 2 === 0 ? '#c9b26a' : '#ffd23f';
       } else {
-        ctx.fillStyle = 'rgba(255, 244, 220, 0.25)';
+        ctx.fillStyle = 'rgba(255, 244, 220, 0.18)';
       }
       ctx.fill();
-      // la siguiente estrella se va "llenando"
-      if (next && W.progress > 0) {
+      if (filled) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
+        starPath(ctx, x - 2, y - 3, r * 0.35);
+        ctx.fill();
+      }
+      // la estrella en curso se llena desde abajo
+      if (filling && W.progress > 0) {
         ctx.save();
         starPath(ctx, x, y, r);
         ctx.clip();
-        ctx.fillStyle = 'rgba(255, 210, 63, 0.55)';
-        ctx.fillRect(x - r, y + r - 2 * r * W.progress, 2 * r, 2 * r * W.progress);
+        const h = 2 * r * W.progress;
+        ctx.fillStyle = warn ? (Math.floor(t * 6) % 2 === 0 ? '#ff6b7d' : '#6f8bff') : 'rgba(255, 210, 63, 0.7)';
+        ctx.fillRect(x - r, y + r - h, 2 * r, h);
+        ctx.restore();
+      }
+      // la que se está perdiendo se vacía (solo cuando ya bajó del todo la siguiente)
+      if (losing && W.hold < 1) {
+        ctx.save();
+        starPath(ctx, x, y, r);
+        ctx.clip();
+        ctx.fillStyle = 'rgba(20, 10, 40, 0.6)';
+        ctx.fillRect(x - r, y - r, 2 * r, 2 * r * (1 - W.hold));
         ctx.restore();
       }
     }
+  }
+
+  drawSirenEdges(ctx, v, t, strength) {
+    const phase = Math.floor(t * 4) % 2 === 0;
+    const a = strength * (0.6 + 0.4 * Math.abs(Math.sin(t * 8)));
+    const left = phase ? '255, 40, 70' : '40, 90, 255';
+    const right = phase ? '40, 90, 255' : '255, 40, 70';
+    let g = ctx.createLinearGradient(0, 0, 90, 0);
+    g.addColorStop(0, `rgba(${left}, ${a})`);
+    g.addColorStop(1, `rgba(${left}, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 90, v.h);
+    g = ctx.createLinearGradient(v.w, 0, v.w - 90, 0);
+    g.addColorStop(0, `rgba(${right}, ${a})`);
+    g.addColorStop(1, `rgba(${right}, 0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(v.w - 90, 0, 90, v.h);
   }
 
   drawBanner(ctx, v) {

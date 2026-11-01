@@ -500,7 +500,7 @@ export class Helicopter extends Obstacle {
       }
       if (this.state === 'fire' && this.timer >= H.shotInterval) {
         this.timer = 0;
-        const burst = H.burst + (g.wanted.stars >= 4 ? 1 : 0);
+        const burst = H.burst + g.policeLevel.heliShots;
         if (this.shots < burst) {
           this.shots++;
           const len = Math.hypot(dx, dy) || 1;

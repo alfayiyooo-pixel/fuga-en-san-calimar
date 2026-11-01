@@ -36,6 +36,8 @@ export const TRANSLATIONS = {
 
     'zone.enter': 'Entrando en',
     'wanted.up': '¡BÚSQUEDA {n}★!',
+    'wanted.warn': '¡LA POLICÍA SE ACERCA!',
+    'wanted.lost': '¡LOS HAS DESPISTADO!',
     'popup.spotted': '¡TE HAN VISTO!',
     'popup.chaos': '¡CAOS!',
     'popup.case': '¡MALETÍN!',
@@ -93,6 +95,8 @@ export const TRANSLATIONS = {
 
     'zone.enter': 'Now entering',
     'wanted.up': 'WANTED {n}★!',
+    'wanted.warn': 'POLICE CLOSING IN!',
+    'wanted.lost': 'YOU LOST THEM!',
     'popup.spotted': 'SPOTTED!',
     'popup.chaos': 'CHAOS!',
     'popup.case': 'BRIEFCASE!',
