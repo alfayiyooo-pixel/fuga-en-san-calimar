@@ -10,6 +10,7 @@ import { causeText } from './entities/obstacles.js';
 import { Sound } from './core/audio.js';
 import { setSpriteScale } from './fx/sprites.js';
 import { Quality } from './core/quality.js';
+import { createTuner } from './ui/tuner.js';
 
 // ---------- arranque ----------
 Save.load();
@@ -21,7 +22,10 @@ const input = new Input(canvas, view);
 const hud = new Hud();
 const game = new Game(view, hud);
 const screens = new Screens();
-if (hud.debug) window.game = game; // acceso desde la consola con ?debug
+if (hud.debug) {
+  window.game = game; // acceso desde la consola con ?debug
+  createTuner();
+}
 
 setLang(Save.data.settings.lang || detectLanguage());
 applyToDom();

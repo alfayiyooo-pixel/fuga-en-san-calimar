@@ -20,7 +20,7 @@ Abre <http://localhost:8000>.
 
 | Parámetro | Efecto |
 |---|---|
-| `?debug` | Muestra FPS, velocidad, física, calor de búsqueda y zona |
+| `?debug` | Muestra FPS, velocidad, física, calor de búsqueda y zona, y un **panel de deslizadores** para ajustar la física del jetpack en vivo (botón «Copiar valores» para pegarlos en `config.js`) |
 | `?god` | Invulnerable (para recorrer todas las zonas) |
 | `?start=1500` | Empieza la partida en esos metros |
 

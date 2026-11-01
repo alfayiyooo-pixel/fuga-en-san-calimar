@@ -76,6 +76,11 @@ export class Player {
   get bottom() { return this.y + this.h / 2; }
 
   /**
+   * Física del vuelo. Claves para que se controle bien:
+   * - brakeBoost: pulsar mientras caes frena casi al instante.
+   * - riseCut: soltar mientras subes corta la subida (no te pasas de altura).
+   * - velocidades máximas bajas y rampa de empuje casi nula.
+   * - techo blando con rebote y pequeño rebote en el suelo.
    * @returns {{landed:boolean, impact:number, bonk:boolean}} eventos del paso
    */
   update(dt, held, speed, groundY) {
@@ -83,22 +88,27 @@ export class Player {
     const m = this.mods;
     const events = { landed: false, impact: 0, bonk: false };
 
-    // rampa del empuje
     if (held) this.thrust = Math.min(1, this.thrust + dt / P.thrustRampUp);
     else this.thrust = Math.max(0, this.thrust - dt / P.thrustRampDown);
-
-    const ay = P.gravity * m.gravity - P.thrust * m.thrust * this.thrust;
-    this.vy = clamp(this.vy + ay * dt, -P.maxRise * m.maxRise, P.maxFall * m.maxFall);
-    this.y += this.vy * dt;
-    this.x += speed * dt;
 
     const topLimit = CONFIG.world.ceiling + this.h / 2;
     const bottomLimit = groundY - this.h / 2;
 
+    let thrust = P.thrust * m.thrust * this.thrust;
+    if (this.vy > 0) thrust *= P.brakeBoost;                       // frenar la caída
+    const nearTop = (this.y - topLimit) / P.ceilingSoft;            // techo blando
+    if (nearTop < 1 && this.vy <= 0) thrust *= Math.max(0, nearTop) * 0.9 + 0.1;
+    let gravity = P.gravity * m.gravity;
+    if (!held && this.vy < 0) gravity *= P.riseCut;                 // cortar la subida
+
+    this.vy = clamp(this.vy + (gravity - thrust) * dt, -P.maxRise * m.maxRise, P.maxFall * m.maxFall);
+    this.y += this.vy * dt;
+    this.x += speed * dt;
+
     if (this.y < topLimit) {
       this.y = topLimit;
       if (this.vy < -200) events.bonk = true;
-      if (this.vy < 0) this.vy = 0;
+      if (this.vy < 0) this.vy = -this.vy * P.ceilingBounce;
     }
 
     const wasOnGround = this.onGround;
@@ -108,8 +118,14 @@ export class Player {
         events.landed = true;
         events.impact = this.vy;
       }
-      if (this.vy > 0) this.vy = 0;
-      this.onGround = true;
+      const bounce = (m.bounce ?? 0) || P.groundBounce;
+      if (this.vy > P.bounceMin && !held) {
+        this.vy = -this.vy * bounce;
+        this.onGround = false;
+      } else {
+        if (this.vy > 0) this.vy = 0;
+        this.onGround = true;
+      }
     } else {
       this.onGround = false;
     }

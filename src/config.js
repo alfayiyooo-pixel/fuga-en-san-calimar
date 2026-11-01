@@ -23,18 +23,25 @@ export const CONFIG = {
     maxFrameDt: 0.1,    // si un frame tarda más, se recorta (evita "saltos")
   },
 
-  // Física del jetpack básico (los personajes la modificarán en la fase d)
+  // Física del jetpack básico (los personajes la multiplican con sus "mods").
+  // Ajustable en vivo con ?debug (panel de deslizadores).
   player: {
     screenX: 0.26,      // posición horizontal en pantalla (fracción del ancho)
     width: 30,          // caja de colisión
     height: 50,
-    gravity: 2000,      // aceleración hacia abajo (px/s²)
-    thrust: 4200,       // empuje del jetpack (px/s²). Neto al subir = thrust - gravity
-    thrustRampUp: 0.07, // s hasta empuje completo al pulsar (más alto = más inercia)
-    thrustRampDown: 0.05, // s hasta apagar el empuje al soltar
-    maxRise: 640,       // velocidad máxima de subida
-    maxFall: 880,       // velocidad máxima de caída
-    hardLanding: 520,   // velocidad de caída a partir de la cual el aterrizaje tiembla
+    gravity: 1500,      // aceleración hacia abajo (px/s²)
+    thrust: 3450,       // empuje del jetpack (px/s²). Neto al subir = thrust - gravity
+    brakeBoost: 2.2,    // multiplica el empuje si pulsas mientras caes (frena la caída al instante)
+    riseCut: 2.4,       // multiplica la gravedad si sueltas mientras subes (evita "pasarse" de altura)
+    thrustRampUp: 0.025, // s hasta empuje completo al pulsar (casi inmediato)
+    thrustRampDown: 0.04, // s hasta apagar el empuje al soltar (un poco de inercia)
+    maxRise: 400,       // velocidad máxima de subida (px/s)
+    maxFall: 520,       // velocidad máxima de caída (px/s)
+    ceilingSoft: 26,    // px bajo el techo en los que el empuje se va apagando
+    ceilingBounce: 0.3, // rebote al tocar el techo (0 = se queda, 1 = rebote total)
+    groundBounce: 0.18, // rebote al caer al suelo rápido
+    bounceMin: 260,     // velocidad mínima de caída para rebotar en el suelo
+    hardLanding: 480,   // velocidad de caída a partir de la cual el aterrizaje tiembla
   },
 
   // Velocidad de avance: sube de start a max de forma asintótica
