@@ -131,6 +131,18 @@ export class Tokens {
     return w;
   }
 
+  /** Lluvia de pavos (premio del respiro): caen desde arriba. */
+  rain(dt, g, rate, goldChance) {
+    this.rainAcc = (this.rainAcc ?? 0) + dt * rate;
+    while (this.rainAcc >= 1) {
+      this.rainAcc -= 1;
+      const x = g.camera.x + g.view.w * rand(0.35, 1.15);
+      const tk = this.add(x, -20, chance(goldChance) ? 'gold' : 'bill');
+      tk.vy = rand(60, 160);
+      tk.falling = true;
+    }
+  }
+
   add(x, y, kind, near = false) {
     const tk = { x, y, baseY: y, kind, near, phase: Math.random() * 6, alive: true, pulled: false };
     this.list.push(tk);
@@ -162,6 +174,15 @@ export class Tokens {
       if (tk.x < g.camera.x - 80) {
         tk.alive = false;
         continue;
+      }
+      if (tk.falling) {
+        tk.vy += 260 * dt;
+        tk.y += tk.vy * dt;
+        tk.x += Math.sin(g.t * 3 + tk.phase) * 30 * dt;
+        if (tk.y > g.view.groundY - 14) {
+          tk.y = g.view.groundY - 14;
+          tk.falling = false;
+        }
       }
       if (!g.dead && this.magnetActive && tk.kind !== 'magnet') {
         const dx = p.x - tk.x;
@@ -245,7 +266,7 @@ export class Tokens {
     for (const tk of this.list) {
       if (tk.x < camX - 40 || tk.x > right) continue;
       const x = tk.x - camX;
-      const bob = tk.pulled ? 0 : Math.sin(time * 3 + tk.phase) * 3;
+      const bob = tk.pulled || tk.falling ? 0 : Math.sin(time * 3 + tk.phase) * 3;
       const y = tk.y + bob;
       if (tk.kind === 'bill') {
         const flip = 0.75 + 0.25 * Math.cos(time * 4 + tk.phase);

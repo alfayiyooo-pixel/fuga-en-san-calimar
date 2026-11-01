@@ -71,6 +71,23 @@ export class Wanted {
     return this.sinceIncident > CONFIG.wanted.decayDelay && this.pending <= 0 && this.heat > 0;
   }
 
+  /**
+   * Respiro: vacía la búsqueda deprisa, sin bajar de minStars.
+   * Las estrellas se pierden sin margen (la policía pierde el rastro).
+   */
+  drain(amount, minStars) {
+    const floor = minStars > 0 ? this.thresholds[minStars - 1] : 0;
+    this.pending = 0;
+    this.heat = Math.max(floor, this.heat - amount);
+    while (this.stars > minStars && this.heat < this.thresholds[this.stars - 1]) {
+      const prev = this.stars;
+      this.stars--;
+      this.lostFlash = 1;
+      this.warned = -1;
+      this.onChange?.(this.stars, prev);
+    }
+  }
+
   /** Añade calor; entra poco a poco en la barra. */
   add(amount) {
     if (amount <= 0) return;

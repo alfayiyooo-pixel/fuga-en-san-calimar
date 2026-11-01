@@ -162,6 +162,31 @@ export const CONFIG = {
     ],
   },
 
+  // ---------------- RESPIROS ----------------
+  // Cuando la partida está al límite (rápida y con muchas estrellas),
+  // de vez en cuando la policía pierde el rastro unos segundos.
+  respite: {
+    minSpeed: 560,          // px/s de velocidad objetivo para considerar "muy rápido"
+    minStars: 4,            // y al menos estas estrellas
+    interval: [22, 45],     // s de tensión hasta el siguiente respiro (aleatorio en el rango)
+    duration: [5, 8],       // s que dura (aleatorio en el rango)
+    speedMult: 0.8,         // la velocidad baja a este factor
+    heatDrain: 14,          // calor de búsqueda que se pierde por segundo
+    minStarsAfter: 2,       // la búsqueda no baja de estas estrellas
+    rainRate: 14,           // pavos por segundo en la lluvia de premio
+    rainGoldChance: 0.08,   // prob. de que un pavo de la lluvia sea dorado
+    recoverTime: 8,         // s en los que la tensión vuelve poco a poco
+    recoverGapMult: 1.7,    // separación de obstáculos justo al terminar (vuelve a 1)
+  },
+
+  // ---------------- AUDIO ----------------
+  audio: {
+    sfxVolume: 0.45,
+    musicVolume: 0.32,
+    chaseTempo: 124,        // ppm de la música de persecución
+    calmTempo: 84,          // ppm de la música tranquila (respiros)
+  },
+
   // ---------------- PAVOS (tokens) ----------------
   tokens: {
     firstAt: 10,          // metros del primer grupo

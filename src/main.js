@@ -92,6 +92,7 @@ function startRun() {
   state = 'playing';
   screens.show(null);
   screens.showHudButtons(true);
+  Sound.music.setMode('chase');
 }
 
 function pause() {
@@ -99,6 +100,7 @@ function pause() {
   state = 'paused';
   input.enabled = false;
   input.clear();
+  Sound.music.setMode('off');
   screens.show('pause');
   screens.showHudButtons(false);
 }
@@ -108,6 +110,7 @@ function resume() {
   state = 'playing';
   input.clear();
   input.enabled = true;
+  Sound.music.setMode(game.respite.active ? 'calm' : 'chase');
   screens.show(null);
   screens.showHudButtons(true);
 }
@@ -116,6 +119,7 @@ function toMenu() {
   state = 'menu';
   input.enabled = false;
   input.clear();
+  Sound.music.setMode('off');
   screens.show('menu');
   screens.showHudButtons(false);
 }
@@ -123,6 +127,7 @@ function toMenu() {
 /** Fin de la partida: guarda récord y estadísticas y muestra el resultado. */
 function endRun() {
   state = 'over';
+  Sound.music.setMode('off');
   input.enabled = false;
   input.clear();
   const d = Math.floor(game.distance);

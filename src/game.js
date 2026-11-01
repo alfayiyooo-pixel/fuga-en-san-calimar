@@ -11,6 +11,7 @@ import { Spawner } from './world/spawner.js';
 import { Wanted } from './systems/wanted.js';
 import { Tokens } from './entities/tokens.js';
 import { Sound } from './core/audio.js';
+import { Respite } from './systems/respite.js';
 
 /**
  * Estado de una partida: jugador, cámara, mundo, obstáculos y efectos.
@@ -31,6 +32,7 @@ export class Game {
     this.wanted.onWarn = (first) => this.onWantedWarn(first);
     this.obstacles = [];
     this.tokens = new Tokens();
+    this.respite = new Respite();
     this.buffer = document.createElement('canvas');
     this.t = 0;
     // Opciones de prueba: ?god (invulnerable) y ?start=1500 (empezar en esos metros)
@@ -53,6 +55,7 @@ export class Game {
     this.tokens.reset(this.player.x);
     this.bucks = 0;
     this.wanted.reset();
+    this.respite.reset();
     this.zone = zoneAt(this.distance);
     this.zoneIndex = this.zone.n;
     this.dead = false;
@@ -72,22 +75,28 @@ export class Game {
     return clamp(this.distance / CONFIG.difficulty.fullAt, 0, 1);
   }
 
-  /** Velocidad objetivo según la distancia (ver CONFIG.speed). */
-  targetSpeed() {
+  /** Velocidad base según la distancia (ver CONFIG.speed). */
+  baseSpeed() {
     const { start, max, cruiseUntil, rampDistance } = CONFIG.speed;
     const d = this.distance;
-    const base = d <= cruiseUntil ? start : start + (max - start) * (1 - Math.exp(-(d - cruiseUntil) / rampDistance));
-    return base * this.player.mods.speed * (this.speedMult ?? 1);
+    return d <= cruiseUntil ? start : start + (max - start) * (1 - Math.exp(-(d - cruiseUntil) / rampDistance));
+  }
+
+  /** Velocidad objetivo: base × personaje × respiro. */
+  targetSpeed() {
+    return this.baseSpeed() * this.player.mods.speed * this.respite.speedMult;
   }
 
   /** Configuración de policía para el nº de estrellas actual. */
   get policeLevel() {
     const L = CONFIG.wanted.levels;
+    if (this.respite.active) return L[0]; // durante un respiro la policía pierde el rastro
     return L[Math.min(this.wanted.stars, L.length - 1)];
   }
 
   /** Recoger pavos llama la atención de la policía. */
   onCollect(kind) {
+    if (this.respite.active) return; // la lluvia de pavos es un premio
     const H = CONFIG.wanted.heat;
     if (kind === 'bill') this.wanted.add(H.tokenBill);
     else if (kind === 'gold') this.wanted.add(H.tokenGold);
@@ -129,7 +138,7 @@ export class Game {
       this.camera.addShake(0.2);
       Sound.starUp();
       this.popups.add(t('wanted.up', { n: stars }), this.view.w / 2, 112, { color: '#ffd23f', size: 30, life: 1.6, rise: 16 });
-    } else {
+    } else if (!this.respite.active) {
       Sound.starDown();
       this.popups.add(t('wanted.lost'), this.view.w / 2, 112, { color: '#7ff7e8', size: 24, life: 1.6, rise: 16 });
     }
@@ -164,6 +173,8 @@ export class Game {
       if (p.onGround && Math.random() < dt * 14) this.dust(p.x - 6, p.bottom, 1);
       p.emitExhaust(dt, this.particles);
       this.wanted.update(dt);
+      this.respite.update(dt, this);
+      Sound.music.setIntensity(this.wanted.stars / 5);
     }
 
     this.camera.follow(p.x, this.view.w);

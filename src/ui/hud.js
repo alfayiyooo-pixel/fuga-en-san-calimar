@@ -73,6 +73,7 @@ export class Hud {
     outlinedText(ctx, t('hud.distance', { n: fmt(game.distance) }), 18, 14, 32);
     this.drawBucks(ctx, game);
     this.drawBanner(ctx, v);
+    if (game.respite.active) this.drawRespite(ctx, game, v);
     this.drawStars(ctx, game, v);
 
     if (this.debug) {
@@ -193,6 +194,25 @@ export class Hud {
         ctx.restore();
       }
     }
+  }
+
+  /** Respiro: viñeta azul suave y barra de tiempo bajo las estrellas. */
+  drawRespite(ctx, game, v) {
+    const R = game.respite;
+    const fade = Math.min(1, R.progress * 8, (1 - R.progress) * 8);
+    const g = ctx.createRadialGradient(v.w / 2, v.h / 2, v.h * 0.4, v.w / 2, v.h / 2, v.w * 0.75);
+    g.addColorStop(0, 'rgba(60, 200, 220, 0)');
+    g.addColorStop(1, `rgba(60, 200, 220, ${0.28 * fade})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, v.w, v.h);
+    const w = 150;
+    const x = v.w / 2 - w / 2;
+    const y = 54;
+    ctx.fillStyle = INK;
+    ctx.fillRect(x - 2, y - 2, w + 4, 10);
+    ctx.fillStyle = '#7ff7e8';
+    ctx.fillRect(x, y, w * (1 - R.progress), 6);
+    outlinedText(ctx, t('respite.label'), v.w / 2, y + 10, 13, '#7ff7e8', 'center');
   }
 
   drawSirenEdges(ctx, v, t, strength) {

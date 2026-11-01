@@ -49,6 +49,10 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 Todo en el bloque `wanted` de [`src/config.js`](src/config.js).
 
+## Respiros
+
+Cuando la partida va muy rápida y tienes 4+ estrellas, tras un intervalo aleatorio (22-45 s) llega un **respiro** de 5-8 s: la policía pierde el rastro, baja la velocidad y la búsqueda, cambia la música a una más tranquila y llueven pavos. Después la tensión vuelve poco a poco. Ajustes en el bloque `respite` de `config.js`.
+
 ## Pavos
 
 - Un grupo nuevo cada 2-4 s de recorrido, con patrones de **línea, onda, escalera, zigzag, bloque, flecha y palabras** ("PAVOS", "SAN CALIMAR"…).

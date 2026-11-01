@@ -16,6 +16,11 @@ export class Spawner {
   update(g) {
     // se genera bastante por delante para que los pavos puedan colocarse alrededor
     const ahead = g.camera.x + g.view.w + 700;
+    // durante un respiro no se genera nada nuevo
+    if (g.respite.active) {
+      this.nextX = Math.max(this.nextX, ahead);
+      return;
+    }
     while (this.nextX < ahead) {
       const type = this.choose(g);
       const len = this.spawn(type, g, this.nextX);
@@ -26,7 +31,7 @@ export class Spawner {
 
   gap(g) {
     const S = CONFIG.spawner;
-    const base = lerp(S.gapStart, S.gapEnd, g.difficulty) * g.policeLevel.gapMult;
+    const base = lerp(S.gapStart, S.gapEnd, g.difficulty) * g.policeLevel.gapMult * g.respite.gapMult;
     const jittered = base * (1 + rand(-S.gapJitter, S.gapJitter));
     return Math.max(jittered, g.speed * S.minGapTime);
   }
