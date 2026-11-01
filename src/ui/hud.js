@@ -1,6 +1,6 @@
 import { t, fmt } from '../core/i18n.js';
 import { CONFIG } from '../config.js';
-import { billSprite, magnetSprite } from '../entities/tokens.js';
+import { billSprite, goldSprite, caseSprite, magnetSprite } from '../entities/tokens.js';
 import { drawSprite, drawGlow } from '../fx/sprites.js';
 
 const FONT = "'Bungee', Impact, sans-serif";
@@ -37,12 +37,30 @@ export class Hud {
     this.starFlash = 0;
     this.bump = 0;
     this.bumpBig = false;
+    this.flyers = [];
+    this.party = 0;
   }
 
   reset() {
     this.bannerData = null;
     this.starFlash = 0;
     this.bump = 0;
+    this.flyers = [];
+    this.party = 0;
+  }
+
+  /** Un billete vuela desde (x, y) de pantalla hasta el contador. */
+  flyToCounter(x, y, kind) {
+    if (this.flyers.length > 24) {
+      this.bumpBucks(kind !== 'bill');
+      return;
+    }
+    this.flyers.push({ x0: x, y0: y, t: 0, kind, dur: kind === 'bill' ? 0.42 : 0.6 });
+  }
+
+  /** Celebración de récord: marco dorado parpadeante unos segundos. */
+  celebrate() {
+    this.party = 3;
   }
 
   /** El contador de pavos "salta" al recoger. */
@@ -66,12 +84,24 @@ export class Hud {
     }
     this.starFlash = Math.max(0, this.starFlash - dt);
     this.bump = Math.max(0, this.bump - dt * 5);
+    this.party = Math.max(0, this.party - dt);
+    for (const f of this.flyers) {
+      f.t += dt;
+      if (f.t >= f.dur && !f.done) {
+        f.done = true;
+        this.bumpBucks(f.kind !== 'bill');
+      }
+    }
+    this.flyers = this.flyers.filter((f) => !f.done);
   }
 
   draw(ctx, game, loop) {
     const v = game.view;
+    if (this.party > 0) this.drawParty(ctx, v, game.t);
     outlinedText(ctx, t('hud.distance', { n: fmt(game.distance) }), 18, 14, 32);
     this.drawBucks(ctx, game);
+    this.drawRecordHint(ctx, game, v);
+    this.drawFlyers(ctx);
     game.powers.drawHud(ctx, game);
     this.drawBanner(ctx, v);
     if (game.respite.active) this.drawRespite(ctx, game, v);
@@ -107,7 +137,10 @@ export class Hud {
     ctx.translate(58, y - 13);
     ctx.scale(s, s);
     outlinedText(ctx, fmt(game.bucks), 0, -2 * k, 26, k > 0.3 ? (this.bumpBig ? '#ffd23f' : '#c9ffd6') : '#9dffb5');
+    ctx.font = `26px ${FONT}`;
+    const tw = ctx.measureText(fmt(game.bucks)).width;
     ctx.restore();
+    this.drawMultiplier(ctx, game, 58 + tw + 30, y);
 
     // imán activo: icono con anillo de tiempo restante
     const mt = game.tokens.magnetTime;
@@ -128,6 +161,77 @@ export class Hud {
       ctx.arc(x, my, 22, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * frac);
       ctx.stroke();
     }
+  }
+
+  /** Insignia del multiplicador: "x3", anillo de tiempo y puntos de carga. */
+  drawMultiplier(ctx, game, x, y) {
+    const C = game.combo;
+    const S = CONFIG.score;
+    const active = C.level > 1;
+    const pop = 1 + C.flash * 0.5 * Math.abs(Math.sin(C.flash * 10));
+    const r = 17 * pop;
+    if (active) drawGlow(ctx, x, y, 34 * pop, 'rgba(255, 210, 63, 0.85)', 0.45 + C.flash * 0.5);
+    ctx.fillStyle = INK;
+    ctx.beginPath();
+    ctx.arc(x, y, r + 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = active ? '#ffd23f' : 'rgba(255, 244, 220, 0.25)';
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+    if (active) {
+      ctx.strokeStyle = '#ff3d7f';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(x, y, r + 1, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * C.timeLeft);
+      ctx.stroke();
+    }
+    ctx.font = `${Math.round(15 * pop)}px ${FONT}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = active ? INK : 'rgba(255, 244, 220, 0.8)';
+    ctx.fillText(`x${C.level}`, x, y + 1);
+    // carga hacia el siguiente nivel
+    if (C.level < S.maxMult) {
+      for (let i = 0; i < S.perLevel; i++) {
+        ctx.fillStyle = i < C.charge ? '#7ff7e8' : 'rgba(255, 244, 220, 0.25)';
+        ctx.beginPath();
+        ctx.arc(x - (S.perLevel - 1) * 4.5 + i * 9, y + r + 9, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  /** "Récord a 84 m" cuando te acercas a tu récord. */
+  drawRecordHint(ctx, game, v) {
+    const left = game.record - game.distance;
+    if (game.recordBeaten || game.record < 30 || left <= 0 || left > CONFIG.score.recordWarn) return;
+    const pulse = 1 + 0.06 * Math.sin(game.t * 8);
+    ctx.save();
+    ctx.translate(v.w / 2, 76);
+    ctx.scale(pulse, pulse);
+    outlinedText(ctx, t('hud.recordIn', { n: fmt(Math.ceil(left)) }), 0, 0, 18, '#ffd23f', 'center');
+    ctx.restore();
+  }
+
+  drawFlyers(ctx) {
+    for (const f of this.flyers) {
+      const k = Math.min(1, f.t / f.dur);
+      const e = k * k * (3 - 2 * k);
+      const x = f.x0 + (34 - f.x0) * e;
+      const y = f.y0 + (72 - f.y0) * e - Math.sin(k * Math.PI) * 60;
+      const spr = f.kind === 'gold' ? goldSprite() : f.kind === 'case' ? caseSprite() : billSprite();
+      const s = 1 - k * 0.35;
+      drawSprite(ctx, spr, x, y, s, s);
+    }
+  }
+
+  /** Marco dorado y destellos al batir el récord. */
+  drawParty(ctx, v, time) {
+    const a = Math.min(1, this.party) * (0.5 + 0.5 * Math.sin(time * 14));
+    ctx.strokeStyle = `rgba(255, 210, 63, ${a})`;
+    ctx.lineWidth = 10;
+    ctx.strokeRect(5, 5, v.w - 10, v.h - 10);
   }
 
   drawStars(ctx, game, v) {

@@ -196,6 +196,33 @@ class AudioFx {
     this.tone({ freq: 2400, type: 'square', dur: 0.02, vol: 0.06 });
   }
 
+  /** Esquiva al límite: silbido rápido. */
+  nearMiss() {
+    this.noise({ dur: 0.18, vol: 0.18, freq: 2500, type: 'bandpass', q: 1.5, slide: 0.4 });
+    this.tone({ freq: 1320, type: 'triangle', dur: 0.08, vol: 0.07 });
+  }
+
+  multUp(level) {
+    const base = 523 * 2 ** ((level - 2) * 2 / 12);
+    [0, 4, 7, 12].forEach((s, i) => this.tone({ freq: base * 2 ** (s / 12), type: 'square', dur: 0.12, vol: 0.08, delay: i * 0.04 }));
+  }
+
+  multDown() {
+    this.tone({ freq: 440, type: 'triangle', dur: 0.2, vol: 0.07, slide: 0.6 });
+  }
+
+  /** Nuevo récord: fanfarria. */
+  fanfare() {
+    const seq = [[0, 0.12], [4, 0.12], [7, 0.12], [12, 0.35], [7, 0.12], [12, 0.6]];
+    let d = 0;
+    for (const [s, len] of seq) {
+      this.tone({ freq: 523 * 2 ** (s / 12), type: 'square', dur: len, vol: 0.12, delay: d });
+      this.tone({ freq: 261 * 2 ** (s / 12), type: 'triangle', dur: len, vol: 0.1, delay: d });
+      d += len * 0.9;
+    }
+    this.noise({ dur: 1.2, vol: 0.12, freq: 6000, type: 'highpass', delay: 0.3 });
+  }
+
   /** Inicio de un respiro: campanillas suaves. */
   respite() {
     [12, 7, 4, 0, 4, 7, 12, 16].forEach((st, i) =>

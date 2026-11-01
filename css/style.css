@@ -251,6 +251,31 @@ canvas {
   gap: calc(8px * var(--s));
 }
 .stat-value.bucks { color: #2a9d4b; }
+.almost {
+  margin: 0;
+  font-family: 'Bungee', Impact, sans-serif;
+  font-size: calc(20px * var(--s));
+  color: #ffd23f;
+  text-shadow: calc(2px * var(--s)) calc(2px * var(--s)) 0 var(--ink);
+}
+.almost.win { color: #7ff7e8; }
+.almost small {
+  display: block;
+  font-family: 'Rubik', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: calc(14px * var(--s));
+  color: var(--cream);
+}
+.stats-small {
+  display: flex;
+  gap: calc(18px * var(--s));
+  font-size: calc(14px * var(--s));
+  font-weight: 700;
+  background: rgba(27, 16, 48, 0.6);
+  padding: calc(6px * var(--s)) calc(14px * var(--s));
+  border-radius: 999px;
+}
+.stats-small b { color: #ffd23f; }
 
 /* AVISO DE ORIENTACIÓN (solo móviles en vertical) */
 #rotate {

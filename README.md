@@ -49,6 +49,14 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 Todo en el bloque `wanted` de [`src/config.js`](src/config.js).
 
+## Puntuación y récord
+
+- **Multiplicador de pavos x1-x5**: sube con las esquivas al límite («¡Por los pelos!», 3 por nivel) y baja si pasas unos segundos sin arriesgar. Se ve junto al contador de pavos, con un anillo de tiempo y puntos de carga.
+- **Récord**: una bandera de cuadros y una línea dorada marcan tu récord en el escenario; al acercarte aparece «Récord a X m» y al superarlo hay celebración (confeti, fanfarria, banner).
+- **Pantalla final**: distancia, pavos y récord con números que suben, el mensaje «¡Te faltaron 84 m para tu récord!» (o «¡Superaste tu récord por…!»), búsqueda máxima, esquivas al límite y multiplicador máximo.
+
+Ajustes en el bloque `score` de `config.js`.
+
 ## Personajes
 
 Las **cápsulas** aparecen dentro de los grupos de pavos. Al cogerla te transformas; si te golpean vuelves al jetpack básico en lugar de morir. Mientras llevas un personaje aparecen sus **iconos de habilidad y gadgets** (solo los suyos) junto a los pavos.

@@ -233,9 +233,11 @@ export class Tokens {
       return;
     }
 
-    const value = T.values[tk.kind];
+    // el multiplicador por esquivas al límite multiplica lo que ganas
+    const value = T.values[tk.kind] * g.combo.level;
     g.bucks += value;
-    g.hud.bumpBucks(tk.kind !== 'bill');
+    if (tk.kind !== 'bill' || this.chain % CONFIG.score.flyEvery === 0) g.hud.flyToCounter(sx, tk.y, tk.kind);
+    else g.hud.bumpBucks(false);
     this.chain++;
     this.sinceLast = 0;
 

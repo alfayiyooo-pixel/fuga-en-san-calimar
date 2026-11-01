@@ -25,13 +25,39 @@ export class Screens {
   }
 
   /** Rellena la pantalla final con el resultado de la partida. */
-  fillGameOver({ distance, best, stars, cause, newBest, bucks }) {
-    document.getElementById('over-bucks').textContent = bucks;
-    document.getElementById('over-distance').textContent = `${distance} m`;
-    document.getElementById('over-best').textContent = `${best} m`;
-    document.getElementById('over-stars').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars);
-    document.getElementById('over-cause').textContent = cause;
-    document.getElementById('over-newbest').classList.toggle('hidden', !newBest);
+  fillGameOver({ distance, best, stars, cause, newBest, bucks, almost, almostSub, win, near, mult, fmt, animate }) {
+    const $ = (id) => document.getElementById(id);
+    // los números "suben" desde 0 (solo la primera vez que se muestra)
+    const countUp = (el, to, suffix = '') => {
+      if (!animate) {
+        el.textContent = fmt(to) + suffix;
+        return;
+      }
+      const t0 = performance.now();
+      const dur = 900;
+      const step = (now) => {
+        const k = Math.min(1, (now - t0) / dur);
+        el.textContent = fmt(to * (1 - (1 - k) ** 3)) + suffix;
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+    countUp($('over-distance'), distance, ' m');
+    countUp($('over-bucks'), bucks);
+    $('over-best').textContent = `${fmt(best)} m`;
+    $('over-stars').textContent = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+    $('over-near').textContent = fmt(near);
+    $('over-mult').textContent = `x${mult}`;
+    $('over-cause').textContent = cause;
+    $('over-newbest').classList.toggle('hidden', !newBest);
+    const a = $('over-almost');
+    a.textContent = almost;
+    a.classList.toggle('win', !!win);
+    if (almostSub) {
+      const sm = document.createElement('small');
+      sm.textContent = almostSub;
+      a.appendChild(sm);
+    }
   }
 
   on(id, fn) {

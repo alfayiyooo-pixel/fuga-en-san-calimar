@@ -84,6 +84,8 @@ input.enabled = false;
 let lastResult = null;
 
 function startRun() {
+  game.record = Save.data.best.distance;
+  game.bestBucks = Save.data.best.bucks;
   game.reset();
   hud.reset();
   hud.banner(t('zone.enter'), t(game.zone.current.nameKey));
@@ -138,24 +140,63 @@ function endRun() {
   s.stats.totalDistance += d;
   s.wallet += game.bucks;
   s.stats.totalBucks += game.bucks;
+  const prevBest = game.record;
+  const prevBucks = s.best.bucks;
   s.best.bucks = Math.max(s.best.bucks, game.bucks);
   for (const [id, n] of Object.entries(game.powers.uses)) s.stats.charUses[id] = (s.stats.charUses[id] ?? 0) + n;
   Save.save();
-  lastResult = { d, newBest, stars: game.wanted.peak, cause: game.cause, bucks: game.bucks };
-  fillOver();
+  lastResult = {
+    d,
+    newBest,
+    prevBest,
+    stars: game.wanted.peak,
+    cause: game.cause,
+    bucks: Math.floor(game.bucks),
+    prevBucks,
+    near: game.combo.nearMisses,
+    mult: game.combo.maxLevel,
+  };
+  fillOver(true);
   screens.show('over');
   screens.showHudButtons(false);
 }
 
-function fillOver() {
+/** Mensaje "casi lo consigo" (o de victoria) para la pantalla final. */
+function almostText(r) {
+  let main;
+  let win = false;
+  if (r.newBest && r.prevBest > 0) {
+    main = t('over.beatBy', { n: fmt(r.d - r.prevBest) });
+    win = true;
+  } else if (r.newBest) {
+    main = t('over.firstRecord');
+    win = true;
+  } else {
+    main = t('over.missedBy', { n: fmt(Math.max(1, r.prevBest - r.d)) });
+  }
+  let sub = '';
+  if (r.prevBucks > 0 && r.bucks > r.prevBucks) sub = t('over.bucksRecord');
+  else if (r.prevBucks > 0 && r.prevBucks - r.bucks <= r.prevBucks * 0.5) sub = t('over.bucksMissed', { n: fmt(r.prevBucks - r.bucks) });
+  return { main, sub, win };
+}
+
+function fillOver(animate = false) {
   if (!lastResult) return;
+  const a = almostText(lastResult);
   screens.fillGameOver({
-    distance: fmt(lastResult.d),
-    best: fmt(Save.data.best.distance),
+    distance: lastResult.d,
+    best: Save.data.best.distance,
     stars: lastResult.stars,
     cause: causeText(lastResult.cause),
     newBest: lastResult.newBest,
-    bucks: fmt(lastResult.bucks),
+    bucks: lastResult.bucks,
+    almost: a.main,
+    almostSub: a.sub,
+    win: a.win,
+    near: lastResult.near,
+    mult: lastResult.mult,
+    fmt,
+    animate,
   });
 }
 

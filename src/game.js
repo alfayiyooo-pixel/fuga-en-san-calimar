@@ -13,6 +13,8 @@ import { Tokens } from './entities/tokens.js';
 import { Sound } from './core/audio.js';
 import { Respite } from './systems/respite.js';
 import { Powers } from './systems/powers.js';
+import { Combo } from './systems/combo.js';
+import { drawGlow } from './fx/sprites.js';
 
 /**
  * Estado de una partida: jugador, cámara, mundo, obstáculos y efectos.
@@ -35,6 +37,8 @@ export class Game {
     this.tokens = new Tokens();
     this.respite = new Respite();
     this.powers = new Powers();
+    this.combo = new Combo();
+    this.record = 0; // récord de distancia al empezar la partida (lo pone main.js)
     this.buffer = document.createElement('canvas');
     this.t = 0;
     // Opciones de prueba: ?god (invulnerable) y ?start=1500 (empezar en esos metros)
@@ -59,6 +63,8 @@ export class Game {
     this.wanted.reset();
     this.respite.reset();
     this.powers.reset();
+    this.combo.reset();
+    this.recordBeaten = false;
     this.powers.applyMods(this.player);
     this.timeScale = 1;
     this.inputHeld = false;
@@ -185,6 +191,8 @@ export class Game {
       p.emitExhaust(dt, this.particles);
       this.wanted.update(dt);
       this.respite.update(dt, this);
+      this.combo.update(dt);
+      this.checkRecord();
       Sound.music.setIntensity(this.wanted.stars / 5);
     }
 
@@ -195,11 +203,19 @@ export class Game {
     const wdt = dt * (this.dead ? 1 : this.timeScale);
     this.tokens.update(wdt, this);
 
-    // obstáculos
+    // obstáculos (y esquivas al límite)
     const box = p.hitbox;
+    const m = CONFIG.score.nearMargin;
+    const near = { l: box.l - m, r: box.r + m, t: box.t - m, b: box.b + m };
+    const canNear = !this.dead && !this.powers.invulnerable;
     for (const o of this.obstacles) {
       o.update(wdt, this);
       if (!this.dead && o.alive && o.hits(box)) this.hit(o);
+      if (canNear && o.alive && !o.nearSeen && o.hits(near)) o.nearSeen = true;
+      if (o.nearSeen && !o.nearDone && o.alive && !this.dead && this.centerOf(o).x < p.left - 10) {
+        o.nearDone = true;
+        if (!this.powers.invulnerable) this.combo.nearMiss(this, p.x, p.y - 50);
+      }
       o.cull(this.camera.x);
     }
     this.obstacles = this.obstacles.filter((o) => o.alive);
@@ -216,6 +232,92 @@ export class Game {
       this.zoneIndex = this.zone.n;
       this.hud.banner(t('zone.enter'), t(this.zone.current.nameKey));
     }
+  }
+
+  /** Bandera del récord: celebración al superarlo (una vez por partida). */
+  checkRecord() {
+    if (this.recordBeaten || this.record < 30 || this.distance <= this.record) return;
+    if (this.startAt >= this.record) return;
+    this.recordBeaten = true;
+    const v = this.view;
+    this.flash = Math.max(this.flash, 0.8);
+    this.camera.addShake(0.4);
+    this.hud.banner(t('record.new'), t('record.sub'));
+    this.hud.celebrate();
+    Sound.fanfare();
+    // confeti desde arriba a lo ancho de la pantalla
+    const colors = ['#ffd23f', '#ff3d7f', '#19c3b1', '#7b5cff', '#fff4dc', '#5fcf7a'];
+    for (let i = 0; i < 70; i++) {
+      this.particles.spawn({
+        x: this.camera.x + Math.random() * v.w * 1.3,
+        y: -10 - Math.random() * 60,
+        vx: rand(-60, 60) + this.speed * 0.8,
+        vy: rand(80, 240),
+        life: rand(1.6, 2.6),
+        size: rand(3, 5),
+        sizeEnd: 3,
+        color: colors[i % colors.length],
+        shape: 'rect',
+        spin: rand(-12, 12),
+        gravity: 120,
+        drag: 0.6,
+        important: true,
+      });
+    }
+    this.particles.spawn({ x: this.player.x, y: this.player.y, life: 0.6, size: 20, sizeEnd: 200, color: 'rgba(255, 210, 63, 0.9)', shape: 'glow', additive: true, important: true });
+  }
+
+  /** Línea y bandera del récord personal, en el mundo. */
+  drawRecordFlag(ctx, camX) {
+    if (this.record < 30) return;
+    const x = this.record * CONFIG.world.pxPerMeter - camX;
+    if (x < -120 || x > this.view.w + 60) return;
+    const gy = this.view.groundY;
+    const beaten = this.recordBeaten;
+    // línea vertical luminosa
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = beaten ? 'rgba(255, 210, 63, 0.35)' : 'rgba(255, 210, 63, 0.55)';
+    ctx.setLineDash([14, 10]);
+    ctx.lineDashOffset = -this.t * 40;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, CONFIG.world.ceiling);
+    ctx.lineTo(x, gy);
+    ctx.stroke();
+    ctx.restore();
+    drawGlow(ctx, x, gy - 80, 70, 'rgba(255, 210, 63, 0.8)', 0.35, 120);
+    // mástil
+    ctx.fillStyle = '#1b1030';
+    ctx.fillRect(x - 3, gy - 170, 6, 170);
+    ctx.fillStyle = '#ffd23f';
+    ctx.beginPath();
+    ctx.arc(x, gy - 172, 6, 0, Math.PI * 2);
+    ctx.fill();
+    // bandera a cuadros ondeando
+    const fw = 70;
+    const fh = 44;
+    const cells = 7;
+    for (let i = 0; i < cells; i++) {
+      for (let j = 0; j < 4; j++) {
+        const wave = Math.sin(this.t * 6 - i * 0.7) * 3 * (i / cells);
+        ctx.fillStyle = (i + j) % 2 ? '#fff4dc' : '#1b1030';
+        ctx.fillRect(x + 3 + (i * fw) / cells, gy - 166 + (j * fh) / 4 + wave, fw / cells + 0.5, fh / 4 + 0.5);
+      }
+    }
+    // cartel con la distancia
+    ctx.font = "13px 'Bungee', Impact, sans-serif";
+    const label = `${t('record.flag')} ${Math.floor(this.record)} m`;
+    const w = ctx.measureText(label).width + 14;
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillRect(x - w / 2, gy - 112, w, 20);
+    ctx.strokeStyle = '#1b1030';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x - w / 2, gy - 112, w, 20);
+    ctx.fillStyle = '#1b1030';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x, gy - 101);
   }
 
   /** Centro aproximado de un obstáculo (para apuntar y explosiones). */
@@ -327,6 +429,7 @@ export class Game {
     }
 
     if (showPlayer) this.player.drawShadow(ctx, cam.x, v.groundY);
+    if (!menu) this.drawRecordFlag(ctx, cam.x);
     if (!menu) this.powers.draw(ctx, cam.x, this);
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
     if (!menu) this.tokens.draw(ctx, cam.x, this);

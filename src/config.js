@@ -162,6 +162,16 @@ export const CONFIG = {
     ],
   },
 
+  // ---------------- PUNTUACIÓN Y RÉCORD ----------------
+  score: {
+    nearMargin: 28,     // px alrededor de tu caja que cuentan como "por los pelos"
+    perLevel: 3,        // esquivas al límite para subir un nivel de multiplicador
+    maxMult: 5,         // multiplicador máximo de pavos
+    decay: 7,           // s sin esquivas al límite para bajar un nivel
+    flyEvery: 2,        // 1 de cada N pavos normales vuela hasta el contador (efecto)
+    recordWarn: 200,    // metros antes del récord en los que aparece el aviso "Récord a X m"
+  },
+
   // ---------------- RESPIROS ----------------
   // Cuando la partida está al límite (rápida y con muchas estrellas),
   // de vez en cuando la policía pierde el rastro unos segundos.
