@@ -7,13 +7,15 @@ export class Screens {
       menu: document.getElementById('screen-menu'),
       pause: document.getElementById('screen-pause'),
       over: document.getElementById('screen-over'),
+      shop: document.getElementById('screen-shop'),
       hudButtons: document.getElementById('hud-buttons'),
     };
   }
 
   /** Muestra una pantalla (o ninguna con null) y oculta el resto. */
   show(name) {
-    for (const key of ['menu', 'pause', 'over']) {
+    for (const key of ['menu', 'pause', 'over', 'shop', 'wardrobe', 'missions']) {
+      if (!this.el[key]) continue;
       this.el[key].classList.toggle('hidden', key !== name);
     }
     // quitar el foco evita que ESPACIO "pulse" un botón oculto

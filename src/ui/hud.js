@@ -186,7 +186,7 @@ export class Hud {
     if (mt > 0) {
       const x = 34;
       const my = y + 78;
-      const frac = mt / CONFIG.tokens.magnet.duration;
+      const frac = mt / (game.tokens.magnetTotal || CONFIG.tokens.magnet.duration);
       const blink = mt < 2 && Math.floor(mt * 8) % 2 === 0;
       if (!blink) drawSprite(ctx, magnetSprite(), x, my, 0.8, 0.8);
       ctx.strokeStyle = '#1b1030';

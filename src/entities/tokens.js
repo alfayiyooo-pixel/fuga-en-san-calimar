@@ -208,7 +208,7 @@ export class Tokens {
 
     const p = g.player;
     const big = 12; // las cápsulas e iconos se cogen desde un poco más lejos
-    const R = this.magnetActive ? T.magnet.radius : g.powers.magnetRadius;
+    const R = this.magnetActive ? T.magnet.radius * (g.upg?.magnetRadiusMult ?? 1) : g.powers.magnetRadius;
     const R2 = R * R;
 
     for (const tk of this.list) {
@@ -270,7 +270,8 @@ export class Tokens {
     }
 
     if (tk.kind === 'magnet') {
-      this.magnetTime = T.magnet.duration;
+      this.magnetTime = T.magnet.duration + (g.upg?.magnetSeconds ?? 0);
+      this.magnetTotal = this.magnetTime;
       Sound.magnet();
       g.popups.add(t('popup.magnet'), sx, tk.y - 30, { color: '#ff6b7d', size: 26, life: 1.2 });
       g.particles.burst(tk.x, tk.y, 18, { color: '#ff6b7d', speed: 300, life: 0.5, size: 4, sizeEnd: 0, additive: true });

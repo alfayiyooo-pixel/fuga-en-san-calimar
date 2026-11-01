@@ -261,6 +261,34 @@ export const CONFIG = {
     slowmo: 0.9,         // s de cámara lenta al cogerlo
   },
 
+  // ---------------- TIENDA ----------------
+  shop: {
+    // Mejoras permanentes (pavos). Coste del nivel 1→5:
+    upgradeCosts: [300, 700, 1500, 3000, 6000],
+    upgrades: {
+      gadgetTime: { perLevel: 0.10 },      // +10% de duración de gadgets por nivel
+      capsule: { perLevel: 0.15 },         // +15% de probabilidad de cápsula
+      magnet: { seconds: 1.5, radius: 0.10 }, // +1,5 s y +10% de radio del imán
+      special: { seconds: 0.6 },           // +0,6 s de habilidad especial
+      orbPower: { perLevel: 0.10 },        // +10% de carga por orbe
+    },
+    // Consumibles de un solo uso (se activan antes de la partida)
+    consumables: {
+      headstart: { price: 500, meters: 500, speedMult: 4.5 }, // arranque rápido
+      shield: { price: 350 },              // escudo inicial (aguanta un golpe)
+      transform: { price: 600 },           // empezar transformado (personaje aleatorio)
+      revive: { price: 900, invuln: 2.5 }, // revivir una vez
+    },
+    // Packs de diamantes con dinero real — MODO SIMULADO (no se cobra nada)
+    payments: { enabled: false, currency: 'EUR' },
+    diamondPacks: [
+      { id: 'handful', gems: 80, bonus: 0, price: 0.99 },
+      { id: 'bag', gems: 450, bonus: 50, price: 4.99 },
+      { id: 'briefcase', gems: 1000, bonus: 150, price: 9.99 },
+      { id: 'vault', gems: 2200, bonus: 400, price: 19.99 },
+    ],
+  },
+
   // ---------------- PAVOS (tokens) ----------------
   tokens: {
     firstAt: 10,          // metros del primer grupo

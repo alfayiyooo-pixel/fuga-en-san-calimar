@@ -104,6 +104,18 @@ export class Particles {
         ctx.beginPath();
         ctx.arc(x, p.y, size, 0, Math.PI * 2);
         ctx.stroke();
+      } else if (p.shape === 'gear') {
+        ctx.save();
+        ctx.translate(x, p.y);
+        ctx.rotate(p.rot);
+        for (let k = 0; k < 6; k++) {
+          ctx.rotate(Math.PI / 3);
+          ctx.fillRect(-size * 0.25, -size * 1.35, size * 0.5, size * 0.6);
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       } else if (p.shape === 'rect') {
         ctx.save();
         ctx.translate(x, p.y);

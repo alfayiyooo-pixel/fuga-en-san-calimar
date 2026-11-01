@@ -12,6 +12,13 @@ const DEFAULTS = {
   },
   wallet: 0,          // pavos disponibles para gastar
   gems: 0,            // diamantes (moneda premium)
+  owned: {},          // artículos comprados: id → true
+  equipped: {},       // personaje → { suit, acc, trail, fx }
+  upgrades: { gadgetTime: 0, capsule: 0, magnet: 0, special: 0, orbPower: 0 },
+  consumables: { headstart: 0, shield: 0, transform: 0, revive: 0 },
+  loadout: { headstart: false, shield: false, transform: false, revive: false },
+  vouchers: 0,        // vales de "artículo de pavos gratis"
+  prestige: 0,        // rango de prestigio (0 = ninguno)
   best: {
     distance: 0,
     bucks: 0,

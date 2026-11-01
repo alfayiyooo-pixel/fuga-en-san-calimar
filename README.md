@@ -54,6 +54,26 @@ Todo en el bloque `wanted` de [`src/config.js`](src/config.js).
 - **Pavos** 💵: moneda común; se ganan jugando. Sirven para mejoras, artículos normales y consumibles.
 - **Diamantes** 💎: moneda premium y escasa. Se ganan con misiones difíciles, subidas de nivel, recompensa diaria, prestigio y, muy raramente, en el recorrido (un diamante da 3-5 💎 con cámara lenta y destello). Bloque `gems` de `config.js`.
 
+## Tienda
+
+- **Personajes**: trajes, accesorios, estelas y efectos de transformación para los tres personajes (y traje y estela para el atracador básico). Los normales con pavos; los legendarios animados con 💎 (piden confirmación con dos toques); los de prestigio no se compran. Vista previa animada antes de comprar.
+- **Mejoras**: duración de gadgets, frecuencia de personajes, imán, habilidad especial y potencia de orbes (5 niveles, coste creciente).
+- **Consumibles** de un solo uso que se activan en el menú antes de jugar: arranque rápido de 500 m, escudo inicial, empezar transformado y revivir una vez.
+- **Diamantes**: packs de dinero real en **modo simulado** (ver abajo).
+
+Precios en el bloque `shop` de `config.js`; artículos en [`src/meta/catalog.js`](src/meta/catalog.js).
+
+### Pagos reales (pendiente)
+
+Ahora mismo **no se cobra nada**: `shop.payments.enabled` es `false` y al pulsar un pack aparece «Compras desactivadas (versión de prueba)». El punto de conexión es [`src/meta/payments.js`](src/meta/payments.js). Para activar pagos reales haría falta:
+
+1. **Un servidor propio** (por ejemplo, una función serverless) con cuentas de usuario, porque el saldo de diamantes comprados no puede vivir solo en el navegador (`localStorage` se puede editar).
+2. **Una pasarela de pago**: Stripe Checkout para la web, o Google Play Billing / App Store In-App Purchase si se publica como app.
+3. **Validación en el servidor**: la pasarela avisa por *webhook* (o se valida el recibo de la tienda); solo entonces el servidor abona los diamantes y el juego consulta el saldo.
+4. **Requisitos legales**: precios con IVA, política de reembolsos, términos de uso y, si el público es joven, control parental y límites de gasto.
+
+Regla del juego: con dinero real solo se compran diamantes o artículos concretos, **nunca tiradas aleatorias**; la ruleta se juega solo con fichas ganadas jugando.
+
 ## Puntuación y récord
 
 - **Multiplicador de pavos x1-x5**: sube con las esquivas al límite («¡Por los pelos!», 3 por nivel) y baja si pasas unos segundos sin arriesgar. Se ve junto al contador de pavos, con un anillo de tiempo y puntos de carga.

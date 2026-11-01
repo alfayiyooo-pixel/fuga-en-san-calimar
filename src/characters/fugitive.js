@@ -6,6 +6,7 @@
 //   wild    — Bruno "Petardo" Tramuntana: camisa hawaiana, barba pelirroja, cohete casero
 
 import { INK, limb, rr, inked, vgrad, hgrad, shoe, hand, flame } from './kit.js';
+import { drawGlow } from '../fx/sprites.js';
 
 export const STYLES = {
   base: {
@@ -77,8 +78,8 @@ function pose(p, t) {
  * Dibuja al fugitivo con el estilo indicado. p necesita: pose, anim, thrust,
  * vy y opcionalmente riding (moto) y vest (chaleco antibalas).
  */
-export function drawFugitive(ctx, p, t, styleId = 'base') {
-  const S = STYLES[styleId] || STYLES.base;
+export function drawFugitive(ctx, p, t, styleId = 'base', look = null) {
+  const S = resolveStyle(styleId, look, t);
   const P = pose(p, t);
   ctx.save();
   ctx.scale(S.scale, S.scale);
@@ -122,6 +123,7 @@ export function drawFugitive(ctx, p, t, styleId = 'base') {
   ctx.translate(3, -26 + P.bob);
   ctx.rotate(P.lean * 0.6);
   drawHead(ctx, S.head, t, p.pose?.fly ?? 0, (p.pose?.fall ?? 0) > 0.5);
+  if (S.acc) drawAccessory(ctx, S.acc, t);
   ctx.restore();
 
   // ---- brazo de delante ----
@@ -241,12 +243,55 @@ function nozzle(ctx, x, y, color, w = 10) {
   inked(ctx, color);
 }
 
+// ---------------- ESTILO + COSMÉTICOS ----------------
+/** Mezcla el estilo base con el traje/accesorio equipados (y anima los legendarios). */
+export function resolveStyle(styleId, look, t) {
+  const S = { ...(STYLES[styleId] || STYLES.base) };
+  if (!look) return S;
+  for (const k of ['jacket', 'jacketLight', 'jacketDark', 'arm', 'armBack', 'pants', 'pantsBack', 'pattern', 'tie', 'stripe', 'anim']) {
+    if (look[k] !== undefined) S[k] = look[k];
+  }
+  S.acc = look.acc ?? null;
+  const h = (t * 70) % 360;
+  if (S.anim === 'gold') {
+    const k = 0.5 + 0.5 * Math.sin(t * 5);
+    S.jacket = '#e8b52c';
+    S.jacketLight = k > 0.5 ? '#fff6c2' : '#ffe27a';
+    S.jacketDark = '#a87d14';
+    S.arm = '#e8b52c';
+    S.armBack = '#a87d14';
+  } else if (S.anim === 'neon') {
+    S.jacket = `hsl(${h}, 95%, 55%)`;
+    S.jacketLight = `hsl(${(h + 40) % 360}, 100%, 72%)`;
+    S.jacketDark = `hsl(${(h + 200) % 360}, 90%, 35%)`;
+    S.arm = S.jacket;
+    S.armBack = S.jacketDark;
+  } else if (S.anim === 'lava') {
+    S.jacket = '#3a1f1f';
+    S.jacketLight = '#5a2a20';
+    S.jacketDark = '#1f0e0e';
+    S.arm = '#3a1f1f';
+    S.armBack = '#1f0e0e';
+  } else if (S.anim === 'holo') {
+    S.jacket = `hsl(${h}, 70%, 70%)`;
+    S.jacketLight = `hsl(${(h + 60) % 360}, 90%, 85%)`;
+    S.jacketDark = `hsl(${(h + 180) % 360}, 60%, 45%)`;
+    S.arm = S.jacket;
+    S.armBack = S.jacketDark;
+    S.pants = `hsl(${(h + 120) % 360}, 50%, 40%)`;
+    S.pantsBack = `hsl(${(h + 120) % 360}, 50%, 30%)`;
+  }
+  return S;
+}
+
 // ---------------- TORSOS ----------------
 function drawTorso(ctx, S, t) {
+  if (S.anim === 'neon') drawGlow(ctx, 0, -5, 26, 'rgba(120, 255, 255, 0.9)', 0.35);
   rr(ctx, -10, -17, 20, 24, 7);
   inked(ctx, vgrad(ctx, -17, 7, S.jacketLight, S.jacketDark));
   ctx.fillStyle = 'rgba(0, 20, 40, 0.22)';
   ctx.fillRect(-10, -14, 5, 19);
+  drawPattern(ctx, S, t);
 
   if (S.torso === 'tracksuit') {
     ctx.fillStyle = '#fff4dc';
@@ -325,6 +370,229 @@ function drawTorso(ctx, S, t) {
     ctx.lineTo(6, 6);
     ctx.stroke();
     belt(ctx, '#8a5a34');
+  }
+}
+
+/** Estampados y detalles de los trajes de la tienda. */
+function drawPattern(ctx, S, t) {
+  ctx.save();
+  rr(ctx, -10, -17, 20, 24, 7);
+  ctx.clip();
+  switch (S.pattern) {
+    case 'stripes':
+      ctx.fillStyle = '#2a2238';
+      for (let y = -15; y < 8; y += 6) ctx.fillRect(-10, y, 20, 3);
+      break;
+    case 'checker':
+      for (let i = 0; i < 5; i++) for (let j = 0; j < 6; j++) if ((i + j) % 2) {
+        ctx.fillStyle = '#1b1030';
+        ctx.fillRect(-10 + i * 4, -17 + j * 4, 4, 4);
+      }
+      break;
+    case 'patches':
+      ctx.fillStyle = '#ff5d73';
+      ctx.fillRect(-7, -12, 5, 5);
+      ctx.fillStyle = '#ffd23f';
+      ctx.beginPath();
+      ctx.arc(5, -3, 3, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'studs':
+      ctx.fillStyle = '#d9dbe3';
+      for (let k = 0; k < 6; k++) ctx.fillRect(-8 + (k % 3) * 7, -14 + Math.floor(k / 3) * 8, 2, 2);
+      break;
+    case 'spikes':
+      ctx.fillStyle = '#ff9a3d';
+      for (let k = 0; k < 4; k++) {
+        ctx.beginPath();
+        ctx.moveTo(-10, -14 + k * 6);
+        ctx.lineTo(-14, -11 + k * 6);
+        ctx.lineTo(-10, -8 + k * 6);
+        ctx.fill();
+      }
+      break;
+    case 'rivets':
+      ctx.strokeStyle = '#5a5f6c';
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(-8, -14, 16, 8);
+      ctx.strokeRect(-8, -4, 16, 8);
+      ctx.fillStyle = '#e6ebf5';
+      for (const [x, y] of [[-6, -12], [6, -12], [-6, -2], [6, -2]]) ctx.fillRect(x - 1, y - 1, 2, 2);
+      break;
+    case 'belt':
+      ctx.fillStyle = '#6b4224';
+      ctx.fillRect(-10, -1, 20, 3);
+      break;
+  }
+  if (S.anim === 'lava') {
+    // grietas de lava que laten
+    const a = 0.6 + 0.4 * Math.sin(t * 6);
+    ctx.strokeStyle = `rgba(255, ${120 + 60 * a}, 40, ${a})`;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(-8, -15);
+    ctx.lineTo(-3, -8);
+    ctx.lineTo(-6, -2);
+    ctx.lineTo(2, 4);
+    ctx.moveTo(6, -14);
+    ctx.lineTo(3, -6);
+    ctx.lineTo(8, 0);
+    ctx.stroke();
+  }
+  if (S.anim === 'gold') {
+    // destello que recorre el traje
+    const x = -14 + ((t * 30) % 40);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.beginPath();
+    ctx.moveTo(x, -17);
+    ctx.lineTo(x + 4, -17);
+    ctx.lineTo(x - 6, 7);
+    ctx.lineTo(x - 10, 7);
+    ctx.fill();
+  }
+  ctx.restore();
+  if (S.tie === 'bow') {
+    ctx.fillStyle = '#b8202f';
+    ctx.beginPath();
+    ctx.moveTo(2, -15);
+    ctx.lineTo(-2, -17);
+    ctx.lineTo(-2, -13);
+    ctx.closePath();
+    ctx.moveTo(2, -15);
+    ctx.lineTo(6, -17);
+    ctx.lineTo(6, -13);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+// ---------------- ACCESORIOS ----------------
+/** Accesorio sobre la cabeza (origen = centro de la cabeza). */
+export function drawAccessory(ctx, acc, t) {
+  switch (acc) {
+    case 'bowler':
+      ctx.beginPath();
+      ctx.ellipse(1, -9, 14, 3, -0.1, 0, Math.PI * 2);
+      inked(ctx, '#1f1d2b');
+      ctx.beginPath();
+      ctx.arc(1, -10, 8.5, Math.PI, 0);
+      ctx.closePath();
+      inked(ctx, '#2a2838');
+      ctx.fillStyle = '#b8202f';
+      ctx.fillRect(-7, -12, 16, 2);
+      break;
+    case 'monocle':
+      ctx.strokeStyle = '#ffd23f';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(9.2, -1, 4, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(9.2, 3);
+      ctx.quadraticCurveTo(8, 10, 2, 13);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(200, 240, 255, 0.4)';
+      ctx.beginPath();
+      ctx.arc(9.2, -1, 3.3, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    case 'bigwatch': {
+      // reloj de bolsillo gigante flotando detrás de la cabeza
+      const by = -22 + Math.sin(t * 2.5) * 2;
+      drawGlow(ctx, -14, by, 20, 'rgba(255, 210, 63, 0.9)', 0.5);
+      ctx.beginPath();
+      ctx.arc(-14, by, 9, 0, Math.PI * 2);
+      inked(ctx, '#ffd23f');
+      ctx.beginPath();
+      ctx.arc(-14, by, 6.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff8e8';
+      ctx.fill();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-14, by);
+      ctx.lineTo(-14 + Math.cos(t * 3) * 5, by + Math.sin(t * 3) * 5);
+      ctx.moveTo(-14, by);
+      ctx.lineTo(-14 + Math.cos(t * 0.5) * 3.5, by + Math.sin(t * 0.5) * 3.5);
+      ctx.stroke();
+      break;
+    }
+    case 'helmet':
+      ctx.beginPath();
+      ctx.arc(0, -1, 12.5, Math.PI * 0.85, Math.PI * 2.15);
+      ctx.closePath();
+      inked(ctx, '#ff3d4f');
+      ctx.fillStyle = '#fff4dc';
+      ctx.fillRect(-11, -6, 22, 3);
+      ctx.fillStyle = 'rgba(160, 230, 255, 0.85)';
+      ctx.fillRect(2, -4, 11, 6);
+      break;
+    case 'headphones':
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.arc(0, -1, 12, Math.PI * 1.05, Math.PI * 1.95);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.ellipse(-1, 1, 4, 6, 0, 0, Math.PI * 2);
+      inked(ctx, '#19e3d0');
+      break;
+    case 'visor': {
+      const hh = (t * 120) % 360;
+      ctx.fillStyle = `hsla(${hh}, 100%, 65%, 0.75)`;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-3, -5);
+      ctx.lineTo(15, -5);
+      ctx.lineTo(13, 2);
+      ctx.lineTo(-1, 2);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.fill();
+      drawGlow(ctx, 6, -2, 14, 'rgba(120, 255, 255, 0.9)', 0.5);
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillRect(1 + ((t * 20) % 12), -4, 2, 5);
+      break;
+    }
+    case 'mohawk':
+      for (let k = 0; k < 5; k++) {
+        ctx.beginPath();
+        ctx.moveTo(-8 + k * 3.5, -8 + Math.abs(k - 2) * 1.5);
+        ctx.lineTo(-6 + k * 3.5, -21 + Math.abs(k - 2) * 2);
+        ctx.lineTo(-4 + k * 3.5, -8 + Math.abs(k - 2) * 1.5);
+        ctx.closePath();
+        inked(ctx, k % 2 ? '#ff3d7f' : '#19e3d0');
+      }
+      break;
+    case 'viking':
+      ctx.beginPath();
+      ctx.arc(0, -3, 11.5, Math.PI, 0);
+      ctx.closePath();
+      inked(ctx, '#9aa3b5');
+      for (const sgn of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(sgn * 9, -6);
+        ctx.quadraticCurveTo(sgn * 20, -8, sgn * 17, -22);
+        ctx.quadraticCurveTo(sgn * 14, -12, sgn * 6, -10);
+        ctx.closePath();
+        inked(ctx, '#f4efe6');
+      }
+      ctx.fillStyle = '#d9a53a';
+      ctx.fillRect(-11, -5, 22, 3);
+      break;
+    case 'firecrown':
+      for (let k = 0; k < 5; k++) {
+        const fl = 0.8 + 0.25 * Math.sin(t * 18 + k * 1.7);
+        const x = -8 + k * 4;
+        drawGlow(ctx, x, -14, 8, 'rgba(255, 140, 40, 0.9)', 0.7);
+        ctx.fillStyle = k % 2 ? '#ffd23f' : '#ff7a3d';
+        ctx.beginPath();
+        ctx.moveTo(x - 3, -9);
+        ctx.quadraticCurveTo(x, -9 - 14 * fl, x + 3, -9);
+        ctx.fill();
+      }
+      break;
   }
 }
 

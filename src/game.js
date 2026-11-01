@@ -1,6 +1,7 @@
 import { CONFIG } from './config.js';
 import { Camera } from './core/camera.js';
-import { rand, clamp, approach } from './core/rng.js';
+import { rand, clamp, approach, pick } from './core/rng.js';
+import { CHARACTER_IDS } from './characters/defs.js';
 import { t } from './core/i18n.js';
 import { Particles } from './fx/particles.js';
 import { Popups } from './fx/popups.js';
@@ -65,6 +66,8 @@ export class Game {
     this.powers.reset();
     this.combo.reset();
     this.recordBeaten = false;
+    this.revives = 0;
+    this.pendingTransform = -1;
     this.xpRun = 0;   // experiencia ganada en esta partida (orbes, distancia, misiones)
     this.gemsRun = 0; // diamantes recogidos en esta partida
     this.orbsRun = 0;
@@ -180,8 +183,13 @@ export class Game {
       this.powers.applyMods(p);
       // se acerca suavemente a la velocidad objetivo: nunca hay saltos
       this.speed = approach(this.speed, this.targetSpeed(), CONFIG.speed.smoothing, dt);
-      // en la conducción perfecta el coche va por el suelo (no se vuela)
-      this.inputHeld = input.held && !this.powers.has('drive');
+      // en la conducción perfecta el coche va por el suelo (no se vuela);
+      // en el arranque rápido el vuelo es automático a media altura
+      this.inputHeld = this.powers.has('boost') ? p.y > 230 : input.held && !this.powers.has('drive');
+      if (this.pendingTransform > 0) {
+        this.pendingTransform -= dt;
+        if (this.pendingTransform <= 0) this.powers.transform(pick(CHARACTER_IDS), this);
+      }
       const ev = p.update(dt, this.inputHeld, this.speed * this.timeScale, this.view.groundY);
       this.powers.update(dt, this, input.consumePresses());
 
@@ -353,10 +361,41 @@ export class Game {
     }
   }
 
+  /**
+   * Consumibles elegidos antes de la partida.
+   * @param {string[]} used ids de CONFIG.shop.consumables
+   */
+  applyLoadout(used) {
+    const C = CONFIG.shop.consumables;
+    if (used.includes('shield')) this.powers.shields.push('bubble');
+    if (used.includes('revive')) this.revives = 1;
+    if (used.includes('headstart')) this.powers.startBoost(this, C.headstart.meters);
+    if (used.includes('transform')) this.pendingTransform = used.includes('headstart') ? 0.3 : 0.8;
+  }
+
+  /** Revivir (consumible): limpia la pantalla y sigues. */
+  revive() {
+    this.revives--;
+    for (const o of this.obstacles) {
+      if (o.alive && this.centerOf(o).x < this.camera.x + this.view.w + 300) this.destroyObstacle(o, true);
+    }
+    this.powers.invuln = CONFIG.shop.consumables.revive.invuln;
+    this.flash = 1;
+    this.camera.addShake(0.6);
+    this.player.vy = -300;
+    this.popups.add(t('popup.revive'), this.view.w / 2, 200, { color: '#7ff7e8', size: 34, life: 1.8, rise: 10 });
+    this.particles.spawn({ x: this.player.x, y: this.player.y, life: 0.6, size: 20, sizeEnd: 220, color: 'rgba(127, 247, 232, 0.9)', shape: 'glow', additive: true, important: true });
+    Sound.transformChar('veteran');
+  }
+
   /** Te han dado: los personajes, escudos e invulnerabilidad absorben el golpe. */
   hit(obstacle) {
     if (this.god) return;
     if (this.powers.absorbHit(obstacle, this)) return;
+    if (this.revives > 0) {
+      this.revive();
+      return;
+    }
     Sound.hit();
     this.powers.effects = {};
     this.powers.applyMods(this.player);

@@ -6,6 +6,7 @@ import { Sound } from '../core/audio.js';
 import { CHARACTERS, CHARACTER_IDS, ITEM_OWNER } from '../characters/defs.js';
 import { capsuleSprite, itemSprite } from '../characters/icons.js';
 import { drawRamp } from '../characters/vehicles.js';
+import { playTransformFx, DEFAULT_FX } from '../characters/transformfx.js';
 import { drawSprite, drawGlow } from '../fx/sprites.js';
 import { outlinedText } from '../ui/hud.js';
 
@@ -27,8 +28,8 @@ export class Powers {
 
   reset() {
     this.char = 'base';
-    this.effects = {};
-    this.shields = [];
+    this.effects = this.has('boost') ? { boost: this.effects.boost } : {};
+    this.shields = this.shields.filter((sh) => sh === 'bubble');
     this.invuln = 0;
     this.slowmo = 0;
     this.capsuleCd = 0;
@@ -39,7 +40,9 @@ export class Powers {
     this.tickTimer = 0;
     this.lastChar = null;
     this.uses = {};
-    this.charge = 0;      // carga de la habilidad especial (se llena con pavos)
+    this.charge = 0;      // carga de la habilidad especial (se llena con orbes)
+    this.totals = {};     // duración total de cada efecto activo (para las barras)
+    this.boostTarget = 0;
     this.readyFlash = 0;
   }
 
@@ -67,12 +70,34 @@ export class Powers {
   }
 
   get invulnerable() {
-    return this.invuln > 0 || this.has('drive') || this.has('nitro') || this.has('rage');
+    return this.invuln > 0 || this.has('drive') || this.has('nitro') || this.has('rage') || this.has('boost');
   }
 
   /** Atraviesa y destruye lo que toca. */
   get smashing() {
-    return this.has('nitro') || this.has('rage');
+    return this.has('nitro') || this.has('rage') || this.has('boost');
+  }
+
+  /** Consumible "arranque rápido": vuela invulnerable unos metros. */
+  startBoost(g, meters) {
+    this.boostTarget = g.distance + meters;
+    this.effects.boost = 999;
+    this.totals.boost = 999;
+    g.popups.add(t('consumable.headstart'), g.view.w / 2, 190, { color: '#7ff7ff', size: 30, life: 1.6, rise: 10 });
+    Sound.nitro();
+  }
+
+  /** Duración de un efecto con las mejoras de la tienda aplicadas. */
+  duration(item, base, g) {
+    const U = g.upg;
+    const special = this.def && item === this.def.special;
+    return special ? base + (U?.specialSeconds ?? 0) : base * (U?.gadgetMult ?? 1);
+  }
+
+  setEffect(item, base, g) {
+    const d = this.duration(item, base, g);
+    this.effects[item] = d;
+    this.totals[item] = d;
   }
 
   get timeScale() {
@@ -95,8 +120,10 @@ export class Powers {
     }
     if (this.has('nitro')) m.speed *= this.cfg('pilot').nitro.speedMult;
     if (this.has('rage')) m.speed *= this.cfg('wild').rage.speedMult;
+    if (this.has('boost')) m.speed *= CONFIG.shop.consumables.headstart.speedMult;
     player.mods = m;
     player.style = this.def ? this.def.style : 'base';
+    player.look = player.looks?.[player.style] ?? null;
     player.vehicle = this.has('drive') ? 'car' : this.has('bike') ? 'bike' : null;
     player.riding = player.vehicle === 'bike';
     player.vest = this.shields.includes('vest');
@@ -111,7 +138,7 @@ export class Powers {
   choosePlacement(g) {
     const C = CONFIG.characters;
     if (this.char === 'base') {
-      if (g.distance >= C.capsuleFrom && this.capsuleCd <= 0 && chance(C.capsuleChance)) {
+      if (g.distance >= C.capsuleFrom && this.capsuleCd <= 0 && chance(C.capsuleChance * (g.upg?.capsuleMult ?? 1))) {
         this.capsuleCd = C.capsuleCooldown;
         const options = CHARACTER_IDS.filter((id) => id !== this.lastChar);
         return { kind: 'capsule', char: pick(options) };
@@ -155,8 +182,9 @@ export class Powers {
     const def = CHARACTERS[id];
     this.char = id;
     this.lastChar = id;
-    this.effects = {};
-    this.shields = [];
+    // se conservan el arranque rápido y la burbuja de los consumibles
+    this.effects = this.has('boost') ? { boost: this.effects.boost } : {};
+    this.shields = this.shields.filter((sh) => sh === 'bubble');
     this.charge = C.specialCharge * C.startCharge;
     this.invuln = C.transformInvuln;
     this.slowmo = C.transformSlowmo;
@@ -169,33 +197,11 @@ export class Powers {
     for (let k = 0; k < 3; k++) {
       g.particles.spawn({ x: p.x, y: p.y, life: 0.45 + k * 0.15, size: 8, sizeEnd: 80 + k * 40, color: k === 1 ? '#ffffff' : def.color, shape: 'ring', additive: true, important: true });
     }
-    // efecto propio de cada personaje
-    if (id === 'veteran') {
-      // esfera de reloj dorada: 12 marcas girando y chispas elegantes
-      g.camera.addShake(0.2);
-      for (let k = 0; k < 12; k++) {
-        const a = (k / 12) * Math.PI * 2;
-        g.particles.spawn({ x: p.x + Math.cos(a) * 46, y: p.y + Math.sin(a) * 46, vx: -Math.sin(a) * 90, vy: Math.cos(a) * 90, life: 0.9, size: 4, sizeEnd: 1, color: '#ffd23f', shape: 'rect', rot: a, spin: 0, additive: true, important: true });
-      }
-      g.particles.burst(p.x, p.y, 16, { color: '#fff3c0', speed: 120, life: 1, size: 2.5, sizeEnd: 0, additive: true, drag: 1.5, important: true });
-    } else if (id === 'pilot') {
-      // derrape: rayas de velocidad, humo de neumático y chispas eléctricas
-      g.camera.addShake(0.35);
-      for (let k = 0; k < 14; k++) {
-        g.particles.spawn({ x: p.x + rand(-20, 40), y: p.y + rand(-30, 30), vx: rand(-900, -500), life: 0.35, size: 3, sizeEnd: 1, color: '#7ff7ff', shape: 'rect', additive: true, important: true });
-      }
-      g.particles.burst(p.x - 10, g.view.groundY - 6, 14, { color: 'rgba(220, 220, 235, 0.6)', speed: 160, life: 1, size: 8, sizeEnd: 22, drag: 2.5, vy: -40, important: true });
-      g.particles.burst(p.x, p.y, 12, { color: '#19e3d0', speed: 420, life: 0.3, size: 2, sizeEnd: 0, additive: true, important: true });
-    } else if (id === 'wild') {
-      // explosión: bola de fuego, onda roja, escombros y temblor fuerte
-      g.camera.addShake(0.75);
-      g.flash = 1;
-      g.particles.spawn({ x: p.x, y: p.y, life: 0.6, size: 30, sizeEnd: 230, color: 'rgba(255, 120, 40, 0.95)', shape: 'glow', additive: true, important: true });
-      g.particles.spawn({ x: p.x, y: p.y, life: 0.55, size: 10, sizeEnd: 220, color: '#ff3d4f', shape: 'ring', additive: true, important: true });
-      g.particles.burst(p.x, p.y, 26, { color: '#ffb627', speed: 480, life: 0.6, size: 5, sizeEnd: 0, additive: true, important: true });
-      g.particles.burst(p.x, p.y, 14, { color: 'rgba(60, 40, 50, 0.7)', speed: 200, life: 1.2, size: 10, sizeEnd: 26, drag: 2, important: true });
-      g.particles.burst(p.x, p.y, 10, { color: '#5a4a3a', speed: 380, life: 1.1, size: 4, shape: 'rect', spin: 14, gravity: 900, important: true });
-    }
+    // efecto de transformación (el equipado en el vestuario)
+    const fx = g.player.looks?.[id]?.fx ?? DEFAULT_FX[id];
+    const r = playTransformFx(fx, g.particles, p.x, p.y, g.view.groundY, def.color);
+    g.camera.addShake(r.shake);
+    g.flash = Math.max(g.flash, r.flash);
     // espiral de chispas en el color del personaje
     for (let k = 0; k < 24; k++) {
       const a = (k / 24) * Math.PI * 2;
@@ -225,8 +231,8 @@ export class Powers {
     const def = this.def;
     const p = g.player;
     this.char = 'base';
-    this.effects = {};
-    this.shields = [];
+    this.effects = this.has('boost') ? { boost: this.effects.boost } : {};
+    this.shields = this.shields.filter((sh) => sh === 'bubble');
     this.invuln = CONFIG.characters.detransformInvuln;
     this.charge = 0;
     this.itemCd = 0;
@@ -256,11 +262,11 @@ export class Powers {
     Sound.powerUp();
     switch (item) {
       case 'bullettime':
-        this.effects.bullettime = C.veteran.bulletTime.duration;
+        this.setEffect('bullettime', C.veteran.bulletTime.duration, g);
         Sound.bulletTime();
         break;
       case 'pistol':
-        this.effects.pistol = C.veteran.pistol.duration;
+        this.setEffect('pistol', C.veteran.pistol.duration, g);
         Sound.cock();
         break;
       case 'vest':
@@ -269,13 +275,13 @@ export class Powers {
         Sound.shield();
         break;
       case 'drive':
-        this.effects.drive = C.pilot.drive.duration;
+        this.setEffect('drive', C.pilot.drive.duration, g);
         g.camera.addShake(0.3);
         g.particles.burst(p.x - 20, g.view.groundY - 8, 16, { color: 'rgba(220, 220, 235, 0.6)', speed: 180, life: 1, size: 8, sizeEnd: 24, drag: 2.5, vy: -50, important: true });
         Sound.skid();
         break;
       case 'nitro':
-        this.effects.nitro = C.pilot.nitro.duration;
+        this.setEffect('nitro', C.pilot.nitro.duration, g);
         g.camera.addShake(0.45);
         g.flash = Math.max(g.flash, 0.4);
         g.particles.burst(p.x - 30, p.y, 24, { color: '#7ff7ff', speed: 500, life: 0.4, size: 4, sizeEnd: 0, additive: true, vx: -300, important: true });
@@ -285,7 +291,7 @@ export class Powers {
         this.placeRamp(g);
         break;
       case 'rage':
-        this.effects.rage = C.wild.rage.duration;
+        this.setEffect('rage', C.wild.rage.duration, g);
         g.camera.addShake(0.7);
         g.flash = 1;
         g.particles.spawn({ x: p.x, y: p.y, life: 0.5, size: 10, sizeEnd: 260, color: '#ff3d4f', shape: 'ring', additive: true, important: true });
@@ -297,7 +303,7 @@ export class Powers {
         Sound.launch();
         break;
       case 'bike':
-        this.effects.bike = C.wild.bike.duration;
+        this.setEffect('bike', C.wild.bike.duration, g);
         if (!this.shields.includes('bike')) this.shields.push('bike');
         Sound.engine();
         break;
@@ -360,6 +366,12 @@ export class Powers {
     const p = g.player;
     this.invuln = Math.max(0, this.invuln - dt);
     this.readyFlash = Math.max(0, this.readyFlash - dt);
+    // fin del arranque rápido
+    if (this.has('boost') && g.distance >= this.boostTarget) {
+      this.effects.boost = 0;
+      this.invuln = 1.5;
+      g.camera.addShake(0.3);
+    }
     this.slowmo = Math.max(0, this.slowmo - dt);
     this.capsuleCd = Math.max(0, this.capsuleCd - dt);
     this.itemCd = Math.max(0, this.itemCd - dt);
@@ -439,7 +451,7 @@ export class Powers {
     if (this.has('rage') && Math.random() < dt * 40) {
       g.particles.spawn({ x: p.x + rand(-16, 16), y: p.y + rand(-24, 20), vx: rand(-80, -20), vy: rand(-140, -40), life: 0.4, size: 5, sizeEnd: 0, color: '#ff5a3d', additive: true });
     }
-    if (this.has('nitro') && Math.random() < dt * 50) {
+    if ((this.has('nitro') || this.has('boost')) && Math.random() < dt * 50) {
       g.particles.spawn({ x: p.x - 30, y: p.y + rand(-14, 14), vx: rand(-260, -120), life: 0.3, size: 6, sizeEnd: 1, color: '#7ff7ff', additive: true });
     }
 
@@ -536,8 +548,23 @@ export class Powers {
 
   // ---------------- DIBUJO ----------------
 
-  /** Rampas, disparos (en el mundo). */
+  /** Rampas, disparos y escudo burbuja (en el mundo). */
   draw(ctx, camX, g) {
+    if (this.shields.includes('bubble') && !g.dead) {
+      const p = g.player;
+      const x = p.x - camX;
+      const r = 40 + Math.sin(g.t * 5) * 2;
+      drawGlow(ctx, x, p.y, r + 10, 'rgba(127, 247, 232, 0.8)', 0.35);
+      ctx.strokeStyle = 'rgba(190, 255, 250, 0.85)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(x, p.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.beginPath();
+      ctx.ellipse(x - r * 0.45, p.y - r * 0.5, 7, 4, -0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
     for (const r of this.ramps) drawRamp(ctx, r.x - camX, g.view.groundY, g.t);
     for (const s of this.shots) {
       const x = s.x - camX;
@@ -592,7 +619,7 @@ export class Powers {
       }
     }
     if (this.has('rage')) vignette(ctx, v, `rgba(255, 30, 40, ${0.28 + 0.12 * Math.sin(g.t * 12)})`);
-    if (this.has('nitro')) {
+    if (this.has('nitro') || this.has('boost')) {
       ctx.strokeStyle = 'rgba(200, 255, 255, 0.5)';
       ctx.lineWidth = 2;
       for (let i = 0; i < 14; i++) {
@@ -687,6 +714,7 @@ export class Powers {
   }
 
   totalFor(k) {
+    if (this.totals[k]) return this.totals[k];
     const C = CONFIG.characters;
     return {
       bullettime: C.veteran.bulletTime.duration,

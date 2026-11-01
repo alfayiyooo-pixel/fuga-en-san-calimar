@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import { clamp, rand, approach } from '../core/rng.js';
 import { drawFugitive } from '../characters/fugitive.js';
 import { drawCar, drawBike } from '../characters/vehicles.js';
+import { emitTrail, DEFAULT_TRAIL } from '../characters/trails.js';
 
 /**
  * El fugitivo con el jetpack básico.
@@ -169,27 +170,8 @@ export class Player {
       this.exhaustAcc += dt * CONFIG.particles.exhaustRate * this.thrust;
       while (this.exhaustAcc >= 1) {
         this.exhaustAcc -= 1;
-        // cada personaje deja un rastro distinto
-        const st = this.style;
-        const colors = st === 'pilot' ? ['#7ff7ff', '#19e3d0'] : st === 'veteran' ? ['#ffe9a8', '#ffd23f'] : st === 'wild' ? ['#ffb627', '#ff3d1f'] : ['#ffd23f', '#ff7a3d'];
-        const big = st === 'wild' ? 1.5 : 1;
-        particles.spawn({
-          x: nozzleX + rand(-3, 3),
-          y: nozzleY + (st === 'wild' ? 6 : 0),
-          vx: st === 'pilot' ? rand(-260, -120) : rand(-70, 10),
-          vy: rand(380, 560),
-          life: rand(0.14, 0.26) * (st === 'pilot' ? 1.3 : 1),
-          size: rand(5, 8) * big,
-          sizeEnd: 1,
-          color: colors[Math.random() < 0.5 ? 0 : 1],
-          additive: true,
-        });
-        if (st === 'veteran' && Math.random() < 0.3) {
-          particles.spawn({ x: nozzleX, y: nozzleY, vx: rand(-60, 20), vy: rand(60, 160), life: 0.6, size: 2, sizeEnd: 0, color: '#fff3c0', additive: true, drag: 1 });
-        }
-        if (st === 'wild' && Math.random() < 0.4) {
-          particles.spawn({ x: nozzleX, y: nozzleY + 24, vx: rand(-60, 0), vy: rand(60, 140), life: rand(0.6, 1), size: 6, sizeEnd: 18, color: 'rgba(70, 55, 60, 0.45)', drag: 2.5 });
-        }
+        // estela: la equipada en el vestuario o la propia del personaje
+        emitTrail(particles, this.look?.trail ?? DEFAULT_TRAIL[this.style] ?? 'fire', nozzleX, nozzleY, this.anim);
         if (Math.random() < 0.25) {
           particles.spawn({
             x: nozzleX,
@@ -202,19 +184,6 @@ export class Player {
             color: '#fff6c2',
             additive: true,
             gravity: 900,
-          });
-        }
-        if (Math.random() < 0.35) {
-          particles.spawn({
-            x: nozzleX,
-            y: nozzleY + 20,
-            vx: rand(-40, 0),
-            vy: rand(80, 160),
-            life: rand(0.45, 0.8),
-            size: rand(4, 6),
-            sizeEnd: 14,
-            color: 'rgba(235, 230, 250, 0.4)',
-            drag: 3,
           });
         }
       }
@@ -251,10 +220,10 @@ export class Player {
       drawBike(ctx, this, t);
       ctx.restore();
       ctx.translate(-4, -9);
-      drawFugitive(ctx, this, t, this.style);
+      drawFugitive(ctx, this, t, this.style, this.look);
     } else {
       ctx.rotate(this.dead ? this.spin : this.tilt);
-      drawFugitive(ctx, this, t, this.style);
+      drawFugitive(ctx, this, t, this.style, this.look);
     }
     ctx.restore();
   }

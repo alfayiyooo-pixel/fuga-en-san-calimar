@@ -13,6 +13,7 @@ import { setSpriteScale } from './fx/sprites.js';
 import { Quality } from './core/quality.js';
 import { createTuner } from './ui/tuner.js';
 import { Profile } from './meta/profile.js';
+import { Shop } from './ui/shop.js';
 
 // ---------- arranque ----------
 Save.load();
@@ -93,12 +94,57 @@ let state = 'menu';
 input.enabled = false;
 let lastResult = null;
 
+// ---------- tienda ----------
+const shop = new Shop(document.getElementById('screen-shop'), {
+  onClose: () => {
+    shop.close();
+    toMenu();
+  },
+  onWardrobe: null,
+  toast,
+});
+function openShop(tab, opts) {
+  state = 'menu';
+  screens.show('shop');
+  applyToDom(document.getElementById('screen-shop'));
+  shop.open(tab, opts);
+  refreshWallet();
+}
+screens.on('btn-shop', () => {
+  Sound.click();
+  openShop('items');
+});
+
+// ---------- consumibles antes de jugar ----------
+const LOADOUT_ICONS = { headstart: '🚀', shield: '🫧', transform: '🎭', revive: '❤️' };
+function renderLoadout() {
+  const el = document.getElementById('loadout');
+  const ids = Object.keys(LOADOUT_ICONS).filter((id) => Profile.consumableCount(id) > 0);
+  el.classList.toggle('hidden', ids.length === 0);
+  el.innerHTML = `<span>${t('menu.loadout')}</span>` + ids.map((id) =>
+    `<button class="load-chip ${Save.data.loadout[id] ? 'on' : ''}" data-cons="${id}" title="${t(`cons.${id}`)}">${LOADOUT_ICONS[id]} ${t(`cons.${id}`)} ×${Profile.consumableCount(id)}</button>`).join('');
+}
+document.getElementById('loadout').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-cons]');
+  if (!b) return;
+  Profile.toggleLoadout(b.dataset.cons);
+  Sound.click();
+});
+Profile.onChange(renderLoadout);
+renderLoadout();
+
 function startRun() {
+  // aspecto equipado, mejoras de la tienda y consumibles elegidos
+  game.looks = Object.fromEntries(['base', 'veteran', 'pilot', 'wild'].map((o) => [o, Profile.look(o)]));
+  game.player.looks = game.looks;
+  game.upg = Profile.runUpgrades();
+  game.orbMult = game.upg.orbMult;
   game.record = Save.data.best.distance;
   game.bestBucks = Save.data.best.bucks;
   game.reset();
   hud.reset();
   hud.banner(t('zone.enter'), t(game.zone.current.nameKey));
+  game.applyLoadout(Profile.takeLoadout());
   input.clear();
   input.enabled = true;
   state = 'playing';
@@ -231,6 +277,8 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
     Save.save();
     screens.refreshLangButtons();
     refreshQualityBtn();
+    renderLoadout();
+    if (state === 'menu' && !document.getElementById('screen-shop').classList.contains('hidden')) shop.render();
     fillOver();
   });
 });
