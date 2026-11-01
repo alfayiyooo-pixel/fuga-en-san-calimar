@@ -12,6 +12,7 @@ import { Voice } from './core/voice.js';
 import { setSpriteScale } from './fx/sprites.js';
 import { Quality } from './core/quality.js';
 import { createTuner } from './ui/tuner.js';
+import { Profile } from './meta/profile.js';
 
 // ---------- arranque ----------
 Save.load();
@@ -83,6 +84,10 @@ function toast(text) {
   toastTimer = setTimeout(() => el.classList.remove('show'), 2600);
 }
 
+const refreshWallet = () => screens.refreshWallet(Profile.bucks, Profile.gems, fmt);
+Profile.onChange(refreshWallet);
+refreshWallet();
+
 // Estados: 'menu' | 'playing' | 'paused' | 'over'
 let state = 'menu';
 input.enabled = false;
@@ -143,7 +148,9 @@ function endRun() {
   if (newBest) s.best.distance = d;
   s.stats.runs += 1;
   s.stats.totalDistance += d;
-  s.wallet += game.bucks;
+  s.wallet += Math.floor(game.bucks);
+  s.gems += game.gemsRun;
+  s.stats.totalGems += game.gemsRun;
   s.stats.totalBucks += game.bucks;
   const prevBest = game.record;
   const prevBucks = s.best.bucks;
@@ -160,7 +167,9 @@ function endRun() {
     prevBucks,
     near: game.combo.nearMisses,
     mult: game.combo.maxLevel,
+    gems: game.gemsRun,
   };
+  refreshWallet();
   fillOver(true);
   screens.show('over');
   screens.showHudButtons(false);
@@ -200,6 +209,7 @@ function fillOver(animate = false) {
     win: a.win,
     near: lastResult.near,
     mult: lastResult.mult,
+    gems: lastResult.gems,
     fmt,
     animate,
   });

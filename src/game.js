@@ -66,6 +66,7 @@ export class Game {
     this.combo.reset();
     this.recordBeaten = false;
     this.xpRun = 0;   // experiencia ganada en esta partida (orbes, distancia, misiones)
+    this.gemsRun = 0; // diamantes recogidos en esta partida
     this.orbsRun = 0;
     this.powers.applyMods(this.player);
     this.timeScale = 1;

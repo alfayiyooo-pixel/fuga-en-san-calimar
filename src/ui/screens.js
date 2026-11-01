@@ -25,8 +25,22 @@ export class Screens {
   }
 
   /** Rellena la pantalla final con el resultado de la partida. */
-  fillGameOver({ distance, best, stars, cause, newBest, bucks, almost, almostSub, win, near, mult, fmt, animate }) {
+  /** Actualiza todos los monederos visibles. */
+  refreshWallet(bucks, gems, fmt) {
+    document.querySelectorAll('.w-bucks').forEach((el) => {
+      if (el.textContent !== fmt(bucks)) el.parentElement.classList.remove('bump'), void el.offsetWidth, el.parentElement.classList.add('bump');
+      el.textContent = fmt(bucks);
+    });
+    document.querySelectorAll('.w-gems').forEach((el) => {
+      if (el.textContent !== fmt(gems)) el.parentElement.classList.remove('bump'), void el.offsetWidth, el.parentElement.classList.add('bump');
+      el.textContent = fmt(gems);
+    });
+  }
+
+  fillGameOver({ distance, best, stars, cause, newBest, bucks, almost, almostSub, win, near, mult, gems, fmt, animate }) {
     const $ = (id) => document.getElementById(id);
+    $('over-gems-wrap').classList.toggle('hidden', !gems);
+    $('over-gems').textContent = `+${gems}`;
     // los números "suben" desde 0 (solo la primera vez que se muestra)
     const countUp = (el, to, suffix = '') => {
       if (!animate) {

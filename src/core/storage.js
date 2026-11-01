@@ -10,7 +10,8 @@ const DEFAULTS = {
     muted: false,
     quality: 'auto', // 'auto' | 'high' | 'low'
   },
-  wallet: 0,          // pavos disponibles para gastar (tienda, fase e)
+  wallet: 0,          // pavos disponibles para gastar
+  gems: 0,            // diamantes (moneda premium)
   best: {
     distance: 0,
     bucks: 0,
@@ -19,6 +20,7 @@ const DEFAULTS = {
     runs: 0,
     totalDistance: 0,
     totalBucks: 0,
+    totalGems: 0,
     charUses: { veteran: 0, pilot: 0, wild: 0 }, // para el "personaje favorito"
   },
 };

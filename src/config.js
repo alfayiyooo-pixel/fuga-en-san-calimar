@@ -253,6 +253,14 @@ export const CONFIG = {
     radius: 16,         // radio de recogida
   },
 
+  // ---------------- DIAMANTES EN EL RECORRIDO ----------------
+  gems: {
+    every: [1500, 2500], // metros entre diamantes (aleatorio en el rango)
+    firstAt: 900,        // metros mínimos para el primero
+    amount: [3, 5],      // diamantes que da (aleatorio)
+    slowmo: 0.9,         // s de cámara lenta al cogerlo
+  },
+
   // ---------------- PAVOS (tokens) ----------------
   tokens: {
     firstAt: 10,          // metros del primer grupo

@@ -22,6 +22,10 @@
           <div class="corner-buttons">
             <button class="icon-btn btn-mute" data-i18n-aria="menu.sound">🔊</button>
           </div>
+          <div class="wallet" aria-live="polite">
+            <span class="coin coin-bucks" data-i18n-aria="wallet.bucks">💵 <b class="w-bucks">0</b></span>
+            <span class="coin coin-gems" data-i18n-aria="wallet.gems">💎 <b class="w-gems">0</b></span>
+          </div>
           <h1 class="logo">
             <span class="logo-top" data-i18n="game.titleTop"></span>
             <span class="logo-main" data-i18n="game.titleMain"></span>
@@ -58,6 +62,7 @@
             <span><span data-i18n="over.stars"></span> <b class="stars" id="over-stars"></b></span>
             <span><span data-i18n="over.near"></span> <b id="over-near"></b></span>
             <span><span data-i18n="over.mult"></span> <b id="over-mult"></b></span>
+            <span id="over-gems-wrap" class="hidden">💎 <b id="over-gems"></b></span>
           </div>
           <div class="row">
             <button class="btn btn-primary" id="btn-retry" data-i18n="over.retry"></button>

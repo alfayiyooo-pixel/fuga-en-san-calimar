@@ -1,6 +1,6 @@
 import { t, fmt } from '../core/i18n.js';
 import { CONFIG } from '../config.js';
-import { billSprite, goldSprite, caseSprite, magnetSprite, orbSprite } from '../entities/tokens.js';
+import { billSprite, goldSprite, caseSprite, magnetSprite, orbSprite, gemSprite } from '../entities/tokens.js';
 import { drawSprite, drawGlow } from '../fx/sprites.js';
 
 const FONT = "'Bungee', Impact, sans-serif";
@@ -77,6 +77,11 @@ export class Hud {
     });
   }
 
+  /** El diamante vuela hasta su contador (arriba a la derecha). */
+  flyGem(x, y, game) {
+    this.flyers.push({ x0: x, y0: y, t: 0, kind: 'gem', dur: 0.9, tx: game.view.w - 160, ty: 32 });
+  }
+
   /** Celebración de récord: marco dorado parpadeante unos segundos. */
   celebrate() {
     this.party = 3;
@@ -105,6 +110,7 @@ export class Hud {
     this.bump = Math.max(0, this.bump - dt * 5);
     this.party = Math.max(0, this.party - dt);
     this.orbPop = Math.max(0, (this.orbPop ?? 0) - dt * 4);
+    this.gemPop = Math.max(0, (this.gemPop ?? 0) - dt * 2);
     this.portraitPop = Math.max(0, (this.portraitPop ?? 0) - dt * 1.2);
     this.specialPop = Math.max(0, (this.specialPop ?? 0) - dt * 1.5);
     for (const f of this.flyers) {
@@ -114,7 +120,8 @@ export class Hud {
         if (f.kind === 'orb') {
           this.orbPop = 1;
           f.onArrive?.();
-        } else this.bumpBucks(f.kind !== 'bill');
+        } else if (f.kind === 'gem') this.gemPop = 1;
+        else this.bumpBucks(f.kind !== 'bill');
       }
     }
     this.flyers = this.flyers.filter((f) => !f.done);
@@ -126,6 +133,7 @@ export class Hud {
     outlinedText(ctx, t('hud.distance', { n: fmt(game.distance) }), 18, 14, 32);
     this.drawBucks(ctx, game);
     this.drawRecordHint(ctx, game, v);
+    this.drawGems(ctx, game, v);
     this.drawFlyers(ctx);
     game.powers.drawHud(ctx, game);
     this.drawBanner(ctx, v);
@@ -194,6 +202,17 @@ export class Hud {
     }
   }
 
+  /** Diamantes de la partida (solo si has cogido alguno). */
+  drawGems(ctx, game, v) {
+    if (!game.gemsRun && !this.gemPop) return;
+    const x = v.w - 160;
+    const y = 32;
+    const p = 1 + (this.gemPop ?? 0) * 0.4;
+    if (this.gemPop > 0) drawGlow(ctx, x, y, 34 * p, 'rgba(160, 240, 255, 0.9)', this.gemPop);
+    drawSprite(ctx, gemSprite(), x, y, 0.75 * p, 0.75 * p);
+    outlinedText(ctx, fmt(game.gemsRun), x + 18, y - 12, 22, '#9ff8ff');
+  }
+
   /** Insignia del multiplicador: "x3", anillo de tiempo y puntos de carga. */
   drawMultiplier(ctx, game, x, y) {
     const C = game.combo;
@@ -256,6 +275,11 @@ export class Hud {
       if (f.kind === 'orb') {
         drawGlow(ctx, x, y, 22, 'rgba(70, 150, 255, 0.95)', 0.8);
         drawSprite(ctx, orbSprite(), x, y, 0.8, 0.8);
+        continue;
+      }
+      if (f.kind === 'gem') {
+        drawGlow(ctx, x, y, 40, 'rgba(160, 240, 255, 0.95)', 0.9);
+        drawSprite(ctx, gemSprite(), x, y, 1.2 - k * 0.4, 1.2 - k * 0.4);
         continue;
       }
       const spr = f.kind === 'gold' ? goldSprite() : f.kind === 'case' ? caseSprite() : billSprite();

@@ -26,6 +26,7 @@ export class Tokens {
     this.nextX = startX + CONFIG.tokens.firstAt * CONFIG.world.pxPerMeter;
     this.nextOrbX = startX + CONFIG.orbs.firstAt * CONFIG.world.pxPerMeter;
     this.orbChain = 0;
+    this.nextGemAt = Math.max(CONFIG.gems.firstAt, startX / CONFIG.world.pxPerMeter + rand(...CONFIG.gems.every));
     this.lastPattern = null;
     this.magnetTime = 0;
     this.chain = 0;
@@ -151,10 +152,18 @@ export class Tokens {
     const caseP = risky ? T.caseRiskChance : T.caseChance;
     if (g.distance > T.caseFrom && chance(caseP)) riskiest.kind = 'case';
 
+    // diamante: muy raro y siempre en el sitio más arriesgado
+    if (x / CONFIG.world.pxPerMeter >= this.nextGemAt) {
+      riskiest.kind = 'gem';
+      riskiest.gems = randInt(CONFIG.gems.amount[0], CONFIG.gems.amount[1]);
+      this.nextGemAt = x / CONFIG.world.pxPerMeter + rand(...CONFIG.gems.every);
+    }
+
     // cápsula de personaje o icono de habilidad/gadget, integrado en el grupo
     const place = g.powers.choosePlacement(g);
     if (place) {
-      const host = risky ? riskiest : placed[Math.floor(placed.length / 2)];
+      let host = risky ? riskiest : placed[Math.floor(placed.length / 2)];
+      if (host.kind === 'gem') host = placed.find((p) => p.kind === 'bill') ?? host;
       Object.assign(host, place);
     }
 
@@ -255,6 +264,11 @@ export class Tokens {
       return;
     }
 
+    if (tk.kind === 'gem') {
+      this.collectGem(tk, g, sx);
+      return;
+    }
+
     if (tk.kind === 'magnet') {
       this.magnetTime = T.magnet.duration;
       Sound.magnet();
@@ -317,6 +331,28 @@ export class Tokens {
     g.hud.flyOrb(sx, tk.y, g, () => g.powers.addCharge(O.charge * (g.orbMult ?? 1), g));
   }
 
+  /** Diamante: cámara lenta, destello prismático y lluvia de chispas. */
+  collectGem(tk, g, sx) {
+    const n = tk.gems ?? 3;
+    g.gemsRun += n;
+    g.powers.slowmo = Math.max(g.powers.slowmo, CONFIG.gems.slowmo);
+    g.flash = 1;
+    g.camera.addShake(0.35);
+    Sound.gem();
+    const rainbow = ['#ff5d73', '#ffd23f', '#5fcf7a', '#19e3d0', '#6f8bff', '#c77dff'];
+    g.particles.spawn({ x: tk.x, y: tk.y, life: 0.7, size: 20, sizeEnd: 220, color: 'rgba(160, 240, 255, 0.95)', shape: 'glow', additive: true, important: true });
+    for (let k = 0; k < 3; k++) {
+      g.particles.spawn({ x: tk.x, y: tk.y, life: 0.5 + k * 0.2, size: 10, sizeEnd: 120 + k * 60, color: rainbow[k * 2], shape: 'ring', additive: true, important: true });
+    }
+    for (let k = 0; k < 36; k++) {
+      const a = (k / 36) * Math.PI * 2;
+      g.particles.spawn({ x: tk.x, y: tk.y, vx: Math.cos(a) * rand(200, 420), vy: Math.sin(a) * rand(200, 420), life: rand(0.6, 1), size: 4, sizeEnd: 0, color: rainbow[k % rainbow.length], additive: true, drag: 2, important: true });
+    }
+    g.popups.add(`+${n} 💎`, g.view.w / 2, 235, { color: '#9ff8ff', size: 44, life: 1.8, rise: 12 });
+    g.popups.add(t('popup.gem'), g.view.w / 2, 290, { color: '#fff4dc', size: 22, life: 1.8, rise: 12 });
+    g.hud.flyGem(sx, tk.y, g);
+  }
+
   // ---------------- DIBUJO ----------------
 
   draw(ctx, camX, g) {
@@ -360,6 +396,29 @@ export class Tokens {
         drawGlow(ctx, x, y, 46, c.rgba, 0.55 + 0.3 * Math.sin(time * 6 + tk.phase));
         const s = 1 + Math.sin(time * 5 + tk.phase) * 0.07;
         drawSprite(ctx, itemSprite(tk.item), x, y, s, s);
+      } else if (tk.kind === 'gem') {
+        drawGlow(ctx, x, y, 64, 'rgba(160, 240, 255, 0.95)', 0.7 + 0.3 * Math.sin(time * 8));
+        drawGlow(ctx, x, y, 40, 'rgba(255, 150, 230, 0.9)', 0.35 + 0.25 * Math.sin(time * 5));
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(Math.cos(time * 3), 1);
+        drawSprite(ctx, gemSprite(), 0, 0, 1.1, 1.1);
+        ctx.restore();
+        // rayos girando
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.strokeStyle = 'rgba(200, 250, 255, 0.5)';
+        ctx.lineWidth = 3;
+        for (let k = 0; k < 6; k++) {
+          const a = time * 1.5 + (k / 6) * Math.PI * 2;
+          ctx.beginPath();
+          ctx.moveTo(x + Math.cos(a) * 22, y + Math.sin(a) * 22);
+          ctx.lineTo(x + Math.cos(a) * 42, y + Math.sin(a) * 42);
+          ctx.stroke();
+        }
+        ctx.restore();
+        sparkle(ctx, x + 20, y - 20, time * 9, 7);
+        sparkle(ctx, x - 22, y + 14, time * 8 + 2, 5);
       } else if (tk.kind === 'orb') {
         const pulse = 0.85 + 0.15 * Math.sin(time * 7 + tk.phase);
         drawGlow(ctx, x, y, 30 * pulse, 'rgba(70, 150, 255, 0.95)', 0.75);
@@ -448,6 +507,51 @@ export function billSprite() {
     // brillo
     ctx.fillStyle = 'rgba(255,255,255,0.45)';
     ctx.fillRect(4, 9, 6, 2);
+  });
+}
+
+/** Diamante facetado (moneda premium). */
+export function gemSprite() {
+  return sprite('tk:gem', 40, 36, (ctx) => {
+    const pts = [[8, 4], [32, 4], [38, 13], [20, 33], [2, 13]];
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.closePath();
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+    const g = ctx.createLinearGradient(0, 4, 40, 33);
+    g.addColorStop(0, '#e8fdff');
+    g.addColorStop(0.5, '#6fe8ff');
+    g.addColorStop(1, '#3a7bff');
+    ctx.fillStyle = g;
+    ctx.fill();
+    // facetas
+    ctx.strokeStyle = 'rgba(20, 40, 120, 0.45)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(2, 13);
+    ctx.lineTo(38, 13);
+    ctx.moveTo(14, 4);
+    ctx.lineTo(11, 13);
+    ctx.lineTo(20, 33);
+    ctx.lineTo(29, 13);
+    ctx.lineTo(26, 4);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath();
+    ctx.moveTo(9, 6);
+    ctx.lineTo(14, 6);
+    ctx.lineTo(11, 12);
+    ctx.lineTo(5, 12);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 150, 220, 0.35)';
+    ctx.beginPath();
+    ctx.moveTo(29, 13);
+    ctx.lineTo(38, 13);
+    ctx.lineTo(20, 33);
+    ctx.fill();
   });
 }
 

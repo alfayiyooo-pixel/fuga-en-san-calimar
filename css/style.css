@@ -277,6 +277,30 @@ canvas {
 }
 .stats-small b { color: #ffd23f; }
 
+/* MONEDERO (menú, tienda, vestuario) */
+.wallet {
+  position: absolute;
+  top: calc(12px * var(--s));
+  left: calc(12px * var(--s));
+  display: flex;
+  gap: calc(8px * var(--s));
+}
+.coin {
+  font-family: 'Bungee', Impact, sans-serif;
+  font-size: calc(16px * var(--s));
+  padding: calc(4px * var(--s)) calc(12px * var(--s));
+  border-radius: 999px;
+  border: calc(3px * var(--s)) solid var(--ink);
+  background: rgba(27, 16, 48, 0.8);
+  box-shadow: 0 calc(3px * var(--s)) 0 var(--ink);
+}
+.coin-bucks b { color: #9dffb5; }
+.coin-gems b { color: #9ff8ff; }
+.coin.bump { animation: coin-bump 0.4s ease-out; }
+@keyframes coin-bump {
+  40% { transform: scale(1.25); }
+}
+
 /* AVISO DE ORIENTACIÓN (solo móviles en vertical) */
 #rotate {
   display: none;

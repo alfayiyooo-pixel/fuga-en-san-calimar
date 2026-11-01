@@ -107,6 +107,16 @@ class AudioFx {
     this.tone({ freq: f * 2.01, type: 'sine', dur: 0.18, vol: 0.05, delay: 0.03 });
   }
 
+  /** Diamante: acorde cristalino con brillo. */
+  gem() {
+    [0, 7, 12, 16, 19, 24].forEach((s, i) => {
+      this.tone({ freq: 1046 * 2 ** (s / 12), type: 'sine', dur: 1.1, vol: 0.09, delay: i * 0.06, attack: 0.005 });
+      this.tone({ freq: 1046 * 2 * 2 ** (s / 12), type: 'triangle', dur: 0.4, vol: 0.03, delay: i * 0.06 });
+    });
+    this.noise({ dur: 1.2, vol: 0.1, freq: 7000, type: 'highpass', delay: 0.1 });
+    this.tone({ freq: 130, type: 'sine', dur: 0.8, vol: 0.2, slide: 0.5 });
+  }
+
   /** Billete dorado: arpegio brillante. */
   gold() {
     [0, 4, 7, 12].forEach((s, i) => this.tone({ freq: 1046 * 2 ** (s / 12), type: 'triangle', dur: 0.16, vol: 0.16, delay: i * 0.045 }));
