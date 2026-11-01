@@ -100,6 +100,13 @@ class AudioFx {
     this.tone({ freq: f * 1.5, type: 'triangle', dur: 0.12, vol: 0.1, delay: 0.035 });
   }
 
+  /** Orbe de experiencia: campanita de cristal que sube con la racha. */
+  orb(chain = 1) {
+    const f = 880 * 2 ** (Math.min(chain - 1, 8) * 2 / 12);
+    this.tone({ freq: f, type: 'sine', dur: 0.25, vol: 0.12, slide: 1.5 });
+    this.tone({ freq: f * 2.01, type: 'sine', dur: 0.18, vol: 0.05, delay: 0.03 });
+  }
+
   /** Billete dorado: arpegio brillante. */
   gold() {
     [0, 4, 7, 12].forEach((s, i) => this.tone({ freq: 1046 * 2 ** (s / 12), type: 'triangle', dur: 0.16, vol: 0.16, delay: i * 0.045 }));

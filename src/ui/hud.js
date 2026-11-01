@@ -1,6 +1,6 @@
 import { t, fmt } from '../core/i18n.js';
 import { CONFIG } from '../config.js';
-import { billSprite, goldSprite, caseSprite, magnetSprite } from '../entities/tokens.js';
+import { billSprite, goldSprite, caseSprite, magnetSprite, orbSprite } from '../entities/tokens.js';
 import { drawSprite, drawGlow } from '../fx/sprites.js';
 
 const FONT = "'Bungee', Impact, sans-serif";
@@ -58,6 +58,25 @@ export class Hud {
     this.flyers.push({ x0: x, y0: y, t: 0, kind, dur: kind === 'bill' ? 0.42 : 0.6 });
   }
 
+  /**
+   * Un orbe vuela hacia la barra de especial (si llevas personaje) o hacia
+   * el contador de experiencia. onArrive se llama al llegar.
+   */
+  flyOrb(x, y, game, onArrive) {
+    const v = game.view;
+    const toBar = !!game.powers.def;
+    this.flyers.push({
+      x0: x,
+      y0: y,
+      t: 0,
+      kind: 'orb',
+      dur: 0.5,
+      tx: toBar ? 14 + 96 + 60 : 34,
+      ty: toBar ? v.h - 38 : 104,
+      onArrive,
+    });
+  }
+
   /** Celebración de récord: marco dorado parpadeante unos segundos. */
   celebrate() {
     this.party = 3;
@@ -85,13 +104,17 @@ export class Hud {
     this.starFlash = Math.max(0, this.starFlash - dt);
     this.bump = Math.max(0, this.bump - dt * 5);
     this.party = Math.max(0, this.party - dt);
+    this.orbPop = Math.max(0, (this.orbPop ?? 0) - dt * 4);
     this.portraitPop = Math.max(0, (this.portraitPop ?? 0) - dt * 1.2);
     this.specialPop = Math.max(0, (this.specialPop ?? 0) - dt * 1.5);
     for (const f of this.flyers) {
       f.t += dt;
       if (f.t >= f.dur && !f.done) {
         f.done = true;
-        this.bumpBucks(f.kind !== 'bill');
+        if (f.kind === 'orb') {
+          this.orbPop = 1;
+          f.onArrive?.();
+        } else this.bumpBucks(f.kind !== 'bill');
       }
     }
     this.flyers = this.flyers.filter((f) => !f.done);
@@ -144,11 +167,17 @@ export class Hud {
     ctx.restore();
     this.drawMultiplier(ctx, game, 58 + tw + 30, y);
 
+    // experiencia ganada en la partida
+    const op = 1 + (this.orbPop ?? 0) * 0.3;
+    if (this.orbPop > 0) drawGlow(ctx, 34, y + 32, 24, 'rgba(70, 150, 255, 0.9)', this.orbPop);
+    drawSprite(ctx, orbSprite(), 34, y + 32, 0.75 * op, 0.75 * op);
+    outlinedText(ctx, `${fmt(game.xpRun)} XP`, 52, y + 23, 16, '#9fd8ff');
+
     // imán activo: icono con anillo de tiempo restante
     const mt = game.tokens.magnetTime;
     if (mt > 0) {
       const x = 34;
-      const my = y + 46;
+      const my = y + 78;
       const frac = mt / CONFIG.tokens.magnet.duration;
       const blink = mt < 2 && Math.floor(mt * 8) % 2 === 0;
       if (!blink) drawSprite(ctx, magnetSprite(), x, my, 0.8, 0.8);
@@ -220,8 +249,15 @@ export class Hud {
     for (const f of this.flyers) {
       const k = Math.min(1, f.t / f.dur);
       const e = k * k * (3 - 2 * k);
-      const x = f.x0 + (34 - f.x0) * e;
-      const y = f.y0 + (72 - f.y0) * e - Math.sin(k * Math.PI) * 60;
+      const tx = f.tx ?? 34;
+      const ty = f.ty ?? 72;
+      const x = f.x0 + (tx - f.x0) * e;
+      const y = f.y0 + (ty - f.y0) * e - Math.sin(k * Math.PI) * 60;
+      if (f.kind === 'orb') {
+        drawGlow(ctx, x, y, 22, 'rgba(70, 150, 255, 0.95)', 0.8);
+        drawSprite(ctx, orbSprite(), x, y, 0.8, 0.8);
+        continue;
+      }
       const spr = f.kind === 'gold' ? goldSprite() : f.kind === 'case' ? caseSprite() : billSprite();
       const s = 1 - k * 0.35;
       drawSprite(ctx, spr, x, y, s, s);

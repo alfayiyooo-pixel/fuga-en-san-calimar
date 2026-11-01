@@ -65,6 +65,8 @@ export class Game {
     this.powers.reset();
     this.combo.reset();
     this.recordBeaten = false;
+    this.xpRun = 0;   // experiencia ganada en esta partida (orbes, distancia, misiones)
+    this.orbsRun = 0;
     this.powers.applyMods(this.player);
     this.timeScale = 1;
     this.inputHeld = false;

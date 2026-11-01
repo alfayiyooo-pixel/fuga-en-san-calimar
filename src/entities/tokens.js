@@ -24,6 +24,8 @@ export class Tokens {
   reset(startX) {
     this.list.length = 0;
     this.nextX = startX + CONFIG.tokens.firstAt * CONFIG.world.pxPerMeter;
+    this.nextOrbX = startX + CONFIG.orbs.firstAt * CONFIG.world.pxPerMeter;
+    this.orbChain = 0;
     this.lastPattern = null;
     this.magnetTime = 0;
     this.chain = 0;
@@ -44,6 +46,30 @@ export class Tokens {
       const len = this.spawnGroup(g, start);
       const interval = g.speed * rand(T.groupEvery[0], T.groupEvery[1]);
       this.nextX = start + Math.max(len + T.minGap, interval);
+    }
+    // orbes de experiencia: grupos pequeños, menos frecuentes que los pavos
+    const O = CONFIG.orbs;
+    while (this.nextOrbX < g.camera.x + g.view.w + 60) {
+      if (!g.respite.active) this.spawnOrbs(g, this.nextOrbX);
+      this.nextOrbX += g.speed * rand(O.every[0], O.every[1]);
+    }
+  }
+
+  /** Grupo de orbes en arco, en una altura libre de obstáculos. */
+  spawnOrbs(g, x) {
+    const O = CONFIG.orbs;
+    const top = CONFIG.world.ceiling + 40;
+    const bottom = g.view.groundY - 40;
+    const obs = g.obstacles.filter((o) => isStatic(o) && o.right > x - 40 && leftOf(o) < x + O.cluster * O.spacing + 40);
+    let y0 = rand(top, bottom);
+    for (let tries = 0; tries < 8; tries++) {
+      const ok = Array.from({ length: O.cluster }, (_, i) => tokenHitsObstacle(x + i * O.spacing, y0 - Math.sin((i / Math.max(1, O.cluster - 1)) * Math.PI) * 30, obs) !== 2).every(Boolean);
+      if (ok) break;
+      y0 = rand(top, bottom);
+    }
+    for (let i = 0; i < O.cluster; i++) {
+      const arc = Math.sin((i / Math.max(1, O.cluster - 1)) * Math.PI) * 30;
+      this.add(x + i * O.spacing, y0 - arc, 'orb');
     }
   }
 
@@ -191,7 +217,7 @@ export class Tokens {
           tk.falling = false;
         }
       }
-      if (!g.dead && R > 0 && (tk.kind === 'bill' || tk.kind === 'gold' || tk.kind === 'case')) {
+      if (!g.dead && R > 0 && (tk.kind === 'bill' || tk.kind === 'gold' || tk.kind === 'case' || tk.kind === 'orb')) {
         const dx = p.x - tk.x;
         const dy = p.y - tk.y;
         const d2 = dx * dx + dy * dy;
@@ -224,6 +250,11 @@ export class Tokens {
       return;
     }
 
+    if (tk.kind === 'orb') {
+      this.collectOrb(tk, g, sx);
+      return;
+    }
+
     if (tk.kind === 'magnet') {
       this.magnetTime = T.magnet.duration;
       Sound.magnet();
@@ -235,7 +266,6 @@ export class Tokens {
 
     // el multiplicador por esquivas al límite multiplica lo que ganas
     const value = T.values[tk.kind] * g.combo.level;
-    g.powers.addCharge(T.values[tk.kind], g);
     g.bucks += value;
     if (tk.kind !== 'bill' || this.chain % CONFIG.score.flyEvery === 0) g.hud.flyToCounter(sx, tk.y, tk.kind);
     else g.hud.bumpBucks(false);
@@ -272,6 +302,19 @@ export class Tokens {
       g.particles.spawn({ x: tk.x, y: tk.y, life: 0.35, size: 14, sizeEnd: 80, color: 'rgba(255, 220, 90, 0.6)', additive: true });
     }
     g.onCollect?.(tk.kind, value);
+  }
+
+  /** Orbe azul: carga la especial y da experiencia; vuela hacia la barra. */
+  collectOrb(tk, g, sx) {
+    const O = CONFIG.orbs;
+    g.xpRun += O.xp;
+    g.orbsRun++;
+    this.orbChain = this.sinceOrb !== undefined && g.t - this.sinceOrb < 1.2 ? this.orbChain + 1 : 1;
+    this.sinceOrb = g.t;
+    Sound.orb(this.orbChain);
+    g.particles.spawn({ x: tk.x, y: tk.y, life: 0.25, size: 8, sizeEnd: 40, color: 'rgba(90, 170, 255, 0.8)', shape: 'glow', additive: true });
+    g.particles.burst(tk.x, tk.y, 6, { color: '#9fd8ff', speed: 160, life: 0.3, size: 2.5, sizeEnd: 0, additive: true });
+    g.hud.flyOrb(sx, tk.y, g, () => g.powers.addCharge(O.charge * (g.orbMult ?? 1), g));
   }
 
   // ---------------- DIBUJO ----------------
@@ -317,6 +360,13 @@ export class Tokens {
         drawGlow(ctx, x, y, 46, c.rgba, 0.55 + 0.3 * Math.sin(time * 6 + tk.phase));
         const s = 1 + Math.sin(time * 5 + tk.phase) * 0.07;
         drawSprite(ctx, itemSprite(tk.item), x, y, s, s);
+      } else if (tk.kind === 'orb') {
+        const pulse = 0.85 + 0.15 * Math.sin(time * 7 + tk.phase);
+        drawGlow(ctx, x, y, 30 * pulse, 'rgba(70, 150, 255, 0.95)', 0.75);
+        drawSprite(ctx, orbSprite(), x, y, pulse, pulse);
+        const a = time * 4 + tk.phase;
+        ctx.fillStyle = '#e6f6ff';
+        ctx.fillRect(x + Math.cos(a) * 15 - 1.5, y + Math.sin(a) * 15 * 0.5 - 1.5, 3, 3);
       } else if (tk.kind === 'magnet') {
         drawGlow(ctx, x, y, 44, 'rgba(255, 90, 120, 0.9)', 0.5 + 0.3 * Math.sin(time * 6));
         const s = 1 + Math.sin(time * 5) * 0.06;
@@ -398,6 +448,34 @@ export function billSprite() {
     // brillo
     ctx.fillStyle = 'rgba(255,255,255,0.45)';
     ctx.fillRect(4, 9, 6, 2);
+  });
+}
+
+/** Orbe de experiencia azul. */
+export function orbSprite() {
+  return sprite('tk:orb', 30, 30, (ctx) => {
+    const g = ctx.createRadialGradient(11, 10, 1, 15, 15, 13);
+    g.addColorStop(0, '#f0fbff');
+    g.addColorStop(0.35, '#7fc8ff');
+    g.addColorStop(0.8, '#2f6bff');
+    g.addColorStop(1, '#1b2f8e');
+    ctx.fillStyle = INK;
+    ctx.beginPath();
+    ctx.arc(15, 15, 13, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(15, 15, 11.5, 0, Math.PI * 2);
+    ctx.fill();
+    // estrella interior
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    ctx.moveTo(15, 9);
+    ctx.quadraticCurveTo(15, 15, 21, 15);
+    ctx.quadraticCurveTo(15, 15, 15, 21);
+    ctx.quadraticCurveTo(15, 15, 9, 15);
+    ctx.quadraticCurveTo(15, 15, 15, 9);
+    ctx.fill();
   });
 }
 

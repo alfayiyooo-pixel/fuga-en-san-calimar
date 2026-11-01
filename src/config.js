@@ -241,6 +241,18 @@ export const CONFIG = {
     },
   },
 
+  // ---------------- ORBES DE EXPERIENCIA ----------------
+  // Cargan la habilidad especial y dan experiencia (los pavos ya no la cargan).
+  orbs: {
+    firstAt: 20,        // metros del primer grupo de orbes
+    every: [5, 7],      // segundos de recorrido entre grupos
+    cluster: 3,         // orbes por grupo
+    spacing: 40,        // px entre orbes
+    charge: 5,          // carga de especial por orbe (la barra se llena con characters.specialCharge)
+    xp: 2,              // experiencia por orbe
+    radius: 16,         // radio de recogida
+  },
+
   // ---------------- PAVOS (tokens) ----------------
   tokens: {
     firstAt: 10,          // metros del primer grupo
