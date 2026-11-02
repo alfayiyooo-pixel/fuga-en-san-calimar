@@ -185,6 +185,25 @@ export const CONFIG = {
     chaos: { duration: 12, bucksMult: 2, gapMult: 0.8 },                  // zona de caos: pavos ×2
   },
 
+  // ---------------- RULETA FINAL ----------------
+  // Se juega SOLO con fichas ganadas jugando (niveles, misiones, diaria).
+  roulette: {
+    cost: 1,              // fichas por tirada
+    spinTime: 3.6,        // s que gira
+    // w = probabilidad relativa (los gajos se ven iguales)
+    prizes: [
+      { id: 'bucks_s', bucks: 150, w: 26, color: '#5fcf7a' },
+      { id: 'boost', w: 14, color: '#ff6b7d' },          // mejora temporal: imán al empezar la próxima partida
+      { id: 'bucks_m', bucks: 400, w: 16, color: '#2fa85a' },
+      { id: 'xp', xp: 150, w: 10, color: '#4fb3ff' },
+      { id: 'revive', w: 12, color: '#7ff7e8' },          // sigues la partida (una vez por partida)
+      { id: 'tickets', tickets: 2, w: 9, color: '#ffd23f' },
+      { id: 'gems', gems: 3, w: 6, color: '#9ff8ff' },
+      { id: 'bucks_l', bucks: 1000, w: 5, color: '#1b7a3c' },
+    ],
+    boostMagnet: 15,      // s de imán de la mejora temporal
+  },
+
   // ---------------- RESPIROS ----------------
   // Cuando la partida está al límite (rápida y con muchas estrellas),
   // de vez en cuando la policía pierde el rastro unos segundos.

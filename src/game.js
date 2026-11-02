@@ -71,6 +71,7 @@ export class Game {
     this.events.reset();
     this.recordBeaten = false;
     this.revives = 0;
+    this.rouletteRevived = false;
     this.pendingTransform = -1;
     this.xpRun = 0;   // experiencia ganada en esta partida (orbes, distancia, misiones)
     this.gemsRun = 0; // diamantes recogidos en esta partida
@@ -420,6 +421,30 @@ export class Game {
     if (used.includes('revive')) this.revives = 1;
     if (used.includes('headstart')) this.powers.startBoost(this, C.headstart.meters);
     if (used.includes('transform')) this.pendingTransform = used.includes('headstart') ? 0.3 : 0.8;
+  }
+
+  /** Premio "revivir" de la ruleta: vuelves a la partida donde caíste. */
+  reviveFromDeath() {
+    const p = this.player;
+    this.dead = false;
+    this.over = false;
+    this.deathTimer = 0;
+    this.cause = null;
+    p.dead = false;
+    p.spin = 0;
+    p.spinRate = 0;
+    p.y = this.view.groundY - 220;
+    p.vy = -200;
+    this.speed = this.targetSpeed();
+    this.rouletteRevived = true;
+    for (const o of this.obstacles) {
+      if (o.alive && this.centerOf(o).x < this.camera.x + this.view.w + 400) this.destroyObstacle(o, true);
+    }
+    this.powers.invuln = CONFIG.shop.consumables.revive.invuln + 0.5;
+    this.flash = 1;
+    this.popups.add(t('popup.revive'), this.view.w / 2, 200, { color: '#7ff7e8', size: 34, life: 1.8, rise: 10 });
+    this.particles.spawn({ x: p.x, y: p.y, life: 0.6, size: 20, sizeEnd: 220, color: 'rgba(127, 247, 232, 0.9)', shape: 'glow', additive: true, important: true });
+    Sound.transformChar('veteran');
   }
 
   /** Revivir (consumible): limpia la pantalla y sigues. */

@@ -137,6 +137,10 @@ Cada 30-60 s (al azar y sin repetir el mismo dos veces seguidas) se anuncia un e
 
 Ajustes en el bloque `events` de `config.js`.
 
+## Ruleta final
+
+Al perder, si tienes fichas 🪙, aparece la **ruleta de la suerte** antes del resumen (1 ficha por tirada). Premios: pavos (incluido un premio gordo), diamantes, experiencia, fichas, **revivir** (vuelves a la partida donde caíste, una vez por partida) o una **mejora temporal** (empiezas la siguiente partida con imán). Las fichas solo se ganan jugando (niveles, misiones y recompensa diaria): nunca se compran con dinero real. Probabilidades en el bloque `roulette` de `config.js`.
+
 ## Respiros
 
 Cuando la partida va muy rápida y tienes 4+ estrellas, tras un intervalo aleatorio (22-45 s) llega un **respiro** de 5-8 s: la policía pierde el rastro, baja la velocidad y la búsqueda, cambia la música a una más tranquila y llueven pavos. Después la tensión vuelve poco a poco. Ajustes en el bloque `respite` de `config.js`.

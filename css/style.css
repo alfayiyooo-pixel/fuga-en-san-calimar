@@ -811,3 +811,22 @@ canvas {
 .over-progress .xp-line { color: #9ff8ff; font-family: 'Bungee', Impact, sans-serif; font-size: calc(15px * var(--s)); }
 .over-progress .lvl-up { color: #ffd23f; font-family: 'Bungee', Impact, sans-serif; font-size: calc(17px * var(--s)); animation: pulse 0.8s ease-in-out infinite; }
 .over-progress .m-line { color: #9dffb5; }
+
+/* ---------- RULETA ---------- */
+#screen-roulette { background: rgba(18, 11, 38, 0.82); backdrop-filter: blur(3px); gap: calc(10px * var(--s)); }
+.wheel-wrap { position: relative; width: calc(270px * var(--s)); height: calc(270px * var(--s)); }
+.wheel { width: 100%; height: 100%; filter: drop-shadow(0 calc(6px * var(--s)) 0 var(--ink)); }
+.wheel-pointer {
+  position: absolute;
+  top: calc(-14px * var(--s));
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: calc(30px * var(--s));
+  color: #ff3d4f;
+  text-shadow: 0 calc(3px * var(--s)) 0 var(--ink);
+  z-index: 1;
+}
+.roulette-result { min-height: calc(26px * var(--s)); font-family: 'Bungee', Impact, sans-serif; font-size: calc(22px * var(--s)); color: #ffd23f; }
+.roulette-result .small { font-family: 'Rubik', system-ui, sans-serif; color: var(--cream); }
+.roulette-btns { align-items: center; }
+.btn:disabled { opacity: 0.5; cursor: default; animation: none !important; }

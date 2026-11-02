@@ -11,13 +11,14 @@ export class Screens {
       wardrobe: document.getElementById('screen-wardrobe'),
       missions: document.getElementById('screen-missions'),
       daily: document.getElementById('screen-daily'),
+      roulette: document.getElementById('screen-roulette'),
       hudButtons: document.getElementById('hud-buttons'),
     };
   }
 
   /** Muestra una pantalla (o ninguna con null) y oculta el resto. */
   show(name) {
-    for (const key of ['menu', 'pause', 'over', 'shop', 'wardrobe', 'missions', 'daily']) {
+    for (const key of ['menu', 'pause', 'over', 'shop', 'wardrobe', 'missions', 'daily', 'roulette']) {
       if (!this.el[key]) continue;
       this.el[key].classList.toggle('hidden', key !== name);
     }

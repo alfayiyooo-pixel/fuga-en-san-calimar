@@ -21,6 +21,8 @@ import { Progression } from './meta/progression.js';
 import { Missions } from './meta/missions.js';
 import { Daily } from './meta/daily.js';
 import { CONFIG } from './config.js';
+import { Roulette, prizeLabel } from './ui/roulette.js';
+import { grant } from './meta/progression.js';
 
 // ---------- arranque ----------
 Save.load();
@@ -200,6 +202,45 @@ screens.on('btn-shop', () => {
   openShop('items');
 });
 
+// ---------- ruleta al morir ----------
+let roulettePrize = null;
+const roulette = new Roulette(document.getElementById('screen-roulette'), {
+  onDone: (prize) => {
+    if (prize?.id === 'revive') {
+      game.reviveFromDeath();
+      state = 'playing';
+      input.clear();
+      input.enabled = true;
+      screens.show(null);
+      screens.showHudButtons(true);
+      Sound.music.setMode('chase');
+      return;
+    }
+    roulettePrize = prize;
+    if (prize) {
+      grant({ bucks: prize.bucks, gems: prize.gems, tickets: prize.tickets });
+      if (prize.id === 'boost') Save.data.nextBoost = true;
+      Profile.changed();
+    }
+    endRun();
+  },
+});
+
+/** Al perder: si hay fichas, primero la ruleta; si no, el resumen. */
+function onGameOver() {
+  if (Save.data.tickets >= CONFIG.roulette.cost) {
+    state = 'roulette';
+    input.enabled = false;
+    input.clear();
+    screens.showHudButtons(false);
+    screens.show('roulette');
+    applyToDom(document.getElementById('screen-roulette'));
+    roulette.open({ noRevive: game.rouletteRevived });
+  } else {
+    endRun();
+  }
+}
+
 // ---------- consumibles antes de jugar ----------
 const LOADOUT_ICONS = { headstart: '🚀', shield: '🫧', transform: '🎭', revive: '❤️' };
 function renderLoadout() {
@@ -231,6 +272,15 @@ function startRun() {
   hud.reset();
   hud.banner(t('zone.enter'), t(game.zone.current.nameKey));
   game.applyLoadout(Profile.takeLoadout());
+  roulettePrize = null;
+  // premio de la ruleta de la partida anterior: imán al empezar
+  if (Save.data.nextBoost) {
+    Save.data.nextBoost = false;
+    game.tokens.magnetTime = CONFIG.roulette.boostMagnet;
+    game.tokens.magnetTotal = CONFIG.roulette.boostMagnet;
+    game.popups.add(t('roulette.boostActive'), view.w / 2, 200, { color: '#ff6b7d', size: 24, life: 2, rise: 10 });
+    Save.save();
+  }
   input.clear();
   input.enabled = true;
   state = 'playing';
@@ -295,7 +345,8 @@ function endRun() {
   // experiencia: distancia + orbes + misiones → niveles
   const xpDist = Math.floor(d / CONFIG.progression.metersPerXp);
   const xpMissions = claimed.reduce((a, c) => a + c.reward.xp, 0);
-  const xpTotal = xpDist + game.xpRun + xpMissions;
+  const xpRoulette = roulettePrize?.xp ?? 0;
+  const xpTotal = xpDist + game.xpRun + xpMissions + xpRoulette;
   const ups = Progression.addXp(xpTotal);
   if (ups.length) setTimeout(() => Sound.levelUp(), 600);
   Save.save();
@@ -311,6 +362,7 @@ function endRun() {
     mult: game.combo.maxLevel,
     gems: game.gemsRun,
     xp: { total: xpTotal, d: xpDist, o: game.xpRun, m: xpMissions },
+    prize: roulettePrize,
     ups,
     claimed,
   };
@@ -346,6 +398,7 @@ function fillOver(animate = false) {
   document.getElementById('over-badge').innerHTML = badgeHtml(Save.data.prestige);
   document.getElementById('over-progress').innerHTML = [
     `<div class="xp-line">${t('over.xp', { n: fmt(r.xp.total) })} <span class="small">(${t('over.xpDetail', { d: fmt(r.xp.d), o: fmt(r.xp.o), m: fmt(r.xp.m) })})</span></div>`,
+    r.prize ? `<div class="m-line">🎰 ${t('roulette.won')}: ${prizeLabel(r.prize)} ${r.prize.bucks ? '💵' : r.prize.gems ? '💎' : r.prize.tickets ? '🪙' : ''}</div>` : '',
     ...r.ups.map((u) => `<div class="lvl-up">${t('over.levelUp', { n: u.level })} ${rewardText(u.reward)}</div>`),
     ...r.claimed.map((c) => `<div class="m-line">✔ ${missionText(c.def)} · ${rewardText(c.reward)}</div>`),
     Progression.canPrestige ? `<div class="lvl-up">${t('over.prestigeReady')}</div>` : '',
@@ -410,10 +463,10 @@ document.addEventListener('visibilitychange', () => {
 // ---------- bucle ----------
 const loop = new Loop(
   (dt) => {
-    if (state === 'playing' || state === 'over') {
+    if (state === 'playing' || state === 'over' || state === 'roulette') {
       game.update(dt, input);
       hud.update(dt);
-      if (state === 'playing' && game.over) endRun();
+      if (state === 'playing' && game.over) onGameOver();
     } else if (state === 'menu') {
       game.updateIdle(dt);
     }
