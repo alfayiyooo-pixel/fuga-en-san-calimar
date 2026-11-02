@@ -31,7 +31,7 @@ export class Spawner {
 
   gap(g) {
     const S = CONFIG.spawner;
-    const base = lerp(S.gapStart, S.gapEnd, g.difficulty) * g.policeLevel.gapMult * g.respite.gapMult;
+    const base = lerp(S.gapStart, S.gapEnd, g.difficulty) * g.policeLevel.gapMult * g.respite.gapMult * g.events.gapMult;
     const jittered = base * (1 + rand(-S.gapJitter, S.gapJitter));
     return Math.max(jittered, g.speed * S.minGapTime);
   }

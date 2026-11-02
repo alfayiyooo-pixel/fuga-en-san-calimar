@@ -124,6 +124,19 @@ Para usar grabaciones propias, copia archivos **MP3** en [`audio/voces/`](audio/
 
 Si el archivo existe se reproduce ese audio; si no, la voz del navegador. Puedes poner solo algunos (por ejemplo, solo los de español). Haz commit y push de los archivos y GitHub Pages los servirá. Las frases sugeridas están en [`audio/voces/LEEME.md`](audio/voces/LEEME.md). El botón de silencio también silencia las voces. (En la consola del navegador verás un aviso 404 por cada archivo que falte: es normal.)
 
+## Eventos aleatorios
+
+Cada 30-60 s (al azar y sin repetir el mismo dos veces seguidas) se anuncia un evento:
+
+| Evento | Qué pasa |
+|---|---|
+| **Persecución policial** | Patrullas en cadena durante 10 s con luces de sirena; si aguantas, premio de pavos. |
+| **Lluvia de billetes** | Caen pavos (y algún billete dorado) durante 7 s. |
+| **Atraco sorpresa** | Aparece un furgón blindado en el suelo: tócalo y suelta el botín (pavos, billetes dorados y un maletín). Sube la búsqueda. |
+| **Zona de caos** | Durante 12 s los pavos valen el doble, pero hay más obstáculos. |
+
+Ajustes en el bloque `events` de `config.js`.
+
 ## Respiros
 
 Cuando la partida va muy rápida y tienes 4+ estrellas, tras un intervalo aleatorio (22-45 s) llega un **respiro** de 5-8 s: la policía pierde el rastro, baja la velocidad y la búsqueda, cambia la música a una más tranquila y llueven pavos. Después la tensión vuelve poco a poco. Ajustes en el bloque `respite` de `config.js`.

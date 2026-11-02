@@ -172,6 +172,19 @@ export const CONFIG = {
     recordWarn: 200,    // metros antes del récord en los que aparece el aviso "Récord a X m"
   },
 
+  // ---------------- EVENTOS ALEATORIOS ----------------
+  // Cada cierto tiempo (aleatorio) ocurre algo: el jugador nunca sabe qué viene.
+  events: {
+    firstAfter: 25,         // s mínimos antes del primer evento
+    interval: [30, 60],     // s entre eventos (aleatorio en el rango)
+    warning: 1.6,           // s de aviso antes de que empiece
+    weights: { chase: 1, billRain: 1, truck: 1, chaos: 1 },
+    chase: { duration: 10, carEvery: 1.3, pairChance: 0.35, reward: 150 }, // persecución policial
+    billRain: { duration: 7, rate: 18, goldChance: 0.1, gapMult: 1.4 },    // lluvia de billetes
+    truck: { speed: 0.45, bills: 36, gold: 3, cases: 1, heat: 10 },        // atraco a un furgón blindado
+    chaos: { duration: 12, bucksMult: 2, gapMult: 0.8 },                  // zona de caos: pavos ×2
+  },
+
   // ---------------- RESPIROS ----------------
   // Cuando la partida está al límite (rápida y con muchas estrellas),
   // de vez en cuando la policía pierde el rastro unos segundos.

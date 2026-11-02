@@ -218,12 +218,14 @@ export class Tokens {
         continue;
       }
       if (tk.falling) {
-        tk.vy += 260 * dt;
+        tk.vy += (tk.vx ? 900 : 260) * dt;
         tk.y += tk.vy * dt;
+        if (tk.vx) tk.x += tk.vx * dt;
         tk.x += Math.sin(g.t * 3 + tk.phase) * 30 * dt;
         if (tk.y > g.view.groundY - 14) {
           tk.y = g.view.groundY - 14;
           tk.falling = false;
+          tk.vx = 0;
         }
       }
       if (!g.dead && R > 0 && (tk.kind === 'bill' || tk.kind === 'gold' || tk.kind === 'case' || tk.kind === 'orb')) {
@@ -280,7 +282,7 @@ export class Tokens {
     }
 
     // el multiplicador por esquivas al límite multiplica lo que ganas
-    const value = T.values[tk.kind] * g.combo.level;
+    const value = T.values[tk.kind] * g.combo.level * g.events.bucksMult;
     g.bucks += value;
     if (tk.kind !== 'bill' || this.chain % CONFIG.score.flyEvery === 0) g.hud.flyToCounter(sx, tk.y, tk.kind);
     else g.hud.bumpBucks(false);

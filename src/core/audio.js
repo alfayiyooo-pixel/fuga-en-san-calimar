@@ -129,6 +129,35 @@ class AudioFx {
     this.noise({ dur: 0.8, vol: 0.1, freq: 6000, type: 'highpass', delay: 0.3 });
   }
 
+  /** Aviso de evento aleatorio. */
+  eventAlarm() {
+    [0, 0.18, 0.36].forEach((d) => this.tone({ freq: 988, type: 'square', dur: 0.1, vol: 0.08, delay: d }));
+    this.tone({ freq: 1318, type: 'square', dur: 0.25, vol: 0.09, delay: 0.54 });
+  }
+
+  /** Sirena de policía (subida y bajada). */
+  siren(delay = 0) {
+    if (!this.ready) return;
+    const t0 = this.ctx.currentTime + delay;
+    const o = this.ctx.createOscillator();
+    const g = this.ctx.createGain();
+    o.type = 'sawtooth';
+    for (let k = 0; k < 4; k++) {
+      o.frequency.setValueAtTime(660, t0 + k * 0.5);
+      o.frequency.linearRampToValueAtTime(990, t0 + k * 0.5 + 0.25);
+      o.frequency.linearRampToValueAtTime(660, t0 + k * 0.5 + 0.5);
+    }
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 1800;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.07, t0 + 0.1);
+    g.gain.linearRampToValueAtTime(0.0001, t0 + 2);
+    o.connect(f).connect(g).connect(this.master);
+    o.start(t0);
+    o.stop(t0 + 2.05);
+  }
+
   /** Billete dorado: arpegio brillante. */
   gold() {
     [0, 4, 7, 12].forEach((s, i) => this.tone({ freq: 1046 * 2 ** (s / 12), type: 'triangle', dur: 0.16, vol: 0.16, delay: i * 0.045 }));

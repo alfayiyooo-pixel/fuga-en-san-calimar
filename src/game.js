@@ -3,6 +3,7 @@ import { Camera } from './core/camera.js';
 import { rand, clamp, approach, pick } from './core/rng.js';
 import { CHARACTER_IDS } from './characters/defs.js';
 import { Missions } from './meta/missions.js';
+import { Events } from './systems/events.js';
 import { t } from './core/i18n.js';
 import { Particles } from './fx/particles.js';
 import { Popups } from './fx/popups.js';
@@ -40,6 +41,7 @@ export class Game {
     this.respite = new Respite();
     this.powers = new Powers();
     this.combo = new Combo();
+    this.events = new Events();
     this.record = 0; // récord de distancia al empezar la partida (lo pone main.js)
     this.buffer = document.createElement('canvas');
     this.t = 0;
@@ -66,6 +68,7 @@ export class Game {
     this.respite.reset();
     this.powers.reset();
     this.combo.reset();
+    this.events.reset();
     this.recordBeaten = false;
     this.revives = 0;
     this.pendingTransform = -1;
@@ -206,6 +209,7 @@ export class Game {
       p.emitExhaust(dt, this.particles);
       this.wanted.update(dt);
       this.respite.update(dt, this);
+      this.events.update(dt, this);
       this.combo.update(dt);
       this.checkRecord();
       this.trackStats(dt);
@@ -518,6 +522,7 @@ export class Game {
     if (showPlayer) this.player.drawShadow(ctx, cam.x, v.groundY);
     if (!menu) this.drawRecordFlag(ctx, cam.x);
     if (!menu) this.powers.draw(ctx, cam.x, this);
+    if (!menu) this.events.draw(ctx, cam.x, this);
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
     if (!menu) this.tokens.draw(ctx, cam.x, this);
     this.particles.draw(ctx, cam.x);

@@ -138,6 +138,7 @@ export class Hud {
     game.powers.drawHud(ctx, game);
     this.drawBanner(ctx, v);
     if (game.respite.active) this.drawRespite(ctx, game, v);
+    else if (game.events.active) this.drawEvent(ctx, game, v);
     this.drawStars(ctx, game, v);
 
     if (this.debug) {
@@ -380,6 +381,32 @@ export class Hud {
     ctx.fillStyle = '#7ff7e8';
     ctx.fillRect(x, y, w * (1 - R.progress), 6);
     outlinedText(ctx, t('respite.label'), v.w / 2, y + 10, 13, '#7ff7e8', 'center');
+  }
+
+  /** Evento en curso: etiqueta y barra de tiempo bajo las estrellas. */
+  drawEvent(ctx, game, v) {
+    const E = game.events;
+    const id = E.current;
+    if (id === 'chaos') {
+      // marco rosa/morado que late y "x2" grande
+      const a = 0.35 + 0.2 * Math.sin(game.t * 8);
+      ctx.strokeStyle = `rgba(255, 61, 160, ${a})`;
+      ctx.lineWidth = 12;
+      ctx.strokeRect(6, 6, v.w - 12, v.h - 12);
+      outlinedText(ctx, `x${CONFIG.events.chaos.bucksMult}`, v.w - 84, 66, 30 + Math.sin(game.t * 10) * 2, '#ff6bd0', 'center');
+    }
+    if (id === 'chase') this.drawSirenEdges(ctx, v, game.t, 0.25);
+    const colors = { chase: '#ff6b7d', billRain: '#9dffb5', truck: '#ffd23f', chaos: '#ff6bd0' };
+    const w = 150;
+    const x = v.w / 2 - w / 2;
+    const y = 54;
+    if (id !== 'truck') {
+      ctx.fillStyle = INK;
+      ctx.fillRect(x - 2, y - 2, w + 4, 10);
+      ctx.fillStyle = colors[id];
+      ctx.fillRect(x, y, w * (1 - E.progress), 6);
+    }
+    outlinedText(ctx, t(`event.${id}.title`).toUpperCase(), v.w / 2, y + 10, 13, colors[id], 'center');
   }
 
   drawSirenEdges(ctx, v, t, strength) {
