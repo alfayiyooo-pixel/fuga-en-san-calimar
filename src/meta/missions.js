@@ -23,6 +23,8 @@ export function progressOf(def, stats) {
     case 'starsSurvive': return stats.starTime[def.stars] ?? 0;
     case 'gems': return stats.gems;
     case 'respites': return stats.respites;
+    case 'minors': return stats.minors;
+    case 'drones': return stats.drones;
     default: return 0;
   }
 }
@@ -53,12 +55,25 @@ export const Missions = {
     for (const a of this.active) {
       if (a.done) continue;
       const def = missionDef(a.id);
-      if (progressOf(def, stats) >= def.n) {
+      if ((def.total ? a.base ?? 0 : 0) + progressOf(def, stats) >= def.n) {
         a.done = true;
         newly.push(def);
       }
     }
     return newly;
+  },
+
+  /** Al terminar la partida: las misiones acumulativas guardan lo conseguido. */
+  commitRun(stats) {
+    for (const a of this.active) {
+      const def = missionDef(a.id);
+      if (def?.total && !a.done) a.base = (a.base ?? 0) + progressOf(def, stats);
+    }
+  },
+
+  /** Progreso guardado de una misión acumulativa (para mostrarlo). */
+  saved(a) {
+    return a.base ?? 0;
   },
 
   /** Al terminar: cobra las completadas y las sustituye. Devuelve las cobradas. */

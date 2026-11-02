@@ -850,3 +850,4 @@ canvas {
 .vol-row output { text-align: right; color: #9ff8ff; }
 .row-btns { display: flex; flex-wrap: wrap; gap: calc(8px * var(--s)); }
 .settings-text { margin: 0; font-size: calc(13px * var(--s)); line-height: 1.4; }
+.m-count { color: #9ff8ff; }

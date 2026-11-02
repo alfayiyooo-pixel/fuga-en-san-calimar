@@ -45,6 +45,8 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 **Obstáculos:** cables eléctricos (fijos, dobles, en puerta o giratorios), carteles que caen, patrullas que vienen de frente, helicópteros con foco que disparan si te detectan y misiles con aviso previo.
 
+**Enemigos menores** (sobre todo en los primeros metros y con 0-1★; se retiran cuando la policía toma el relevo): guardia de seguridad con linterna que salta al verte, dron de reparto que cruza el cielo, perro callejero que te persigue por el suelo desde atrás (aviso "GUAU!" en el borde izquierdo), bandadas de gaviotas (solo en la playa) y matón en patinete eléctrico que viene de frente y salta. Son fáciles de esquivar, pero **chocar cuenta como golpe**. Se derrotan con gadgets y habilidades (pistola, furia, nitro, coche, moto, cohete…): salen volando con estrellitas de mareo y dan unos pavos (× multiplicador) y algo de XP. Misiones: «Derrota 3 enemigos menores en una partida» y «Elimina 10 drones de reparto» (acumulativa entre partidas). Bloque `minors` de `config.js`.
+
 **Nivel de búsqueda (★1-5):**
 
 - Cada estrella es una barra que se llena **poco a poco**; cada una cuesta más que la anterior (1ª fácil, 5ª muy difícil).
@@ -176,6 +178,7 @@ Todos los valores están en [`src/config.js`](src/config.js), agrupados por bloq
 | `player` | Física del jetpack (también ajustable en vivo con `?debug`) |
 | `speed` | Curva de velocidad (constante hasta 1.000 m, luego sube suave hasta un tope) |
 | `spawner`, `obstacles` | Frecuencia y tipos de obstáculos |
+| `minors` | Enemigos menores: peso, desaparición por distancia/estrellas, recompensa y comportamiento |
 | `wanted` | Estrellas de búsqueda y policía por nivel |
 | `tokens`, `orbs`, `gems` | Pavos, orbes de experiencia y diamantes |
 | `characters` | Cápsulas, habilidades, gadgets y física de cada personaje |

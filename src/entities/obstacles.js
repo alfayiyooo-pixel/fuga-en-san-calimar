@@ -22,7 +22,7 @@ function boxOverlap(a, l, r, t, b) {
   return a.l < r && a.r > l && a.t < b && a.b > t;
 }
 
-class Obstacle {
+export class Obstacle {
   constructor(type) {
     this.type = type;
     this.alive = true;
@@ -784,7 +784,7 @@ export class Missile extends Obstacle {
 }
 
 /** Icono de aviso en el borde derecho de la pantalla. */
-function warningIcon(ctx, x, y, time, kind, visible = true, locked = false) {
+export function warningIcon(ctx, x, y, time, kind, visible = true, locked = false) {
   const pulse = 1 + Math.sin(time * 12) * 0.08;
   if (visible) drawGlow(ctx, x, y, 40, locked ? 'rgba(255, 61, 79, 0.9)' : 'rgba(255, 210, 63, 0.9)', 0.6);
   ctx.save();
@@ -808,7 +808,7 @@ function warningIcon(ctx, x, y, time, kind, visible = true, locked = false) {
   ctx.font = "18px 'Bungee', Impact, sans-serif";
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(kind === 'car' ? '◀' : '!', 0, 2);
+  ctx.fillText(kind === 'car' ? '◀' : kind === 'behind' ? '▶' : '!', 0, 2);
   ctx.restore();
   if (kind === 'missile' && locked) {
     // línea de trayectoria

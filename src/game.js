@@ -18,6 +18,7 @@ import { Respite } from './systems/respite.js';
 import { Powers } from './systems/powers.js';
 import { Combo } from './systems/combo.js';
 import { drawGlow } from './fx/sprites.js';
+import { minorKoFx } from './entities/minors.js';
 
 /**
  * Estado de una partida: jugador, cámara, mundo, obstáculos y efectos.
@@ -76,7 +77,7 @@ export class Game {
     this.xpRun = 0;   // experiencia ganada en esta partida (orbes, distancia, misiones)
     this.gemsRun = 0; // diamantes recogidos en esta partida
     // estadísticas de la partida (para las misiones)
-    this.stats = { cases: 0, specials: 0, gadgets: 0, air: 0, airMax: 0, starCur: [0, 0, 0, 0, 0, 0], starTime: [0, 0, 0, 0, 0, 0] };
+    this.stats = { minors: 0, drones: 0, cases: 0, specials: 0, gadgets: 0, air: 0, airMax: 0, starCur: [0, 0, 0, 0, 0, 0], starTime: [0, 0, 0, 0, 0, 0] };
     this.missionTimer = 0;
     this.orbsRun = 0;
     this.powers.applyMods(this.player);
@@ -238,7 +239,7 @@ export class Game {
       o.update(wdt, this);
       if (!this.dead && o.alive && o.hits(box)) this.hit(o);
       if (canNear && o.alive && !o.nearSeen && o.hits(near)) o.nearSeen = true;
-      if (o.nearSeen && !o.nearDone && o.alive && !this.dead && this.centerOf(o).x < p.left - 10) {
+      if (o.nearSeen && !o.nearDone && o.alive && !o.ko && !this.dead && this.centerOf(o).x < p.left - 10) {
         o.nearDone = true;
         if (!this.powers.invulnerable) this.combo.nearMiss(this, p.x, p.y - 50);
       }
@@ -298,6 +299,8 @@ export class Game {
       starTime: this.stats.starTime,
       gems: this.gemsRun,
       respites: this.respite.count ?? 0,
+      minors: this.stats.minors,
+      drones: this.stats.drones,
     };
   }
 
@@ -402,7 +405,11 @@ export class Game {
 
   /** Destruye un obstáculo con explosión (disparos, furia, nitro, cohete…). */
   destroyObstacle(o, quiet = false) {
-    if (!o.alive) return;
+    if (!o.alive || o.ko) return;
+    if (o.minor) {
+      this.defeatMinor(o);
+      return;
+    }
     o.alive = false;
     const { x, y } = this.centerOf(o);
     const big = o.type === 'heli' || o.type === 'car';
@@ -415,6 +422,23 @@ export class Game {
       Sound.boom();
       if (Math.random() < 0.5) this.popAt(t('popup.boom'), x, y - 30, '#ff7a3d', 26);
     }
+  }
+
+  /** Enemigo menor derrotado: sale volando, efecto cómico y pequeña recompensa. */
+  defeatMinor(o) {
+    const M = CONFIG.minors;
+    o.knockOut(this);
+    minorKoFx(o, this);
+    this.camera.addShake(0.15);
+    const bucks = Math.round(rand(M.reward.bucks[0], M.reward.bucks[1]) * this.combo.level * this.events.bucksMult);
+    this.bucks += bucks;
+    this.xpRun += M.reward.xp;
+    this.stats.minors++;
+    if (o.type === 'drone') this.stats.drones++;
+    const sx = o.x - this.camera.x;
+    this.popups.add(t(`minor.ko.${o.type}`), sx, o.y - 40, { color: '#fff4dc', size: 22, life: 1.2 });
+    this.popups.add(`+${bucks} 💵  +${M.reward.xp} XP`, sx, o.y - 12, { color: '#9dffb5', size: 16, life: 1.1, rise: 40 });
+    Sound.coin(4);
   }
 
   /**

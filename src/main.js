@@ -366,6 +366,7 @@ function endRun() {
   for (const [id, n] of Object.entries(game.powers.uses)) s.stats.charUses[id] = (s.stats.charUses[id] ?? 0) + n;
   // misiones: comprobación final, cobro y sustitución
   Missions.check(game.missionStats());
+  Missions.commitRun(game.missionStats());
   const claimed = Missions.claimAndReplace();
   // experiencia: distancia + orbes + misiones → niveles
   const xpDist = Math.floor(d / CONFIG.progression.metersPerXp);

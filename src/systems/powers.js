@@ -477,8 +477,9 @@ export class Powers {
     let best = null;
     let bestD = Infinity;
     for (const o of g.obstacles) {
-      if (!o.alive) continue;
+      if (!o.alive || o.ko) continue;
       if (o.type === 'missile' && o.state !== 'fly') continue;
+      if (o.type === 'dog' && o.state === 'warn') continue;
       const c = g.centerOf(o);
       if (c.x < p.x + 10 || c.x > p.x + range || c.x > g.camera.x + g.view.w) continue;
       const d = c.x - p.x + Math.abs(c.y - p.y) * 0.5;
@@ -535,7 +536,8 @@ export class Powers {
     const right = g.camera.x + g.view.w + 250;
     let n = 0;
     for (const o of g.obstacles) {
-      if (!o.alive) continue;
+      if (!o.alive || o.ko) continue;
+      if (o.type === 'dog' && o.state === 'warn') continue;
       if (o.type === 'missile' && o.state !== 'fly') {
         o.alive = false;
         continue;

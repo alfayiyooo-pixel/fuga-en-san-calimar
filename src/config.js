@@ -125,6 +125,27 @@ export const CONFIG = {
     },
   },
 
+  // ---------------- ENEMIGOS MENORES ----------------
+  // Aparecen sobre todo al principio y con 0-1 estrellas; se van retirando
+  // cuando la policía toma el relevo. Chocar con uno cuenta como golpe.
+  minors: {
+    weight: 4,              // peso frente a cable (5) y cartel (2) al principio
+    fullUntil: 350,         // m con el peso completo
+    fadeUntil: 1500,        // m a los que dejan de salir por distancia…
+    floor: 0.12,            // …salvo este resto (si hay pocas estrellas)
+    starMult: [1, 0.75, 0.25, 0, 0, 0], // multiplicador por estrellas (0★…5★)
+    gapMult: 0.7,           // separación tras un enemigo menor (son fáciles)
+    hitbox: 0.78,           // caja de choque respecto al dibujo
+    types: { guard: 1, drone: 1.2, dog: 0.8, gull: 1.5, scooter: 0.9 }, // pesos (gaviotas solo en la playa)
+    unlockAt: { guard: 0, drone: 30, dog: 90, gull: 0, scooter: 160 },  // m
+    reward: { bucks: [4, 9], xp: 3 }, // al derrotarlos (los pavos × multiplicador)
+    guard: { walkSpeed: 25, jumpRange: 330, jump: [560, 700], gravity: 1700, jumpCooldown: 1.3 },
+    drone: { speed: [90, 160], bob: 18 },            // px/s hacia ti
+    dog: { warnTime: 0.9, overtake: [150, 230], hop: [180, 300] }, // aviso, px/s más rápido que tú
+    gull: { speed: [50, 110], wave: 34, flock: [2, 3, 3] },
+    scooter: { speed: [140, 220], jumpRange: 230, jump: 560 },
+  },
+
   // ---------------- NIVEL DE BÚSQUEDA (estrellas) ----------------
   wanted: {
     // calor necesario para llenar cada estrella: 1ª fácil … 5ª muy difícil
@@ -330,6 +351,7 @@ export const CONFIG = {
       { id: 'e_near', tier: 'easy', type: 'nearMisses', n: 3 },
       { id: 'e_transform', tier: 'easy', type: 'transforms', n: 1 },
       { id: 'e_case', tier: 'easy', type: 'cases', n: 1 },
+      { id: 'e_minors', tier: 'easy', type: 'minors', n: 3 },
       { id: 'm_bucks', tier: 'medium', type: 'bucks', n: 400 },
       { id: 'm_dist', tier: 'medium', type: 'distance', n: 1500 },
       { id: 'm_air', tier: 'medium', type: 'air', n: 1000 },
@@ -337,6 +359,8 @@ export const CONFIG = {
       { id: 'm_special', tier: 'medium', type: 'specials', n: 2 },
       { id: 'm_gadgets', tier: 'medium', type: 'gadgets', n: 3 },
       { id: 'm_mult', tier: 'medium', type: 'multiplier', n: 3 },
+      // total: true → se acumula entre partidas
+      { id: 'm_drones', tier: 'medium', type: 'drones', n: 10, total: true },
       { id: 'h_stars', tier: 'hard', type: 'starsSurvive', n: 20, stars: 4 },
       { id: 'h_dist', tier: 'hard', type: 'distance', n: 3000 },
       { id: 'h_gem', tier: 'hard', type: 'gems', n: 1 },

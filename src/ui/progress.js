@@ -106,7 +106,7 @@ export class ProgressScreen {
             const r = CONFIG.missions.rewards[def.tier];
             return `<div class="mission tier-${def.tier} ${a.done ? 'done' : ''}">
               <div class="m-tier">${t(`tier.${def.tier}`)}</div>
-              <div class="m-text">${a.done ? '✔ ' : ''}${missionText(def)}</div>
+              <div class="m-text">${a.done ? '✔ ' : ''}${missionText(def)}${def.total && !a.done ? ` <b class="m-count">(${fmt(Missions.saved(a))}/${fmt(def.n)})</b>` : ''}</div>
               <div class="m-reward">${rewardText(r)} · ${r.xp} XP</div>
               ${a.done ? '' : `<button class="m-discard" data-act="discard" data-id="${a.id}" ${Missions.canDiscard() ? '' : 'disabled'}>↻ ${t('progress.discard')}</button>`}
             </div>`;

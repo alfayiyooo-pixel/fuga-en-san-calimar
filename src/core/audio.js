@@ -508,6 +508,44 @@ class AudioFx {
     );
   }
 
+  // ---------- enemigos menores ----------
+  /** Ladrido: dos golpes de sierra con filtro de vocal. */
+  bark() {
+    [0, 0.17].forEach((d) => {
+      this.tone({ freq: 420, type: 'sawtooth', dur: 0.11, vol: 0.12, slide: 0.55, delay: d });
+      this.noise({ dur: 0.08, vol: 0.12, freq: 900, type: 'bandpass', q: 2, delay: d });
+    });
+  }
+
+  /** Gañido del perro al salir volando. */
+  yelp() {
+    this.tone({ freq: 900, type: 'sawtooth', dur: 0.3, vol: 0.1, slide: 1.6 });
+    this.tone({ freq: 1400, type: 'triangle', dur: 0.25, vol: 0.06, slide: 0.6, delay: 0.12 });
+  }
+
+  /** Graznido de gaviota. */
+  squawk() {
+    [0, 0.14].forEach((d, i) => this.tone({ freq: i ? 1250 : 1500, type: 'sawtooth', dur: 0.13, vol: 0.08, slide: 0.6, delay: d }));
+    this.noise({ dur: 0.1, vol: 0.08, freq: 2600, type: 'bandpass', q: 3 });
+  }
+
+  /** Dron averiado: pitido que cae + chisporroteo. */
+  droneDown() {
+    this.tone({ freq: 1600, type: 'square', dur: 0.6, vol: 0.06, slide: 0.15 });
+    this.noise({ dur: 0.3, vol: 0.15, freq: 4000, type: 'highpass' });
+  }
+
+  /** Golpe cómico "¡boing!". */
+  bonk() {
+    this.tone({ freq: 180, type: 'sine', dur: 0.35, vol: 0.25, slide: 2.6 });
+    this.tone({ freq: 90, type: 'square', dur: 0.08, vol: 0.08 });
+  }
+
+  /** Bocina de patinete (dos pitidos). */
+  horn() {
+    [0.1, 0.24].forEach((d) => this.tone({ freq: 560, type: 'square', dur: 0.1, vol: 0.06, delay: d }));
+  }
+
   click() {
     this.tone({ freq: 660, type: 'square', dur: 0.05, vol: 0.08 });
   }

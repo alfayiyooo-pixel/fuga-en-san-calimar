@@ -1,6 +1,7 @@
 import { CONFIG } from '../config.js';
 import { rand, chance, lerp, pick, clamp } from '../core/rng.js';
 import { Cable, Billboard, PatrolCar, Helicopter, Missile } from '../entities/obstacles.js';
+import { spawnMinor } from '../entities/minors.js';
 
 /**
  * Genera obstáculos por delante de la cámara.
@@ -25,7 +26,7 @@ export class Spawner {
       const type = this.choose(g);
       const len = this.spawn(type, g, this.nextX);
       this.lastType = type;
-      this.nextX += len + this.gap(g);
+      this.nextX += len + this.gap(g) * (type === 'minor' ? CONFIG.minors.gapMult : 1);
     }
   }
 
@@ -56,6 +57,9 @@ export class Spawner {
     consider('car', lvl.car);
     consider('missile', lvl.missile);
     consider('heli', lvl.heli);
+    // enemigos menores: al principio y con pocas estrellas
+    const mw = this.minorWeight(g);
+    if (mw > 0) entries.push(['minor', mw * (this.lastType === 'minor' ? 0.6 : 1)]);
 
     const total = entries.reduce((s, [, w]) => s + w, 0);
     let roll = Math.random() * total;
@@ -66,9 +70,37 @@ export class Spawner {
     return 'cable';
   }
 
+  /**
+   * Peso de los enemigos menores: máximo en los primeros metros y con 0-1★;
+   * se desvanece con la distancia y con las estrellas (la policía toma el relevo).
+   */
+  minorWeight(g) {
+    const M = CONFIG.minors;
+    const d = g.distance;
+    const byDist = d <= M.fullUntil ? 1 : clamp(1 - (d - M.fullUntil) / (M.fadeUntil - M.fullUntil), 0, 1);
+    const byStars = M.starMult[g.wanted.stars] ?? 0;
+    return M.weight * Math.max(byDist, M.floor) * byStars;
+  }
+
+  /** Elige qué enemigo menor sale (las gaviotas solo en la playa). */
+  chooseMinor(g) {
+    const M = CONFIG.minors;
+    const zone = g.zone.current.id;
+    const entries = Object.entries(M.types).filter(([type]) => g.distance >= (M.unlockAt[type] ?? 0) && (type !== 'gull' || zone === 'beach'));
+    const total = entries.reduce((s, [, w]) => s + w, 0);
+    let roll = Math.random() * total;
+    for (const [type, w] of entries) {
+      roll -= w;
+      if (roll <= 0) return type;
+    }
+    return 'guard';
+  }
+
   /** Crea el patrón y devuelve cuánto espacio horizontal ocupa. */
   spawn(type, g, x) {
     switch (type) {
+      case 'minor':
+        return spawnMinor(this.chooseMinor(g), g, x);
       case 'billboard':
         g.addObstacle(new Billboard(x));
         return 150;
