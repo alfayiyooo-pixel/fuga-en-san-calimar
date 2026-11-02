@@ -228,6 +228,7 @@ export const CONFIG = {
     chaseTempo: 124,        // ppm de la música de persecución
     calmTempo: 84,          // ppm de la música tranquila (respiros)
     voiceVolume: 1,         // volumen de las frases de los personajes
+    jetVolume: 0.06,        // volumen del siseo del jetpack al propulsar
     // voz del navegador (provisional): tono 0-2 y velocidad 0.1-10 por personaje
     voices: {
       veteran: { pitch: 0.6, rate: 0.82 },
@@ -419,5 +420,6 @@ export const CONFIG = {
   death: {
     slowdown: 2.2,      // frenada tras el golpe
     overDelay: 1.5,     // s hasta la pantalla final
+    slowmo: 0.3,        // velocidad del mundo justo al morir (cámara lenta que se recupera)
   },
 };

@@ -303,6 +303,7 @@ export class PatrolCar extends Obstacle {
     this.y = g.view.groundY - this.h;
     this.passed = false;
     this.wheel = 0;
+    if (!delay) Sound.sirenBlip();
   }
 
   get right() {
@@ -439,6 +440,7 @@ export class Helicopter extends Obstacle {
     this.beam = Math.PI * 0.62;
     this.locked = false;
     this.x = g.camera.x + this.sx;
+    Sound.chopper();
   }
 
   get right() {
@@ -488,6 +490,7 @@ export class Helicopter extends Obstacle {
         this.state = 'lock';
         this.timer = 0;
         this.shots = 0;
+        Sound.spottedAlarm();
         g.spotted(CONFIG.wanted.heat.heliSpotted, p.x, p.y - 60);
       }
       if (this.life <= 0) this.state = 'leave';
@@ -705,6 +708,14 @@ export class Missile extends Obstacle {
   update(dt, g) {
     const M = CONFIG.obstacles.missile;
     this.timer += dt;
+    // pitidos de aviso: lentos al seguirte, rápidos al fijarse
+    if (this.state !== 'fly' && this.timer >= 0) {
+      this.beep = (this.beep ?? 0) - dt;
+      if (this.beep <= 0) {
+        this.beep = this.state === 'lock' ? 0.09 : 0.32;
+        Sound.lockBeep(this.state === 'lock');
+      }
+    }
     if (this.state === 'warn') {
       const target = clamp(g.player.y + this.offsetY, 60, g.view.groundY - 20);
       this.ty = approach(this.ty, target, 5, dt);
@@ -718,6 +729,7 @@ export class Missile extends Obstacle {
         this.x = g.camera.x + g.view.w + 40;
         this.y = this.ty;
         g.camera.addShake(0.12);
+        Sound.missileLaunch();
       }
     } else {
       this.x -= M.speed * dt;

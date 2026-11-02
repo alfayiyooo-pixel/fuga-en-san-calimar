@@ -129,6 +129,91 @@ class AudioFx {
     this.noise({ dur: 0.8, vol: 0.1, freq: 6000, type: 'highpass', delay: 0.3 });
   }
 
+  // ---------- amenazas ----------
+  /** Toque corto de sirena al aparecer una patrulla. */
+  sirenBlip() {
+    this.tone({ freq: 700, type: 'sawtooth', dur: 0.32, vol: 0.05, slide: 1.4 });
+    this.tone({ freq: 980, type: 'sawtooth', dur: 0.3, vol: 0.05, slide: 0.72, delay: 0.3 });
+  }
+
+  /** Pitido de fijación del misil (más agudo al fijarse). */
+  lockBeep(locked = false) {
+    this.tone({ freq: locked ? 1760 : 1320, type: 'square', dur: 0.05, vol: 0.06 });
+  }
+
+  /** Lanzamiento de misil: silbido descendente. */
+  missileLaunch() {
+    this.noise({ dur: 0.7, vol: 0.22, freq: 3000, type: 'bandpass', q: 3, slide: 0.25 });
+  }
+
+  /** Helicóptero entrando: aspas (ruido modulado). */
+  chopper() {
+    if (!this.ready) return;
+    const t0 = this.ctx.currentTime;
+    const dur = 1.8;
+    const len = Math.floor(this.ctx.sampleRate * dur);
+    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) {
+      const env = 0.5 + 0.5 * Math.sin((i / this.ctx.sampleRate) * Math.PI * 2 * 13);
+      d[i] = (Math.random() * 2 - 1) * env * env;
+    }
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    const f = this.ctx.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 500;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(0.35, t0 + 0.6);
+    g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f).connect(g).connect(this.master);
+    src.start(t0);
+  }
+
+  /** El foco del helicóptero te ha detectado. */
+  spottedAlarm() {
+    [0, 0.14].forEach((d) => this.tone({ freq: 1046, type: 'square', dur: 0.1, vol: 0.08, delay: d }));
+    this.tone({ freq: 784, type: 'square', dur: 0.2, vol: 0.08, delay: 0.28 });
+  }
+
+  /** Golpe seco al aterrizar fuerte. */
+  thud(strength = 1) {
+    this.tone({ freq: 110, type: 'sine', dur: 0.18, vol: 0.18 * strength, slide: 0.5 });
+    this.noise({ dur: 0.1, vol: 0.1 * strength, freq: 400 });
+  }
+
+  /** Barrido al entrar en una zona nueva. */
+  whoosh() {
+    this.noise({ dur: 0.6, vol: 0.18, freq: 400, type: 'bandpass', q: 1.2, slide: 6 });
+  }
+
+  /**
+   * Siseo continuo del jetpack: sigue al empuje (0-1).
+   * Se crea una vez y solo se cambia el volumen.
+   */
+  jet(level) {
+    if (!this.ctx) return;
+    if (!this.jetGain) {
+      const len = this.ctx.sampleRate * 2;
+      const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 900;
+      f.Q.value = 0.7;
+      this.jetGain = this.ctx.createGain();
+      this.jetGain.gain.value = 0;
+      src.connect(f).connect(this.jetGain).connect(this.master);
+      src.start();
+    }
+    this.jetGain.gain.setTargetAtTime(level * CONFIG.audio.jetVolume, this.ctx.currentTime, 0.03);
+  }
+
   /** Aviso de evento aleatorio. */
   eventAlarm() {
     [0, 0.18, 0.36].forEach((d) => this.tone({ freq: 988, type: 'square', dur: 0.1, vol: 0.08, delay: d }));

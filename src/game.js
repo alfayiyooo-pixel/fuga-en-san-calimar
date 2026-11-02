@@ -176,9 +176,12 @@ export class Game {
     const p = this.player;
 
     if (this.dead) {
+      Sound.jet(0);
+      // cámara lenta dramática al principio de la caída
+      const sdt = dt * Math.min(1, CONFIG.death.slowmo + this.deathTimer * 1.5);
       this.deathTimer += dt;
-      this.speed *= Math.exp(-CONFIG.death.slowdown * dt);
-      if (p.updateDead(dt, this.speed, this.view.groundY)) {
+      this.speed *= Math.exp(-CONFIG.death.slowdown * sdt);
+      if (p.updateDead(sdt, this.speed, this.view.groundY)) {
         this.camera.addShake(0.15);
         this.dust(p.x, p.bottom, 8);
       }
@@ -201,7 +204,9 @@ export class Game {
       const ev = p.update(dt, this.inputHeld, this.speed * this.timeScale, this.view.groundY);
       this.powers.update(dt, this, input.consumePresses());
 
+      Sound.jet(p.vehicle ? 0 : p.thrust);
       if (ev.landed && ev.impact > CONFIG.player.hardLanding) {
+        Sound.thud(Math.min(1, ev.impact / 700));
         this.camera.addShake(0.25);
         this.dust(p.x, p.bottom, 10);
       }
@@ -221,7 +226,7 @@ export class Game {
     this.camera.update(dt);
     this.updateZone();
     if (!this.dead) this.spawner.update(this);
-    const wdt = dt * (this.dead ? 1 : this.timeScale);
+    const wdt = this.dead ? dt * Math.min(1, CONFIG.death.slowmo + this.deathTimer * 1.5) : dt * this.timeScale;
     this.tokens.update(wdt, this);
 
     // obstáculos (y esquivas al límite)
@@ -252,6 +257,7 @@ export class Game {
     if (this.zone.n !== this.zoneIndex) {
       this.zoneIndex = this.zone.n;
       this.hud.banner(t('zone.enter'), t(this.zone.current.nameKey));
+      Sound.whoosh();
     }
   }
 

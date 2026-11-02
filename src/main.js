@@ -293,6 +293,7 @@ function pause() {
   if (state !== 'playing') return;
   state = 'paused';
   input.enabled = false;
+  Sound.jet(0);
   input.clear();
   Sound.music.setMode('off');
   screens.show('pause');
@@ -314,6 +315,7 @@ function toMenu() {
   input.enabled = false;
   input.clear();
   Sound.music.setMode('off');
+  Sound.jet(0);
   screens.showHudButtons(false);
   if (!maybeShowDaily()) screens.show('menu');
   renderLevelChip();
