@@ -1,12 +1,36 @@
 # Voces de los personajes
 
-Pon aquí tus grabaciones en **MP3** con estos nombres exactos. Si un archivo existe, el juego lo usa;
-si no, usa la voz del navegador (Web Speech API) como provisional.
+Pon aquí tus grabaciones en **MP3** con este patrón de nombre:
 
-| Personaje | Español | Inglés | Frase sugerida (ES / EN) |
-|---|---|---|---|
-| Don Aurelio Vega, "El Relojero" | `veterano_es.mp3` | `veterano_en.mp3` | «Don Aurelio Vega. La prisa es de aficionados.» / «Don Aurelio Vega. Haste is for amateurs.» |
-| Vera "Chispa" Rivas | `chispa_es.mp3` | `chispa_en.mp3` | «¡Chispa al volante! ¡Agárrate!» / «Spark's at the wheel! Hold on!» |
-| Bruno "Petardo" Tramuntana | `petardo_es.mp3` | `petardo_en.mp3` | «¡Petardo! ¡A reventarlo todo!» / «Firecracker! Let's blow it all up!» |
+```
+[personaje]_[momento]_[idioma].mp3
+personaje: aurelio | vera | bruno
+momento:   coger (al cogerlo) | habilidad (al activar su habilidad especial) | perder (al perderlo por un golpe)
+idioma:    es | en
+```
 
-Consejos: 1-3 segundos, sin silencio al principio, volumen normalizado (unos -3 dB de pico).
+Si un archivo existe, el juego lo usa; si no, usa la voz del navegador (Web Speech API) con la frase de abajo.
+
+| Archivo | Frase (respaldo) |
+|---|---|
+| `aurelio_coger_es.mp3` | «El tiempo es oro, querido.» |
+| `aurelio_coger_en.mp3` | «Time is money, dear.» |
+| `aurelio_habilidad_es.mp3` | «Todo a su debido tiempo.» |
+| `aurelio_habilidad_en.mp3` | «All in due time.» |
+| `aurelio_perder_es.mp3` | «Qué poco elegante.» |
+| `aurelio_perder_en.mp3` | «How inelegant.» |
+| `vera_coger_es.mp3` | «¡Chispa al volante!» |
+| `vera_coger_en.mp3` | «Spark's behind the wheel!» |
+| `vera_habilidad_es.mp3` | «¡Agárrate!» |
+| `vera_habilidad_en.mp3` | «Hold on tight!» |
+| `vera_perder_es.mp3` | «¡Mi pintura!» |
+| `vera_perder_en.mp3` | «My paint job!» |
+| `bruno_coger_es.mp3` | «¡Que empiece la fiesta!» |
+| `bruno_coger_en.mp3` | «Let the party start!» |
+| `bruno_habilidad_es.mp3` | «¡¡PETARDOOO!!» |
+| `bruno_habilidad_en.mp3` | «BOOM TIME!» |
+| `bruno_perder_es.mp3` | «¡Eso ha dolido!» |
+| `bruno_perder_en.mp3` | «That hurt!» |
+
+Consejos: 1-2 segundos, sin silencio al principio ni al final, volumen normalizado (unos -3 dB de pico).
+Las frases nunca se solapan: si una está sonando, la siguiente espera un momento o se descarta.

@@ -23,6 +23,7 @@ import { Daily } from './meta/daily.js';
 import { CONFIG } from './config.js';
 import { Roulette, prizeLabel } from './ui/roulette.js';
 import { grant } from './meta/progression.js';
+import { SettingsScreen } from './ui/settings.js';
 
 // ---------- arranque ----------
 Save.load();
@@ -43,6 +44,7 @@ setLang(Save.data.settings.lang || detectLanguage());
 applyToDom();
 screens.refreshLangButtons();
 Sound.setMuted(Save.data.settings.muted);
+Sound.setLevels(Save.data.settings.volumes);
 screens.setMuteIcon(Save.data.settings.muted);
 
 // el audio solo puede arrancar tras una interacción del jugador
@@ -54,15 +56,19 @@ const unlockAudio = () => {
 window.addEventListener('pointerdown', unlockAudio);
 window.addEventListener('keydown', unlockAudio);
 
+function toggleMute() {
+  const muted = !Save.data.settings.muted;
+  Save.data.settings.muted = muted;
+  Save.save();
+  Sound.setMuted(muted);
+  if (muted) Voice.stop();
+  screens.setMuteIcon(muted);
+  if (!muted) Sound.click();
+}
 document.querySelectorAll('.btn-mute').forEach((b) =>
   b.addEventListener('click', (e) => {
     e.preventDefault();
-    const muted = !Save.data.settings.muted;
-    Save.data.settings.muted = muted;
-    Save.save();
-    Sound.setMuted(muted);
-    screens.setMuteIcon(muted);
-    if (!muted) Sound.click();
+    toggleMute();
     b.blur();
   }),
 );
@@ -202,6 +208,22 @@ screens.on('btn-shop', () => {
   openShop('items');
 });
 
+// ---------- ajustes ----------
+const settings = new SettingsScreen(document.getElementById('screen-settings'), {
+  onClose: () => toMenu(),
+  onMute: toggleMute,
+});
+function openSettings() {
+  state = 'menu';
+  screens.show('settings');
+  applyToDom(document.getElementById('screen-settings'));
+  settings.open();
+}
+screens.on('btn-settings', () => {
+  Sound.click();
+  openSettings();
+});
+
 // ---------- ruleta al morir ----------
 let roulettePrize = null;
 const roulette = new Roulette(document.getElementById('screen-roulette'), {
@@ -296,6 +318,7 @@ function pause() {
   Sound.jet(0);
   input.clear();
   Sound.music.setMode('off');
+  Voice.stop();
   screens.show('pause');
   screens.showHudButtons(false);
 }
@@ -442,6 +465,7 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
     renderLoadout();
     renderLevelChip();
     if (!document.getElementById('screen-missions').classList.contains('hidden')) progress.render();
+    if (!document.getElementById('screen-settings').classList.contains('hidden')) settings.render();
     if (state === 'menu' && !document.getElementById('screen-shop').classList.contains('hidden')) shop.render();
     if (state === 'menu' && !document.getElementById('screen-wardrobe').classList.contains('hidden')) wardrobe.render();
     fillOver();

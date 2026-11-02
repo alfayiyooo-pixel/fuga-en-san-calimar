@@ -142,20 +142,21 @@ Pantalla propia desde el menú (👕 Vestuario): un apartado por personaje, con 
 
 - Efectos y música **sintetizados con Web Audio API** (sin archivos): música de persecución que gana capas con las estrellas y música tranquila en los respiros; siseo del jetpack, sirenas, pitidos de misil, aspas del helicóptero, monedas con tono que sube en las rachas, fanfarrias…
 - El botón 🔊 silencia todo (efectos, música y voces).
+- **⚙ Ajustes** (menú, esquina superior derecha): volumen independiente de **música**, **efectos** y **voces** (se guarda en el navegador), silenciar todo y "Probar voz".
 
 ### Voces de los personajes (añadir tus propios audios)
 
-Al transformarte, el personaje dice una frase en el idioma elegido. Por defecto se usa la **voz del navegador** (Web Speech API) con un tono y velocidad distintos para cada uno (`audio.voices` en `config.js`).
+Cada personaje habla en tres momentos: **al cogerlo**, **al activar su habilidad especial** y **al perderlo por un golpe**. Por defecto se usa la **voz del navegador** (Web Speech API) con tono y velocidad propios de cada personaje y momento (`audio.voices` en `config.js`). Las frases nunca se solapan: si una suena, la siguiente espera como mucho `audio.voiceQueueWait` segundos o se descarta.
 
-Para usar grabaciones propias, copia archivos **MP3** en [`audio/voces/`](audio/voces/) con estos nombres:
+Para usar grabaciones propias, copia archivos **MP3** en [`audio/voces/`](audio/voces/) con el patrón `[personaje]_[momento]_[idioma].mp3` (personaje `aurelio`/`vera`/`bruno`, momento `coger`/`habilidad`/`perder`, idioma `es`/`en`). Son 18 archivos:
 
-| Personaje | Español | Inglés |
-|---|---|---|
-| El Relojero | `veterano_es.mp3` | `veterano_en.mp3` |
-| Chispa | `chispa_es.mp3` | `chispa_en.mp3` |
-| Petardo | `petardo_es.mp3` | `petardo_en.mp3` |
+| | coger | habilidad | perder |
+|---|---|---|---|
+| Aurelio | `aurelio_coger_es.mp3` · `aurelio_coger_en.mp3` | `aurelio_habilidad_es.mp3` · `aurelio_habilidad_en.mp3` | `aurelio_perder_es.mp3` · `aurelio_perder_en.mp3` |
+| Vera | `vera_coger_es.mp3` · `vera_coger_en.mp3` | `vera_habilidad_es.mp3` · `vera_habilidad_en.mp3` | `vera_perder_es.mp3` · `vera_perder_en.mp3` |
+| Bruno | `bruno_coger_es.mp3` · `bruno_coger_en.mp3` | `bruno_habilidad_es.mp3` · `bruno_habilidad_en.mp3` | `bruno_perder_es.mp3` · `bruno_perder_en.mp3` |
 
-Si el archivo existe se reproduce ese audio; si no, la voz del navegador. Puedes poner solo algunos (por ejemplo, solo los de español). Haz commit y push de los archivos y GitHub Pages los servirá. Las frases sugeridas están en [`audio/voces/LEEME.md`](audio/voces/LEEME.md). El botón de silencio también silencia las voces. (En la consola del navegador verás un aviso 404 por cada archivo que falte: es normal.)
+Si el archivo existe se reproduce ese audio; si no, la voz del navegador. Puedes poner solo algunos. Haz commit y push y GitHub Pages los servirá. Las frases de respaldo están en [`audio/voces/LEEME.md`](audio/voces/LEEME.md). (En la consola verás un aviso 404 por cada archivo que falte: es normal.)
 
 ## Gráficos y rendimiento
 

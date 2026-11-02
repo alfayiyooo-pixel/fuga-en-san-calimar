@@ -227,13 +227,17 @@ export const CONFIG = {
     musicVolume: 0.32,
     chaseTempo: 124,        // ppm de la música de persecución
     calmTempo: 84,          // ppm de la música tranquila (respiros)
-    voiceVolume: 1,         // volumen de las frases de los personajes
+    voiceVolume: 1,         // volumen de las frases de los personajes (los ajustes del jugador lo multiplican)
+    voiceQueueWait: 1.6,    // s que una frase puede esperar en cola si otra está sonando (si no, se descarta)
+    voiceGap: 0.25,         // s de silencio mínimo entre dos frases
     jetVolume: 0.06,        // volumen del siseo del jetpack al propulsar
-    // voz del navegador (provisional): tono 0-2 y velocidad 0.1-10 por personaje
+    // voz del navegador (provisional, mientras no haya archivos en audio/voces/):
+    // pitch 0-2 y rate 0.1-10 base por personaje; en cada momento se suma
+    // pitch y se multiplica rate (pick = al cogerlo, special = habilidad, lose = al perderlo)
     voices: {
-      veteran: { pitch: 0.6, rate: 0.82 },
-      pilot: { pitch: 1.55, rate: 1.25 },
-      wild: { pitch: 0.2, rate: 1.15 },
+      veteran: { pitch: 0.55, rate: 0.82, pick: { pitch: 0, rate: 1 }, special: { pitch: -0.1, rate: 0.8 }, lose: { pitch: 0.1, rate: 0.9 } },
+      pilot: { pitch: 1.5, rate: 1.2, pick: { pitch: 0, rate: 1 }, special: { pitch: 0.25, rate: 1.15 }, lose: { pitch: 0.2, rate: 1.25 } },
+      wild: { pitch: 0.2, rate: 1.1, pick: { pitch: 0.1, rate: 1 }, special: { pitch: 0.3, rate: 0.8 }, lose: { pitch: 0, rate: 1.1 } },
     },
   },
 

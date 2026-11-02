@@ -11,7 +11,8 @@ class AudioFx {
     this.ctx = null;
     this.master = null;
     this.muted = false;
-    this.volume = CONFIG.audio.sfxVolume;
+    // volúmenes del jugador (0-1), multiplican a los de CONFIG.audio
+    this.levels = { music: 1, sfx: 1, voice: 1 };
     this.lastCoin = 0;
     this.music = new Music(this);
   }
@@ -21,28 +22,52 @@ class AudioFx {
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       this.ctx = new AC();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = this.muted ? 0 : this.volume;
-      this.master.connect(this.ctx.destination);
+      // salida general (silencio) → destino; efectos, voces y música van por separado
+      this.out = this.ctx.createGain();
+      this.out.gain.value = this.muted ? 0 : 1;
+      this.out.connect(this.ctx.destination);
+      this.master = this.ctx.createGain(); // bus de efectos
+      this.master.connect(this.out);
+      this.voiceBus = this.ctx.createGain();
+      this.voiceBus.connect(this.out);
+      this.applyLevels();
     }
     if (this.ctx.state === 'suspended') this.ctx.resume();
   }
 
   setMuted(m) {
     this.muted = m;
-    if (this.master) this.master.gain.value = m ? 0 : this.volume;
+    if (this.out) this.out.gain.value = m ? 0 : 1;
     if (m && 'speechSynthesis' in window) window.speechSynthesis.cancel();
   }
 
-  /** Reproduce un audio ya decodificado (voces grabadas). */
-  playBuffer(buf, vol = 1) {
-    if (!this.ready) return;
+  /** Volúmenes del menú de ajustes (0-1 cada uno). */
+  setLevels(levels) {
+    Object.assign(this.levels, levels);
+    this.applyLevels();
+  }
+
+  applyLevels() {
+    if (!this.ctx) return;
+    const A = CONFIG.audio;
+    this.master.gain.value = A.sfxVolume * this.levels.sfx;
+    this.voiceBus.gain.value = A.voiceVolume * this.levels.voice;
+    this.music.applyLevel();
+  }
+
+  /** Volumen efectivo de las voces (para la voz del navegador). */
+  get voiceLevel() {
+    return this.muted ? 0 : CONFIG.audio.voiceVolume * this.levels.voice;
+  }
+
+  /** Reproduce un audio ya decodificado por el bus de voces. Devuelve su duración. */
+  playVoice(buf) {
+    if (!this.ready) return 0;
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
-    const g = this.ctx.createGain();
-    g.gain.value = vol / Math.max(0.01, this.volume); // independiente del volumen de efectos
-    src.connect(g).connect(this.master);
+    src.connect(this.voiceBus);
     src.start();
+    return buf.duration;
   }
 
   get ready() {
@@ -514,9 +539,21 @@ class Music {
     if (!this.bus) {
       this.bus = c.createGain();
       this.bus.gain.value = 0;
-      this.bus.connect(this.fx.master);
+      this.bus.connect(this.fx.out);
     }
     return true;
+  }
+
+  get vol() {
+    return CONFIG.audio.musicVolume * this.fx.levels.music;
+  }
+
+  applyLevel() {
+    if (this.bus && this.mode !== 'off') {
+      const now = this.fx.ctx.currentTime;
+      this.bus.gain.cancelScheduledValues(now);
+      this.bus.gain.setTargetAtTime(this.vol, now, 0.05);
+    }
   }
 
   /** 0-1: cuántas capas suenan en modo persecución. */
@@ -544,7 +581,7 @@ class Music {
       return;
     }
     g.linearRampToValueAtTime(0.0001, now + 0.25);
-    g.linearRampToValueAtTime(CONFIG.audio.musicVolume, now + 1.6);
+    g.linearRampToValueAtTime(this.vol, now + 1.6);
     if (!this.timer) {
       this.nextTime = now + 0.1;
       this.step = 0;

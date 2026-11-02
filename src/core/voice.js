@@ -2,22 +2,41 @@ import { CONFIG } from '../config.js';
 import { Sound } from './audio.js';
 
 /**
- * Frases de los personajes al aparecer.
- * 1) Si existe audio/voces/<nombre>_<idioma>.mp3 (p. ej. veterano_es.mp3), se usa ese archivo.
- * 2) Si no, se usa la voz del navegador (Web Speech API) con tono y velocidad
- *    distintos para cada personaje (CONFIG.audio.voices).
- * Respeta el botón de silencio.
+ * Frases de los personajes en tres momentos: al cogerlo ('coger'), al activar
+ * su habilidad especial ('habilidad') y al perderlo por un golpe ('perder').
+ *
+ * 1) Si existe audio/voces/<personaje>_<momento>_<idioma>.mp3
+ *    (p. ej. aurelio_coger_es.mp3), se usa ese archivo.
+ * 2) Si no, se usa la voz del navegador (Web Speech API) con un tono y una
+ *    velocidad distintos para cada personaje y momento (CONFIG.audio.voices).
+ *
+ * Nunca se solapan dos frases: si una está sonando, la nueva espera en cola
+ * (como mucho CONFIG.audio.voiceQueueWait s) o se descarta.
+ * Respeta el botón de silencio y el volumen de voces de los ajustes.
  */
-export const VOICE_FILES = { veteran: 'veterano', pilot: 'chispa', wild: 'petardo' };
+export const VOICE_NAMES = { veteran: 'aurelio', pilot: 'vera', wild: 'bruno' };
+export const VOICE_MOMENTS = ['coger', 'habilidad', 'perder'];
+const MOMENT_KEY = { coger: 'pick', habilidad: 'special', perder: 'lose' };
+
+/** Lista completa de archivos que busca el juego (para el README y las pruebas). */
+export function voiceFileList(langs = ['es', 'en']) {
+  const out = [];
+  for (const n of Object.values(VOICE_NAMES)) for (const m of VOICE_MOMENTS) for (const l of langs) out.push(`${n}_${m}_${l}.mp3`);
+  return out;
+}
 
 class Voices {
   constructor() {
     this.cache = new Map(); // clave → AudioBuffer | null (no existe) | Promise
+    this.busyUntil = 0;     // performance.now() hasta el que hay una frase sonando
+    this.queued = null;     // { id, moment, lang, text, until }
+    this.timer = 0;
+    this.speaking = false;
   }
 
-  /** Intenta cargar los audios del idioma (se llama al activar el sonido y al cambiar de idioma). */
+  /** Intenta cargar los audios del idioma (al activar el sonido y al cambiar de idioma). */
   preload(lang) {
-    for (const name of Object.values(VOICE_FILES)) this.load(`${name}_${lang}`);
+    for (const n of Object.values(VOICE_NAMES)) for (const m of VOICE_MOMENTS) this.load(`${n}_${m}_${lang}`);
   }
 
   load(key) {
@@ -36,17 +55,64 @@ class Voices {
     return p;
   }
 
-  async say(id, lang, text) {
-    if (Sound.muted) return;
-    const key = `${VOICE_FILES[id]}_${lang}`;
-    let buf = this.cache.get(key);
-    if (buf === undefined || buf instanceof Promise) buf = await this.load(key);
-    if (Sound.muted) return;
-    if (buf) Sound.playBuffer(buf, CONFIG.audio.voiceVolume);
-    else this.speak(id, lang, text);
+  get busy() {
+    return this.speaking || performance.now() < this.busyUntil;
   }
 
-  speak(id, lang, text) {
+  /**
+   * Pide decir una frase. id: 'veteran' | 'pilot' | 'wild';
+   * moment: 'coger' | 'habilidad' | 'perder'; text: frase de respaldo.
+   */
+  say(id, moment, lang, text) {
+    if (Sound.muted || Sound.voiceLevel <= 0 || !VOICE_NAMES[id]) return;
+    const req = { id, moment, lang, text, until: performance.now() + CONFIG.audio.voiceQueueWait * 1000 };
+    if (this.busy) {
+      // solo una en espera: la más reciente sustituye a la anterior
+      this.queued = req;
+      this.schedule();
+      return;
+    }
+    this.play(req);
+  }
+
+  schedule() {
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => {
+      const q = this.queued;
+      if (!q) return;
+      if (performance.now() > q.until) {
+        this.queued = null; // demasiado tarde: se descarta
+        return;
+      }
+      if (this.busy) {
+        this.schedule();
+        return;
+      }
+      this.queued = null;
+      this.play(q);
+    }, 120);
+  }
+
+  async play({ id, moment, lang, text }) {
+    // se marca ocupado ya, para que no entre otra mientras se carga el archivo
+    this.busyUntil = performance.now() + 4000;
+    const key = `${VOICE_NAMES[id]}_${moment}_${lang}`;
+    let buf = this.cache.get(key);
+    if (buf === undefined || buf instanceof Promise) buf = await this.load(key);
+    if (Sound.muted) {
+      this.busyUntil = 0;
+      return;
+    }
+    if (buf) {
+      const dur = Sound.playVoice(buf);
+      this.busyUntil = performance.now() + (dur + CONFIG.audio.voiceGap) * 1000;
+    } else {
+      this.busyUntil = 0;
+      this.speak(id, moment, lang, text);
+    }
+  }
+
+  speak(id, moment, lang, text) {
     if (!('speechSynthesis' in window)) return;
     const synth = window.speechSynthesis;
     synth.cancel();
@@ -54,15 +120,33 @@ class Voices {
     const full = lang === 'es' ? 'es-ES' : 'en-US';
     u.lang = full;
     const v = CONFIG.audio.voices[id] ?? {};
-    u.pitch = v.pitch ?? 1;
-    u.rate = v.rate ?? 1;
-    u.volume = CONFIG.audio.voiceVolume;
-    const voice = synth.getVoices().find((vo) => vo.lang === full) || synth.getVoices().find((vo) => vo.lang.startsWith(lang));
+    const m = v[MOMENT_KEY[moment]] ?? {};
+    u.pitch = Math.max(0, Math.min(2, (v.pitch ?? 1) + (m.pitch ?? 0)));
+    u.rate = Math.max(0.1, Math.min(10, (v.rate ?? 1) * (m.rate ?? 1)));
+    u.volume = Math.min(1, Sound.voiceLevel);
+    const voices = synth.getVoices();
+    const voice = voices.find((vo) => vo.lang === full) || voices.find((vo) => vo.lang.startsWith(lang));
     if (voice) u.voice = voice;
+    this.speaking = true;
+    // por si el navegador no dispara 'end' (pasa en algunos móviles)
+    const safety = setTimeout(() => this.done(), 5000);
+    u.onend = u.onerror = () => {
+      clearTimeout(safety);
+      this.done();
+    };
     synth.speak(u);
   }
 
+  done() {
+    this.speaking = false;
+    this.busyUntil = performance.now() + CONFIG.audio.voiceGap * 1000;
+  }
+
   stop() {
+    this.queued = null;
+    clearTimeout(this.timer);
+    this.speaking = false;
+    this.busyUntil = 0;
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }
 }

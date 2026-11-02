@@ -9,6 +9,7 @@ const DEFAULTS = {
     lang: null,     // null = detectar del navegador
     muted: false,
     quality: 'auto', // 'auto' | 'high' | 'low'
+    volumes: { music: 1, sfx: 1, voice: 1 }, // 0-1, menú de ajustes de sonido
   },
   wallet: 0,          // pavos disponibles para gastar
   gems: 0,            // diamantes (moneda premium)

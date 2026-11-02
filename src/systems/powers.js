@@ -223,8 +223,7 @@ export class Powers {
     g.hud.portraitPop = 1;
     Sound.transformChar(id);
     // la frase se dice un instante después del efecto de sonido
-    const lang = getLang();
-    setTimeout(() => Voice.say(id, lang, t(`voice.${id}`)), 450);
+    this.say(id, 'coger', 450);
   }
 
   detransform(g) {
@@ -242,6 +241,14 @@ export class Powers {
     g.particles.burst(p.x, p.y, 18, { color: def.color, speed: 340, life: 0.8, size: 4, shape: 'rect', spin: 12, gravity: 900, important: true });
     g.popups.add(t('char.lost'), p.x - g.camera.x, p.y - 60, { color: '#ff6b7d', size: 22, life: 1.3 });
     Sound.detransform();
+    this.say(def.id, 'perder', 250);
+  }
+
+  /** Frase del personaje (archivo grabado o voz del navegador) con un pequeño retraso. */
+  say(id, moment, delayMs = 0) {
+    const lang = getLang();
+    const text = t(`voice.${id}.${moment}`);
+    setTimeout(() => Voice.say(id, moment, lang, text), delayMs);
   }
 
   // ---------------- HABILIDADES Y GADGETS ----------------
@@ -259,6 +266,7 @@ export class Powers {
       g.flash = Math.max(g.flash, 0.5);
       g.camera.addShake(0.35);
       g.hud.specialPop = 1;
+      this.say(this.char, 'habilidad', 150);
     }
     Sound.powerUp();
     switch (item) {

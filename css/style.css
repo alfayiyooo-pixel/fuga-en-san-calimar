@@ -830,3 +830,23 @@ canvas {
 .roulette-result .small { font-family: 'Rubik', system-ui, sans-serif; color: var(--cream); }
 .roulette-btns { align-items: center; }
 .btn:disabled { opacity: 0.5; cursor: default; animation: none !important; }
+
+/* ---------- AJUSTES ---------- */
+.settings-body { flex: 1; }
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(300px * var(--s)), 1fr));
+  gap: calc(10px * var(--s));
+}
+.vol-row {
+  display: grid;
+  grid-template-columns: calc(110px * var(--s)) 1fr calc(48px * var(--s));
+  align-items: center;
+  gap: calc(8px * var(--s));
+  font-weight: 800;
+  font-size: calc(14px * var(--s));
+}
+.vol-row input[type=range] { width: 100%; accent-color: #ffd23f; height: calc(24px * var(--s)); }
+.vol-row output { text-align: right; color: #9ff8ff; }
+.row-btns { display: flex; flex-wrap: wrap; gap: calc(8px * var(--s)); }
+.settings-text { margin: 0; font-size: calc(13px * var(--s)); line-height: 1.4; }
