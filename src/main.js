@@ -3,7 +3,7 @@ import { Input } from './core/input.js';
 import { Loop } from './core/loop.js';
 import { Save } from './core/storage.js';
 import { setLang, detectLanguage, applyToDom, fmt, t, getLang } from './core/i18n.js';
-import { Game } from './game.js';
+import { Game, zoneTrack } from './game.js';
 import { Hud } from './ui/hud.js';
 import { Screens } from './ui/screens.js';
 import { causeText } from './entities/obstacles.js';
@@ -25,6 +25,7 @@ import { Roulette, prizeLabel } from './ui/roulette.js';
 import { grant } from './meta/progression.js';
 import { SettingsScreen, appCard } from './ui/settings.js';
 import { Pwa } from './core/pwa.js';
+import { CreditsScreen } from './ui/credits.js';
 
 // ---------- arranque ----------
 Save.load();
@@ -50,10 +51,22 @@ Sound.setLevels(Save.data.settings.volumes);
 screens.setMuteIcon(Save.data.settings.muted);
 
 // el audio solo puede arrancar tras una interacción del jugador
+/** Tema del menú (calmado, sin efectos). */
+function menuMusic() {
+  Sound.music.setCalm(false);
+  Sound.music.setFx(null);
+  Sound.music.setStars(0);
+  Sound.music.play('menu');
+}
+
 const unlockAudio = () => {
   const first = !Sound.ctx;
   Sound.unlock();
-  if (first && Sound.ctx) Voice.preload(getLang());
+  if (first && Sound.ctx) {
+    Voice.preload(getLang());
+    // la música del menú empieza con la primera pulsación (lo exigen los navegadores)
+    if (state !== 'playing') menuMusic();
+  }
 };
 window.addEventListener('pointerdown', unlockAudio);
 window.addEventListener('keydown', unlockAudio);
@@ -214,7 +227,13 @@ screens.on('btn-shop', () => {
 const settings = new SettingsScreen(document.getElementById('screen-settings'), {
   onClose: () => toMenu(),
   onMute: toggleMute,
+  onCredits: () => {
+    screens.show('credits');
+    applyToDom(document.getElementById('screen-credits'));
+    credits.open();
+  },
 });
+const credits = new CreditsScreen(document.getElementById('screen-credits'), { onClose: () => openSettings() });
 // ---------- app instalable ----------
 const installBtn = document.getElementById('btn-install');
 const iosHelp = document.getElementById('ios-help');
@@ -264,7 +283,7 @@ const roulette = new Roulette(document.getElementById('screen-roulette'), {
       input.enabled = true;
       screens.show(null);
       screens.showHudButtons(true);
-      Sound.music.setMode('chase');
+      Sound.music.play(zoneTrack(game.zone.current.id));
       return;
     }
     roulettePrize = prize;
@@ -337,7 +356,10 @@ function startRun() {
   state = 'playing';
   screens.show(null);
   screens.showHudButtons(true);
-  Sound.music.setMode('chase');
+  Sound.music.setCalm(false);
+  Sound.music.setFx(null);
+  Sound.music.setStars(0);
+  Sound.music.play(zoneTrack(game.zone.current.id));
 }
 
 function pause() {
@@ -346,7 +368,7 @@ function pause() {
   input.enabled = false;
   Sound.jet(0);
   input.clear();
-  Sound.music.setMode('off');
+  Sound.music.stop(0.3);
   Voice.stop();
   screens.show('pause');
   screens.showHudButtons(false);
@@ -357,7 +379,7 @@ function resume() {
   state = 'playing';
   input.clear();
   input.enabled = true;
-  Sound.music.setMode(game.respite.active ? 'calm' : 'chase');
+  Sound.music.play(zoneTrack(game.zone.current.id), { fade: 0.6 });
   screens.show(null);
   screens.showHudButtons(true);
 }
@@ -366,7 +388,7 @@ function toMenu() {
   state = 'menu';
   input.enabled = false;
   input.clear();
-  Sound.music.setMode('off');
+  menuMusic();
   Sound.jet(0);
   screens.showHudButtons(false);
   if (!maybeShowDaily()) screens.show('menu');
@@ -376,7 +398,7 @@ function toMenu() {
 /** Fin de la partida: guarda récord y estadísticas y muestra el resultado. */
 function endRun() {
   state = 'over';
-  Sound.music.setMode('off');
+  menuMusic();
   input.enabled = false;
   input.clear();
   const d = Math.floor(game.distance);
@@ -496,6 +518,7 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
     renderLevelChip();
     if (!document.getElementById('screen-missions').classList.contains('hidden')) progress.render();
     if (!document.getElementById('screen-settings').classList.contains('hidden')) settings.render();
+    if (!document.getElementById('screen-credits').classList.contains('hidden')) credits.render();
     if (state === 'menu' && !document.getElementById('screen-shop').classList.contains('hidden')) shop.render();
     if (state === 'menu' && !document.getElementById('screen-wardrobe').classList.contains('hidden')) wardrobe.render();
     fillOver();

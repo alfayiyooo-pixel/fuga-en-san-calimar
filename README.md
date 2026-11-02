@@ -151,9 +151,26 @@ Pantalla propia desde el menú (👕 Vestuario): un apartado por personaje, con 
 
 ## Sonido y voces
 
-- Efectos y música **sintetizados con Web Audio API** (sin archivos): música de persecución que gana capas con las estrellas y música tranquila en los respiros; siseo del jetpack, sirenas, pitidos de misil, aspas del helicóptero, monedas con tono que sube en las rachas, fanfarrias…
+- Efectos **sintetizados con Web Audio API** (sin archivos): siseo del jetpack, sirenas, pitidos de misil, aspas del helicóptero, monedas con tono que sube en las rachas, ladridos, graznidos, fanfarrias…
 - El botón 🔊 silencia todo (efectos, música y voces).
 - **⚙ Ajustes** (menú, esquina superior derecha): volumen independiente de **música**, **efectos** y **voces** (se guarda en el navegador), silenciar todo y "Probar voz".
+
+### Música por zonas
+
+Cada zona tiene su tema y al pasar de una a otra cambian con un **fundido cruzado** de 2,5 s (`music.crossfade`):
+
+| Pista | Zona | Estilo |
+|---|---|---|
+| `menu` | Menú y pantalla final | Tema propio con melodía del juego |
+| `playa` | Playa Coral | Relajada y soleada: guitarra a contratiempo, steel drum, shaker |
+| `centro` | Distrito Lingote | Electrónica nocturna: bombo a negras, bajo pulsante, arpegios |
+| `industrial` | Las Chimeneas | Dura y metálica: percusión pesada, golpes de yunque, quintas |
+| `mansiones` | Colinas Brisa | Funk/soul elegante: bajo slap, clavinet, metales, piano eléctrico |
+| `puerto` | Puerto Ancla | Tensa, de película de atracos: ostinato cromático, dron, vibráfono |
+
+**Capas dinámicas:** con 1★ entran más instrumentos y desde 3★ más percusión y tensión; en el **respiro** la música se calma (sin batería, filtrada); y cada habilidad especial la cambia: **tiempo bala** de Aurelio = música lenta y grave, **conducción** de Vera = más rápida y brillante, **furia** de Bruno = distorsión. Todo en el bloque `music` de `config.js`.
+
+**Sustituirla por archivos:** copia MP3 en [`audio/musica/`](audio/musica/) con los nombres `menu.mp3`, `playa.mp3`, `centro.mp3`, `industrial.mp3`, `mansiones.mp3`, `puerto.mp3`. Si existe el archivo se usa (en bucle sin cortes); si no, el tema generado. Detalles del bucle exacto en [`audio/musica/LEEME.md`](audio/musica/LEEME.md). Si la licencia pide atribución, añade autor y licencia en [`src/credits.js`](src/credits.js): salen en **⚙ Ajustes → 📜 Créditos**.
 
 ### Voces de los personajes (añadir tus propios audios)
 
@@ -196,7 +213,7 @@ Todos los valores están en [`src/config.js`](src/config.js), agrupados por bloq
 | `roulette` | Coste y probabilidades de la ruleta |
 | `progression`, `missions`, `daily` | Niveles, prestigio, misiones y recompensa diaria |
 | `shop` | Mejoras, consumibles y packs de diamantes |
-| `audio`, `quality` | Volúmenes, voces y calidad gráfica |
+| `audio`, `music`, `quality` | Volúmenes, voces, música por zonas y calidad gráfica |
 
 Los textos (ES/EN) están en [`src/i18n/translations.js`](src/i18n/translations.js) y los artículos de la tienda en [`src/meta/catalog.js`](src/meta/catalog.js).
 
@@ -244,4 +261,4 @@ Regla del juego: con dinero real solo se compran diamantes o artículos concreto
 
 - Juego, personajes, ciudad, gráficos, música y efectos de sonido originales, generados por código.
 - Tipografías: [Bungee](https://fonts.google.com/specimen/Bungee) y [Rubik](https://fonts.google.com/specimen/Rubik) (Google Fonts, licencia SIL Open Font License).
-- Sin imágenes ni audios de terceros.
+- Sin imágenes ni audios de terceros (si añades música o voces con licencia, apúntalas en `src/credits.js`; se muestran en ⚙ Ajustes → Créditos).

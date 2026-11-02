@@ -63,8 +63,9 @@ export function appCard({ onInstall, onIosHelp, toast }) {
  * y silencio general. Otras secciones (app, créditos) se añaden con addCard().
  */
 export class SettingsScreen {
-  constructor(root, { onClose, onMute }) {
+  constructor(root, { onClose, onMute, onCredits }) {
     this.root = root;
+    this.onCredits = onCredits;
     this.onClose = onClose;
     this.onMute = onMute;
     this.cards = [];
@@ -112,6 +113,9 @@ export class SettingsScreen {
             <button class="btn small" data-act="mute">${Save.data.settings.muted ? '🔇 ' + t('settings.unmute') : '🔊 ' + t('settings.mute')}</button>
             <button class="btn small" data-act="test-voice">🗣️ ${t('settings.testVoice')}</button>
           </div>
+          <div class="row-btns">
+            <button class="btn small" data-act="credits">📜 ${t('credits.title')}</button>
+          </div>
         </div>
         ${this.cards.map((c) => c.render()).join('')}
       </div>`;
@@ -143,6 +147,9 @@ export class SettingsScreen {
     } else if (act === 'mute') {
       this.onMute();
       this.render();
+    } else if (act === 'credits') {
+      Sound.click();
+      this.onCredits();
     } else if (act === 'test-voice') {
       Sound.unlock();
       const ids = ['veteran', 'pilot', 'wild'];

@@ -3,6 +3,7 @@
 // como exigen los navegadores.
 
 import { CONFIG } from '../config.js';
+import { MusicEngine } from './music.js';
 
 const MAJOR = [0, 2, 4, 5, 7, 9, 11];
 
@@ -14,7 +15,7 @@ class AudioFx {
     // volúmenes del jugador (0-1), multiplican a los de CONFIG.audio
     this.levels = { music: 1, sfx: 1, voice: 1 };
     this.lastCoin = 0;
-    this.music = new Music(this);
+    this.music = new MusicEngine(this);
   }
 
   unlock() {
@@ -548,162 +549,6 @@ class AudioFx {
 
   click() {
     this.tone({ freq: 660, type: 'square', dur: 0.05, vol: 0.08 });
-  }
-}
-
-// ------------------------------------------------------------
-// MÚSICA PROCEDURAL
-// Secuenciador de 16 pasos × 4 compases (La menor: Am – F – C – G).
-//   'chase': bombo, palmas, bajo; con más estrellas entran charles y arpegio.
-//   'calm':  acordes suaves y notas sueltas, sin percusión (respiros).
-// ------------------------------------------------------------
-const ROOTS = [110, 87.31, 130.81, 98.0];
-const CHORDS = [[0, 3, 7], [0, 4, 7], [0, 4, 7], [0, 4, 7]];
-
-class Music {
-  constructor(fx) {
-    this.fx = fx;
-    this.mode = 'off';
-    this.intensity = 0;
-    this.step = 0;
-    this.nextTime = 0;
-    this.timer = null;
-    this.bus = null;
-  }
-
-  ensure() {
-    const c = this.fx.ctx;
-    if (!c) return false;
-    if (!this.bus) {
-      this.bus = c.createGain();
-      this.bus.gain.value = 0;
-      this.bus.connect(this.fx.out);
-    }
-    return true;
-  }
-
-  get vol() {
-    return CONFIG.audio.musicVolume * this.fx.levels.music;
-  }
-
-  applyLevel() {
-    if (this.bus && this.mode !== 'off') {
-      const now = this.fx.ctx.currentTime;
-      this.bus.gain.cancelScheduledValues(now);
-      this.bus.gain.setTargetAtTime(this.vol, now, 0.05);
-    }
-  }
-
-  /** 0-1: cuántas capas suenan en modo persecución. */
-  setIntensity(v) {
-    this.intensity = v;
-  }
-
-  setMode(mode) {
-    if (mode === this.mode && (this.timer || mode === 'off')) return;
-    this.mode = mode;
-    if (!this.ensure()) return;
-    const c = this.fx.ctx;
-    const g = this.bus.gain;
-    const now = c.currentTime;
-    g.cancelScheduledValues(now);
-    g.setValueAtTime(g.value, now);
-    if (mode === 'off') {
-      g.linearRampToValueAtTime(0, now + 0.6);
-      setTimeout(() => {
-        if (this.mode === 'off' && this.timer) {
-          clearInterval(this.timer);
-          this.timer = null;
-        }
-      }, 700);
-      return;
-    }
-    g.linearRampToValueAtTime(0.0001, now + 0.25);
-    g.linearRampToValueAtTime(this.vol, now + 1.6);
-    if (!this.timer) {
-      this.nextTime = now + 0.1;
-      this.step = 0;
-      this.timer = setInterval(() => this.tick(), 25);
-    }
-  }
-
-  tick() {
-    const c = this.fx.ctx;
-    if (!c || c.state !== 'running' || this.mode === 'off') return;
-    const bpm = this.mode === 'calm' ? CONFIG.audio.calmTempo : CONFIG.audio.chaseTempo;
-    const spb = 60 / bpm / 4;
-    if (this.nextTime < c.currentTime - 0.2) this.nextTime = c.currentTime + 0.05;
-    while (this.nextTime < c.currentTime + 0.12) {
-      this.play(this.step, this.nextTime, spb);
-      this.nextTime += spb;
-      this.step = (this.step + 1) % 64;
-    }
-  }
-
-  note(t, freq, dur, type, vol, { attack = 0.005, lowpass = 0, slide = 0 } = {}) {
-    const c = this.fx.ctx;
-    const o = c.createOscillator();
-    const g = c.createGain();
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t);
-    if (slide) o.frequency.exponentialRampToValueAtTime(freq * slide, t + dur);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(vol, t + attack);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    let node = o.connect(g);
-    if (lowpass) {
-      const f = c.createBiquadFilter();
-      f.type = 'lowpass';
-      f.frequency.value = lowpass;
-      node = node.connect(f);
-    }
-    node.connect(this.bus);
-    o.start(t);
-    o.stop(t + dur + 0.05);
-  }
-
-  hit(t, dur, vol, freq, type = 'highpass') {
-    const c = this.fx.ctx;
-    const len = Math.floor(c.sampleRate * dur);
-    const buf = c.createBuffer(1, len, c.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    const src = c.createBufferSource();
-    src.buffer = buf;
-    const f = c.createBiquadFilter();
-    f.type = type;
-    f.frequency.value = freq;
-    const g = c.createGain();
-    g.gain.setValueAtTime(vol, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(f).connect(g).connect(this.bus);
-    src.start(t);
-  }
-
-  play(s, t, spb) {
-    const bar = Math.floor(s / 16);
-    const st = s % 16;
-    const root = ROOTS[bar];
-    const chord = CHORDS[bar];
-    const tone = (oct, i) => root * oct * 2 ** (chord[i % 3] / 12);
-
-    if (this.mode === 'calm') {
-      if (st === 0) {
-        this.note(t, root / 2, spb * 16, 'sine', 0.16, { attack: 0.3 });
-        for (let i = 0; i < 3; i++) this.note(t, tone(2, i), spb * 16.5, 'triangle', 0.05, { attack: 0.5 });
-      }
-      if (st === 6 || st === 10 || st === 14) this.note(t, tone(4, st), 0.6, 'sine', 0.05, { attack: 0.01 });
-      return;
-    }
-
-    // persecución
-    const I = this.intensity;
-    if (st % 4 === 0) this.note(t, 150, 0.2, 'sine', 0.5, { slide: 0.27 });
-    if (st === 4 || st === 12) this.hit(t, 0.12, 0.22, 1500);
-    if (I > 0.15 && st % 2 === 1) this.hit(t, 0.03, 0.07, 7000);
-    if (st % 2 === 0) this.note(t, root * (st % 4 === 2 ? 2 : 1), spb * 1.7, 'sawtooth', 0.09, { lowpass: 520 });
-    if (I > 0.5 && st % 2 === 0) this.note(t, tone(4, st / 2), spb * 0.9, 'square', 0.03, { lowpass: 2600 });
-    if (I > 0.85 && (st === 14 || st === 15)) this.hit(t, 0.08, 0.15, 900, 'bandpass');
   }
 }
 

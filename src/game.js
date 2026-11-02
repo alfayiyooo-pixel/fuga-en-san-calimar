@@ -20,6 +20,9 @@ import { Combo } from './systems/combo.js';
 import { drawGlow } from './fx/sprites.js';
 import { minorKoFx } from './entities/minors.js';
 
+/** Pista de música de una zona. */
+export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
+
 /**
  * Estado de una partida: jugador, cámara, mundo, obstáculos y efectos.
  * main.js decide cuándo se actualiza (menú, jugando, pausa, final).
@@ -178,6 +181,7 @@ export class Game {
 
     if (this.dead) {
       Sound.jet(0);
+      Sound.music.setFx(null);
       // cámara lenta dramática al principio de la caída
       const sdt = dt * Math.min(1, CONFIG.death.slowmo + this.deathTimer * 1.5);
       this.deathTimer += dt;
@@ -220,7 +224,10 @@ export class Game {
       this.combo.update(dt);
       this.checkRecord();
       this.trackStats(dt);
-      Sound.music.setIntensity(this.wanted.stars / 5);
+      Sound.music.setStars(this.wanted.stars);
+      // pequeño cambio musical con la habilidad especial activa
+      const P = this.powers;
+      Sound.music.setFx(P.has('bullettime') ? 'bullettime' : P.has('drive') ? 'drive' : P.has('rage') ? 'rage' : null);
     }
 
     this.camera.follow(p.x, this.view.w);
@@ -259,6 +266,7 @@ export class Game {
       this.zoneIndex = this.zone.n;
       this.hud.banner(t('zone.enter'), t(this.zone.current.nameKey));
       Sound.whoosh();
+      Sound.music.play(zoneTrack(this.zone.current.id));
     }
   }
 

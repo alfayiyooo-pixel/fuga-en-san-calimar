@@ -246,8 +246,6 @@ export const CONFIG = {
   audio: {
     sfxVolume: 0.45,
     musicVolume: 0.32,
-    chaseTempo: 124,        // ppm de la música de persecución
-    calmTempo: 84,          // ppm de la música tranquila (respiros)
     voiceVolume: 1,         // volumen de las frases de los personajes (los ajustes del jugador lo multiplican)
     voiceQueueWait: 1.6,    // s que una frase puede esperar en cola si otra está sonando (si no, se descarta)
     voiceGap: 0.25,         // s de silencio mínimo entre dos frases
@@ -260,6 +258,27 @@ export const CONFIG = {
       pilot: { pitch: 1.5, rate: 1.2, pick: { pitch: 0, rate: 1 }, special: { pitch: 0.25, rate: 1.15 }, lose: { pitch: 0.2, rate: 1.25 } },
       wild: { pitch: 0.2, rate: 1.1, pick: { pitch: 0.1, rate: 1 }, special: { pitch: 0.3, rate: 0.8 }, lose: { pitch: 0, rate: 1.1 } },
     },
+  },
+
+  // ---------------- MÚSICA ----------------
+  // Un tema por zona + menú. Generados por código salvo que exista
+  // audio/musica/<pista>.mp3 (ver audio/musica/LEEME.md).
+  music: {
+    crossfade: 2.5,         // s de fundido cruzado al cambiar de zona
+    zoneTracks: { beach: 'playa', finance: 'centro', industrial: 'industrial', hills: 'mansiones', port: 'puerto' },
+    starBoost: 0.03,        // volumen extra por estrella
+    tenseFrom: 3,           // estrellas desde las que entra la capa de tensión
+    calm: { lowpass: 1200, volume: 1.1 }, // respiro: filtro y volumen
+    // efecto de cada habilidad especial sobre la música
+    //   tempo/pitch: música generada · rate: velocidad de los archivos mp3
+    fx: {
+      none: { tempo: 1, pitch: 1, rate: 1, lowpass: 18000, highpass: 20, distortion: 0 },
+      bullettime: { tempo: 0.55, pitch: 0.84, rate: 0.7, lowpass: 1500, highpass: 20, distortion: 0 }, // Aurelio: todo se ralentiza
+      drive: { tempo: 1.12, pitch: 1.06, rate: 1.08, lowpass: 18000, highpass: 220, distortion: 0 },    // Vera: más rápido y brillante
+      rage: { tempo: 1.05, pitch: 1, rate: 1.03, lowpass: 9000, highpass: 20, distortion: 0.55 },       // Bruno: distorsión
+    },
+    // opcional por pista: { file: 'otro.mp3', loopStart: 1.2, loopEnd: 63.8 } (s) para bucles exactos
+    files: {},
   },
 
   // ---------------- PERSONAJES ----------------

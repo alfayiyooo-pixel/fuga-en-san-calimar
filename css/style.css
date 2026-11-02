@@ -905,3 +905,9 @@ canvas {
   .modal-box .hint { font-size: 11px; margin: 0; }
   .modal-box .btn { font-size: 15px; padding: 6px 22px; min-width: 0; }
 }
+
+/* ---------- CRÉDITOS ---------- */
+.credits-body { flex: 1; }
+.credits-list { margin: 0; padding-left: calc(18px * var(--s)); display: flex; flex-direction: column; gap: calc(4px * var(--s)); font-size: calc(13px * var(--s)); }
+.credits-list a { color: #9ff8ff; }
+.credits-list .lic, .dim { color: rgba(255, 244, 220, 0.6); }

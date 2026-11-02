@@ -73,13 +73,13 @@ export class Respite {
     g.hud.banner(t('respite.title'), t('respite.sub'));
     g.popups.add(t('wanted.lost'), g.view.w / 2, 215, { color: '#7ff7e8', size: 30, life: 2, rise: 10 });
     Sound.respite();
-    Sound.music.setMode('calm');
+    Sound.music.setCalm(true);
   }
 
   end(g) {
     this.active = false;
     this.timer = rand(...CONFIG.respite.interval);
     this.recover = CONFIG.respite.recoverTime;
-    if (!g.dead) Sound.music.setMode('chase');
+    Sound.music.setCalm(false);
   }
 }
