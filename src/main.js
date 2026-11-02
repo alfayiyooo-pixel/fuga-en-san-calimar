@@ -23,10 +23,12 @@ import { Daily } from './meta/daily.js';
 import { CONFIG } from './config.js';
 import { Roulette, prizeLabel } from './ui/roulette.js';
 import { grant } from './meta/progression.js';
-import { SettingsScreen } from './ui/settings.js';
+import { SettingsScreen, appCard } from './ui/settings.js';
+import { Pwa } from './core/pwa.js';
 
 // ---------- arranque ----------
 Save.load();
+Pwa.init();
 Quality.set(Save.data.settings.quality);
 const canvas = document.getElementById('canvas');
 const stage = document.getElementById('stage');
@@ -213,6 +215,33 @@ const settings = new SettingsScreen(document.getElementById('screen-settings'), 
   onClose: () => toMenu(),
   onMute: toggleMute,
 });
+// ---------- app instalable ----------
+const installBtn = document.getElementById('btn-install');
+const iosHelp = document.getElementById('ios-help');
+function refreshInstall() {
+  installBtn.classList.toggle('hidden', !Pwa.mode);
+  if (!document.getElementById('screen-settings').classList.contains('hidden')) settings.render();
+}
+async function doInstall() {
+  if (Pwa.mode === 'ios') {
+    iosHelp.classList.remove('hidden');
+    return;
+  }
+  if (await Pwa.install()) toast(t('pwa.thanks'));
+  refreshInstall();
+}
+installBtn.addEventListener('click', () => {
+  Sound.click();
+  doInstall();
+});
+document.getElementById('btn-ios-ok').addEventListener('click', () => iosHelp.classList.add('hidden'));
+Pwa.onChange((what) => {
+  if (what === 'installed') toast(t('pwa.thanks'));
+  refreshInstall();
+});
+settings.addCard(appCard({ onInstall: doInstall, onIosHelp: doInstall, toast }));
+refreshInstall();
+
 function openSettings() {
   state = 'menu';
   screens.show('settings');

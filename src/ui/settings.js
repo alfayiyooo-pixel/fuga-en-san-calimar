@@ -3,6 +3,60 @@ import { Sound } from '../core/audio.js';
 import { Save } from '../core/storage.js';
 import { Voice } from '../core/voice.js';
 import { getLang } from '../core/i18n.js';
+import { Pwa } from '../core/pwa.js';
+
+/** Tarjeta "App": instalar y pasar el progreso a otro navegador/la app de iPhone. */
+export function appCard({ onInstall, onIosHelp, toast }) {
+  let showImport = false;
+  let code = '';
+  return {
+    render() {
+      const mode = Pwa.mode;
+      return `
+        <div class="card">
+          <h3>📲 ${t('pwa.title')}</h3>
+          <p class="settings-text">${Pwa.standalone ? t('pwa.installed') : mode ? t('pwa.pitch') : t('pwa.noInstall')}</p>
+          <div class="row-btns">
+            ${mode === 'prompt' ? `<button class="btn small" data-act="install">📲 ${t('pwa.install')}</button>` : ''}
+            ${mode === 'ios' ? `<button class="btn small" data-act="ios-help">📲 ${t('pwa.install')}</button>` : ''}
+          </div>
+          <h3>💾 ${t('transfer.title')}</h3>
+          <p class="settings-text">${t('transfer.text')}</p>
+          <div class="row-btns">
+            <button class="btn small" data-act="export">📋 ${t('transfer.copy')}</button>
+            <button class="btn small" data-act="import-open">📥 ${t('transfer.paste')}</button>
+          </div>
+          ${code ? `<textarea class="code-box" readonly>${code}</textarea>` : ''}
+          ${showImport ? `<textarea class="code-box" id="import-code" placeholder="SC1:…"></textarea>
+            <button class="btn small" data-act="import">✔ ${t('transfer.load')}</button>` : ''}
+        </div>`;
+    },
+    onClick(act, el, screen) {
+      if (act === 'install') onInstall();
+      else if (act === 'ios-help') onIosHelp();
+      else if (act === 'export') {
+        code = Save.exportCode();
+        showImport = false;
+        navigator.clipboard?.writeText(code).then(() => toast(t('transfer.copied')), () => {});
+        screen.render();
+        screen.root.querySelector('.code-box')?.select();
+      } else if (act === 'import-open') {
+        showImport = !showImport;
+        code = '';
+        screen.render();
+      } else if (act === 'import') {
+        const val = screen.root.querySelector('#import-code')?.value ?? '';
+        if (Save.importCode(val)) {
+          toast(t('transfer.done'));
+          setTimeout(() => location.reload(), 900);
+        } else {
+          toast(t('transfer.bad'));
+        }
+      } else return false;
+      return true;
+    },
+  };
+}
 
 /**
  * Pantalla de ajustes: volúmenes independientes de música, efectos y voces,
@@ -95,7 +149,7 @@ export class SettingsScreen {
       const id = ids[Math.floor(Math.random() * 3)];
       Voice.say(id, 'coger', getLang(), t(`voice.${id}.coger`));
     } else {
-      for (const c of this.cards) if (c.onClick?.(act, el)) return;
+      for (const c of this.cards) if (c.onClick?.(act, el, this)) return;
     }
   }
 }

@@ -82,6 +82,26 @@ class SaveStore {
     }
   }
 
+  /** Código de texto con todo el progreso (para pasarlo a la app instalada en iPhone). */
+  exportCode() {
+    const json = JSON.stringify(this.data);
+    return 'SC1:' + btoa(unescape(encodeURIComponent(json)));
+  }
+
+  /** Carga un código de exportCode(). Devuelve true si era válido. */
+  importCode(code) {
+    try {
+      const raw = String(code).trim().replace(/^SC1:/, '');
+      const data = JSON.parse(decodeURIComponent(escape(atob(raw))));
+      if (!data || typeof data !== 'object' || !data.best || !data.stats) return false;
+      this.data = merge(DEFAULTS, data);
+      this.save();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   reset() {
     this.data = clone(DEFAULTS);
     this.save();

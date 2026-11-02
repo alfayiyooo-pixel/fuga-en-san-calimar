@@ -37,6 +37,15 @@ Abre <http://localhost:8000>. (Con Node también vale `npx serve`.)
 
 No hace falta compilar nada: GitHub Pages sirve los archivos tal cual. El archivo `.nojekyll` evita que GitHub procese la web con Jekyll. Cada `git push` a `main` actualiza el juego publicado.
 
+## Instalar como app (PWA)
+
+El juego es una **app web instalable**: se abre a **pantalla completa** desde su icono, en horizontal, y **funciona sin conexión** en cuanto se ha abierto una vez.
+
+- **Android (Chrome/Edge):** botón **📲 Instalar app** en el menú (o en ⚙ Ajustes). Si no aparece, menú ⋮ del navegador → «Instalar app». El progreso se mantiene: la app instalada comparte el guardado con el navegador.
+- **iPhone/iPad (Safari):** el botón **📲 Instalar app** muestra cómo hacerlo: Compartir ⬆︎ → «Añadir a pantalla de inicio». Ojo: en iOS la app instalada guarda su progreso **aparte** de Safari; para llevártelo usa ⚙ Ajustes → **Pasar mi progreso** → «Copiar código» en Safari y «Pegar código» en la app.
+- **Actualizaciones:** el service worker ([`sw.js`](sw.js)) usa «primero la red»: con conexión siempre carga lo último publicado (cada push, incluidos audios nuevos) y lo guarda en caché para jugar offline. No hay que tocar nada al publicar; si algún día quieres vaciar la caché de todos, sube `VERSION` en `sw.js`.
+- **Icono:** dibujado por código con el protagonista ([`src/ui/appicon.js`](src/ui/appicon.js)); los PNG de [`icons/`](icons/) se regeneran con `node tools/generar-iconos.js` (servidor local en marcha y Playwright instalado).
+
 ## Cómo se juega
 
 ### La ciudad y los peligros

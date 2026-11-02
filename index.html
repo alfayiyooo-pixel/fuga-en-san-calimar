@@ -4,6 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <meta name="theme-color" content="#ff7a3d">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="San Calimar">
   <meta name="description" content="Endless runner con jetpack por San Calimar, una ciudad costera inventada.">
   <title>Fuga en San Calimar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -45,7 +52,10 @@
             <button class="lang-btn" data-lang="es">ES</button>
             <button class="lang-btn" data-lang="en">EN</button>
           </div>
-          <button class="chip-btn" id="btn-quality"></button>
+          <div class="menu-chips">
+            <button class="chip-btn" id="btn-quality"></button>
+            <button class="chip-btn install hidden" id="btn-install">📲 <span data-i18n="pwa.install"></span></button>
+          </div>
           <p class="hint" data-i18n="menu.hint"></p>
         </section>
 
@@ -113,6 +123,18 @@
   </div>
 
   <div id="toast" class="toast"></div>
+  <div id="ios-help" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <h2 class="screen-title small-title" data-i18n="pwa.iosTitle"></h2>
+      <ol class="ios-steps">
+        <li data-i18n-html="pwa.iosStep1"></li>
+        <li data-i18n-html="pwa.iosStep2"></li>
+        <li data-i18n-html="pwa.iosStep3"></li>
+      </ol>
+      <p class="hint small" data-i18n="pwa.iosNote"></p>
+      <button class="btn btn-primary" id="btn-ios-ok" data-i18n="pwa.ok"></button>
+    </div>
+  </div>
   <div id="rotate"><div class="rotate-icon">📱↻</div><p data-i18n="rotate"></p></div>
 
   <script type="module" src="src/main.js"></script>
