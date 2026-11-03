@@ -27,6 +27,9 @@ export const CONFIG = {
   // Ajustable en vivo con ?debug (panel de deslizadores).
   player: {
     screenX: 0.26,      // posición horizontal en pantalla (fracción del ancho)
+    // aspecto: tamaño de dibujo (la caja de choque no cambia), contorno luminoso
+    // (solo en calidad alta) y estiramiento/aplastamiento al saltar y aterrizar
+    visual: { scale: 1.15, outline: 'rgba(255, 248, 225, 0.9)', outlineBlur: 6, squash: 0.12 },
     width: 30,          // caja de colisión
     height: 50,
     gravity: 1500,      // aceleración hacia abajo (px/s²)

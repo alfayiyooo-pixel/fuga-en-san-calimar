@@ -275,6 +275,10 @@ Opcional: variantes `radio_<momento>_2_<idioma>.mp3`, `_3_`, `_4_`; el juego eli
 
 ## Gráficos y rendimiento
 
+**Detalle visual (calidad alta):** variaciones en palmeras (altura, inclinación, grosor, hojas y cocos), sombrillas (tamaño, gajos, toallas), casetas, árboles, setos, contenedores y bidones; rayos de sol suaves; destellos del sol y la luna en el agua, olas que llegan a la orilla y espuma que sube y baja; huellas, conchas y ondas en la arena; vetas, grava, manchas y grietas en el suelo; perspectiva atmosférica (las capas lejanas más claras); y un **primer plano** desenfocado (hierba, postes, arbustos, tuberías, cajas…) que pasa rápido por la franja de abajo sin tapar los obstáculos. El personaje se dibuja un 15 % más grande que su caja de choque, con un contorno luminoso suave y estiramiento/aplastamiento al saltar y aterrizar (`player.visual`). Los contadores tienen un fondo semitransparente y la barra de Radio Calimar es más compacta y va pegada al borde inferior.
+
+En calidad **baja** se quitan el primer plano, los rayos, las texturas y el contorno, y la vida del fondo baja a 4 elementos a la vez.
+
 Todo el arte está **generado por código** (sin imágenes externas, así que no hay licencias de terceros que declarar):
 
 - Cada zona tiene su ambiente: atardecer en la playa, noche con neones en el centro financiero, anochecer con humo en la zona industrial, mañana despejada en las colinas y hora azul en el puerto.

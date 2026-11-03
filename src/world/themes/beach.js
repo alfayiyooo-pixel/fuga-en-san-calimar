@@ -2,7 +2,8 @@
 // Sol enorme hundiéndose en el mar, ciudad lejana en el cabo,
 // chiringuitos con guirnaldas de bombillas y palmeras a contraluz.
 
-import { sea, sunReflection, streetLamp, INK } from './shapes.js';
+import { sea, sunReflection, streetLamp, INK, glints, shoreWaves } from './shapes.js';
+import { hash } from '../../core/rng.js';
 import { drawGlow } from '../../fx/sprites.js';
 
 const HORIZON = 0.6;
@@ -24,31 +25,54 @@ export const beach = {
   clouds: { color: 'rgba(255, 196, 170, 0.95)', shade: 'rgba(150, 70, 120, 0.55)', rim: 'rgba(255, 236, 190, 0.9)' },
   haze: 'rgba(255, 160, 120, 0.4)',
   skyline: { factor: 0.06, base: HORIZON, min: 10, max: 46, color: '#6b3b6e', lit: '#ffd38a' },
-  ground: { top: '#e0a868', body: '#a8653a', line: '#7c4826', edge: '#4a2614', joint: 48, beams: true },
+  ground: { top: '#e0a868', body: '#a8653a', line: '#7c4826', edge: '#4a2614', joint: 48, beams: true, grain: 'rgba(90, 40, 20, 0.28)', nails: 'rgba(60, 30, 20, 0.6)' },
 
-  backdrop(ctx, v, camX, t) {
+  rays: { color: 'rgba(255, 200, 140, 0.07)' },
+
+  backdrop(ctx, v, camX, t, q) {
     const hy = v.h * HORIZON;
     const sy = v.h * SAND_TOP;
     sea(ctx, v, camX, t, hy, sy, '#d0708a', '#3b3c88', 'rgba(255, 220, 180, 0.6)');
     sunReflection(ctx, v.w * this.celestial.x, hy, 8, t, 'rgba(255, 200, 120, 0.8)');
+    if (q.detail) {
+      glints(ctx, v.w * this.celestial.x, hy + 4, 150, sy - hy - 10, t, 'rgba(255, 240, 200, 0.95)', 14);
+      shoreWaves(ctx, v, camX, t, hy + 18, sy - 6, 'rgba(255, 236, 220, 0.5)');
+    }
 
-    // espuma
+    // arena mojada y espuma que sube y baja por la orilla
+    const tide = Math.sin(t * 0.9) * 3;
+    ctx.fillStyle = '#c98a6a';
+    ctx.fillRect(0, sy - 2, v.w, 9);
     ctx.fillStyle = 'rgba(255, 236, 220, 0.85)';
     ctx.beginPath();
     ctx.moveTo(0, sy);
     const foamOff = camX * 0.35;
-    for (let x = 0; x <= v.w; x += 20) ctx.lineTo(x, sy - 3 - 3 * Math.sin((x + foamOff) * 0.04 + t * 1.5));
-    ctx.lineTo(v.w, sy + 4);
-    ctx.lineTo(0, sy + 4);
+    for (let x = 0; x <= v.w; x += 16) ctx.lineTo(x, sy - 3 + tide - 3 * Math.sin((x + foamOff) * 0.04 + t * 1.5));
+    ctx.lineTo(v.w, sy + 4 + tide);
+    ctx.lineTo(0, sy + 4 + tide);
     ctx.fill();
+    if (q.detail) {
+      ctx.strokeStyle = 'rgba(255, 245, 235, 0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let x = 0; x <= v.w; x += 16) {
+        const yy = sy + 7 + tide * 1.6 + 2 * Math.sin((x + foamOff) * 0.06 - t * 1.2);
+        if (x === 0) ctx.moveTo(x, yy);
+        else ctx.lineTo(x, yy);
+      }
+      ctx.stroke();
+    }
 
     // arena cálida del atardecer
     const sand = ctx.createLinearGradient(0, sy, 0, v.groundY);
     sand.addColorStop(0, '#f6c48d');
     sand.addColorStop(1, '#d99a68');
     ctx.fillStyle = sand;
-    ctx.fillRect(0, sy + 2, v.w, v.groundY - sy);
+    ctx.fillRect(0, sy + 9 + tide, v.w, v.groundY - sy);
+    if (q.detail) sandDetails(ctx, v, camX, sy + 14, v.groundY);
   },
+
+  foreground: { chance: 0.5, kinds: ['grass', 'grass', 'posts'], color: 'rgba(58, 26, 44, 0.92)', rim: 'rgba(110, 50, 60, 0.9)' },
 
   layers: [
     // islas y veleros a contraluz
@@ -98,8 +122,8 @@ export const beach = {
       draw(ctx, sx, r, v, t, i) {
         const base = v.h * SAND_TOP + 30 + r(3) * 22;
         const kind = r(0);
-        if (kind < 0.38) drawUmbrella(ctx, sx + r(1) * 60, base, UMBRELLAS[Math.floor(r(2) * UMBRELLAS.length)]);
-        else if (kind < 0.58) drawHut(ctx, sx, base, HUTS[Math.floor(r(2) * HUTS.length)]);
+        if (kind < 0.38) drawUmbrella(ctx, sx + r(1) * 60, base, UMBRELLAS[Math.floor(r(2) * UMBRELLAS.length)], r);
+        else if (kind < 0.58) drawHut(ctx, sx, base, HUTS[Math.floor(r(2) * HUTS.length)], r);
         else if (kind < 0.78) drawBar(ctx, sx, base, t, i);
         else if (kind < 0.88) drawLifeguard(ctx, sx + 30, base);
       },
@@ -111,7 +135,7 @@ export const beach = {
       spacing: 280,
       draw(ctx, sx, r, v, t, i) {
         const base = v.groundY + 2;
-        if (r(0) < 0.72) drawPalm(ctx, sx + r(1) * 120, base, 170 + r(2) * 90, (r(3) - 0.5) * 70, t, i);
+        if (r(0) < 0.72) drawPalm(ctx, sx + r(1) * 120, base, 150 + r(2) * 120, (r(3) - 0.5) * 90, t, i, r);
         else if (r(0) < 0.9) streetLamp(ctx, sx + 60, base, '#2a1838', '#ffe9a8', true);
       },
     },
@@ -125,22 +149,36 @@ function shadowOnSand(ctx, x, y, w) {
   ctx.fill();
 }
 
-function drawUmbrella(ctx, x, base, colors) {
-  shadowOnSand(ctx, x + 10, base, 40);
-  ctx.fillStyle = colors[0];
-  ctx.fillRect(x + 6, base - 4, 44, 8);
-  ctx.fillStyle = 'rgba(0,0,0,0.12)';
-  ctx.fillRect(x + 6, base + 1, 44, 3);
+/** Sombrilla con variaciones (tamaño, inclinación, gajos y toalla). */
+function drawUmbrella(ctx, x, base, colors, r) {
+  const sz = 0.8 + r(5) * 0.45;
+  const tilt = (r(6) - 0.6) * 20;
+  const pole = 62 * sz;
+  shadowOnSand(ctx, x + 10, base, 40 * sz);
+  if (r(7) < 0.75) {
+    ctx.fillStyle = r(8) < 0.5 ? colors[0] : UMBRELLAS[Math.floor(r(9) * UMBRELLAS.length)][0];
+    ctx.save();
+    ctx.translate(x + 28, base);
+    ctx.rotate((r(10) - 0.5) * 0.3);
+    ctx.fillRect(-22, -4, 44, 8);
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.fillRect(-22, -1, 44, 2);
+    ctx.restore();
+  }
   ctx.strokeStyle = '#fff4dc';
   ctx.lineWidth = 3;
   ctx.beginPath();
   ctx.moveTo(x, base);
-  ctx.lineTo(x - 6, base - 62);
+  ctx.lineTo(x + tilt * 0.3 - 6, base - pole);
   ctx.stroke();
-  const cx = x - 6;
-  const cy = base - 62;
-  const rad = 36;
-  const n = 6;
+  const cx = x + tilt * 0.3 - 6;
+  const cy = base - pole;
+  const rad = 36 * sz;
+  const n = 5 + Math.floor(r(11) * 4);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(tilt * 0.012);
+  ctx.translate(-cx, -cy);
   for (let k = 0; k < n; k++) {
     ctx.fillStyle = colors[k % 2];
     ctx.beginPath();
@@ -161,11 +199,12 @@ function drawUmbrella(ctx, x, base, colors) {
   ctx.beginPath();
   ctx.arc(cx, cy + 8, rad, Math.PI, 0);
   ctx.stroke();
+  ctx.restore();
 }
 
-function drawHut(ctx, x, base, color) {
-  const w = 58;
-  const h = 48;
+function drawHut(ctx, x, base, color, r) {
+  const w = 50 + Math.floor(r(5) * 22);
+  const h = 42 + Math.floor(r(6) * 14);
   shadowOnSand(ctx, x + w / 2 + 8, base, 38);
   ctx.fillStyle = color;
   ctx.fillRect(x, base - h, w, h);
@@ -173,10 +212,10 @@ function drawHut(ctx, x, base, color) {
   for (let k = 0; k < w; k += 12) ctx.fillRect(x + k, base - h, 6, h);
   ctx.fillStyle = 'rgba(80, 30, 80, 0.2)';
   ctx.fillRect(x, base - h, 10, h);
-  ctx.fillStyle = '#ff7a3d';
+  ctx.fillStyle = ['#ff7a3d', '#19c3b1', '#ff5d73', '#7b5cff'][Math.floor(r(7) * 4)];
   ctx.beginPath();
   ctx.moveTo(x - 6, base - h);
-  ctx.lineTo(x + w / 2, base - h - 22);
+  ctx.lineTo(x + w / 2, base - h - 16 - r(8) * 12);
   ctx.lineTo(x + w + 6, base - h);
   ctx.fill();
   ctx.fillStyle = '#5b3a8a';
@@ -265,13 +304,20 @@ function drawLifeguard(ctx, x, base) {
   ctx.fillRect(x, base - 130, 14, 9);
 }
 
-function drawPalm(ctx, x, base, height, lean, t, i) {
+/** Palmera a contraluz con variaciones: altura, inclinación, grosor, hojas y cocos. */
+function drawPalm(ctx, x, base, height, lean, t, i, r) {
   const topX = x + lean;
   const topY = base - height;
+  const thick = 9 + r(4) * 7;
+  const leaves = 6 + Math.floor(r(5) * 4);
+  const leafLen = 58 + r(6) * 34;
+  const droop = 0.35 + r(7) * 0.3;
+  const leafCol = ['#173a3a', '#1d3f2f', '#22343f'][Math.floor(r(8) * 3)];
+  const nuts = Math.floor(r(9) * 4);
   ctx.lineCap = 'round';
   // tronco a contraluz con borde iluminado
   ctx.strokeStyle = '#4a2a35';
-  ctx.lineWidth = 13;
+  ctx.lineWidth = thick;
   ctx.beginPath();
   ctx.moveTo(x, base);
   ctx.quadraticCurveTo(x + lean * 0.1, base - height * 0.5, topX, topY);
@@ -289,21 +335,20 @@ function drawPalm(ctx, x, base, height, lean, t, i) {
     const px = x + (topX - x) * f * f + lean * 0.2 * f * (1 - f);
     const py = base - height * f;
     ctx.beginPath();
-    ctx.moveTo(px - 6, py);
-    ctx.lineTo(px + 6, py - 2);
+    ctx.moveTo(px - thick * 0.45, py);
+    ctx.lineTo(px + thick * 0.45, py - 2);
     ctx.stroke();
   }
   const sway = Math.sin(t * 1.3 + i * 1.7) * 0.06;
-  const leaves = 7;
   for (let k = 0; k < leaves; k++) {
-    const a = -Math.PI + (k / (leaves - 1)) * Math.PI + sway;
-    const len = 70 + (k % 2) * 16;
+    const a = -Math.PI + (k / (leaves - 1)) * Math.PI + sway + (hash(i * 13 + k, 40) - 0.5) * 0.25;
+    const len = leafLen + (k % 2) * 16 + hash(i * 7 + k, 41) * 12;
     const ex = topX + Math.cos(a) * len;
-    const ey = topY + Math.sin(a) * len * 0.45 + 34;
+    const ey = topY + Math.sin(a) * len * droop + len * 0.42;
     const cx = topX + Math.cos(a) * len * 0.5;
     const cy = topY + Math.sin(a) * len * 0.6 - 12;
-    ctx.strokeStyle = '#173a3a';
-    ctx.lineWidth = 12;
+    ctx.strokeStyle = leafCol;
+    ctx.lineWidth = 9 + (k % 3) * 2;
     ctx.beginPath();
     ctx.moveTo(topX, topY);
     ctx.quadraticCurveTo(cx, cy, ex, ey);
@@ -316,10 +361,65 @@ function drawPalm(ctx, x, base, height, lean, t, i) {
     ctx.stroke();
   }
   ctx.fillStyle = '#2f1a24';
-  for (let k = 0; k < 3; k++) {
+  for (let k = 0; k < nuts; k++) {
     ctx.beginPath();
     ctx.arc(topX - 6 + k * 6, topY + 6 + (k % 2) * 3, 5, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.lineCap = 'butt';
+}
+
+/** Huellas, conchas, toallas y ondas en la arena (se mueven con la capa media). */
+function sandDetails(ctx, v, camX, top, bottom) {
+  const f = 0.45;
+  const step = 70;
+  const off = camX * f;
+  const i0 = Math.floor(off / step) - 1;
+  const i1 = Math.ceil((off + v.w) / step) + 1;
+  for (let i = i0; i <= i1; i++) {
+    const x = i * step - off;
+    const h = (k) => hash(i, 700 + k);
+    const y = top + h(1) * (bottom - top - 8);
+    const kind = h(0);
+    if (kind < 0.3) {
+      // huellas
+      ctx.fillStyle = 'rgba(150, 80, 60, 0.22)';
+      for (let k = 0; k < 4; k++) {
+        ctx.beginPath();
+        ctx.ellipse(x + k * 11, y + (k % 2) * 6, 3, 1.6, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (kind < 0.45) {
+      // concha
+      ctx.fillStyle = h(2) < 0.5 ? '#fff0e6' : '#ffc2b8';
+      ctx.beginPath();
+      ctx.arc(x, y, 3.2, Math.PI, 0);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(160, 90, 80, 0.5)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      for (let k = -1; k <= 1; k++) {
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + k * 2.5, y - 2.6);
+      }
+      ctx.stroke();
+    } else if (kind < 0.75) {
+      // ondas de viento en la arena
+      ctx.strokeStyle = 'rgba(255, 230, 190, 0.35)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + 9, y - 2, x + 18, y);
+      ctx.moveTo(x + 6, y + 4);
+      ctx.quadraticCurveTo(x + 15, y + 2, x + 24, y + 4);
+      ctx.stroke();
+    } else if (kind < 0.8) {
+      // piedrecitas
+      ctx.fillStyle = 'rgba(120, 70, 60, 0.35)';
+      ctx.beginPath();
+      ctx.ellipse(x, y, 2.4, 1.6, 0, 0, Math.PI * 2);
+      ctx.ellipse(x + 5, y + 2, 1.6, 1.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 }

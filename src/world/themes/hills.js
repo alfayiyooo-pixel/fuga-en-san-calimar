@@ -30,12 +30,15 @@ export const hills = {
   clouds: { color: 'rgba(255, 255, 255, 0.95)', shade: 'rgba(160, 190, 230, 0.6)', rim: null },
   haze: 'rgba(225, 242, 255, 0.45)',
   skyline: { factor: 0.04, base: 0.6, min: 130, max: 230, color: '#9cc0e0', style: 'mountains' },
-  ground: { top: '#d8d2c0', body: '#3d3a4a', line: '#2b2936', edge: '#1e1c28', joint: 0, dashes: true },
+  ground: { top: '#d8d2c0', body: '#3d3a4a', line: '#2b2936', edge: '#1e1c28', joint: 0, dashes: true, speckle: 'rgba(220, 220, 240, 0.1)', stains: 'rgba(20, 20, 30, 0.15)' },
+  rays: { color: 'rgba(255, 250, 220, 0.06)' },
 
   backdrop(ctx, v, camX) {
     hillLine(ctx, v, camX * 0.07, v.h * 0.56, 120, '#a8dd9c', '#8acb85');
     hillLine(ctx, v, camX * 0.15 + 500, v.h * 0.69, 110, '#7cc47d', '#5aa865');
   },
+
+  foreground: { chance: 0.5, kinds: ['bush', 'grass'], color: 'rgba(24, 70, 40, 0.94)', rim: 'rgba(60, 130, 70, 0.9)', flowers: 'rgba(255, 140, 170, 0.8)' },
 
   layers: [
     {
@@ -112,18 +115,26 @@ export const hills = {
         const base = v.groundY + 2;
         const k = r(0);
         if (k < 0.35) {
+          const hw = 100 + Math.floor(r(5) * 70);
+          const hh = 28 + Math.floor(r(6) * 14);
           ctx.fillStyle = INK;
-          ctx.fillRect(sx - 2, base - 36, 154, 36);
+          ctx.fillRect(sx - 2, base - hh - 2, hw + 4, hh + 2);
           ctx.fillStyle = '#2e8b4e';
-          ctx.fillRect(sx, base - 34, 150, 34);
+          ctx.fillRect(sx, base - hh, hw, hh);
           ctx.fillStyle = '#45b56c';
-          ctx.fillRect(sx, base - 34, 150, 8);
+          ctx.fillRect(sx, base - hh, hw, 8);
           ctx.fillStyle = 'rgba(0, 40, 20, 0.25)';
-          for (let x = sx + 8; x < sx + 150; x += 16) ctx.fillRect(x, base - 24, 6, 20);
+          for (let x = sx + 8; x < sx + hw; x += 16) ctx.fillRect(x, base - hh + 10, 6, hh - 14);
+          // flores
+          if (r(7) < 0.6) {
+            ctx.fillStyle = ['#ff6b9a', '#ffd23f', '#fff4dc'][Math.floor(r(8) * 3)];
+            for (let x = sx + 6; x < sx + hw - 4; x += 11) ctx.fillRect(x + ((x * 7) % 5), base - hh + 2 + ((x * 3) % 4), 3, 3);
+          }
         } else if (k < 0.6) {
           ctx.fillStyle = '#9a8670';
           ctx.fillRect(sx + 20, base - 20, 30, 20);
-          for (const [cy, rad] of [[42, 22], [78, 15], [101, 9]]) {
+          const tk = 0.8 + r(5) * 0.4;
+          for (const [cy, rad] of [[42 * tk, 22 * tk], [78 * tk, 15 * tk], [101 * tk, 9 * tk]].slice(0, r(6) < 0.3 ? 2 : 3)) {
             ctx.fillStyle = INK;
             ctx.beginPath();
             ctx.arc(sx + 35, base - cy, rad + 2, 0, Math.PI * 2);
@@ -157,7 +168,8 @@ export const hills = {
           ctx.fillRect(sx - 14, base - 90, 5, 90);
           ctx.fillRect(sx + 120, base - 90, 5, 90);
         } else {
-          tree(ctx, sx + 40, base, 130, '#6b4224', '#3a9e5a', '#55c07a');
+          const pal = [['#3a9e5a', '#55c07a'], ['#2f8a4e', '#4caf62'], ['#5aa84a', '#7cc45e']][Math.floor(r(3) * 3)];
+          tree(ctx, sx + 40, base, 105 + r(2) * 55, '#6b4224', pal[0], pal[1]);
         }
       },
     },

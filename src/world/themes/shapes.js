@@ -131,3 +131,64 @@ export function beacon(ctx, x, y, t, phase = 0) {
   ctx.fill();
   if (on) drawGlow(ctx, x, y, 16, 'rgba(255, 60, 80, 0.9)', 0.9);
 }
+
+/** Destellos del sol/luna en el agua: estrellitas que parpadean. */
+export function glints(ctx, cx, top, spread, height, t, color, n = 12) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = color;
+  for (let k = 0; k < n; k++) {
+    const ph = t * (1.3 + (k % 4) * 0.4) + k * 2.1;
+    const a = Math.max(0, Math.sin(ph));
+    if (a < 0.3) continue;
+    const yk = ((k * 37) % 100) / 100;
+    const x = cx + (((k * 53) % 100) / 100 - 0.5) * spread * (0.4 + yk);
+    const y = top + yk * height;
+    const sz = 1 + a * 2.6;
+    ctx.globalAlpha = a;
+    ctx.fillRect(x - sz * 2, y - 0.6, sz * 4, 1.2);
+    ctx.fillRect(x - 0.6, y - sz, 1.2, sz * 2);
+  }
+  ctx.restore();
+}
+
+/** Crestas de olas que avanzan hacia la orilla. */
+export function shoreWaves(ctx, v, camX, t, top, bottom, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.6;
+  const rows = 3;
+  for (let r = 0; r < rows; r++) {
+    const k = ((t * 0.18 + r / rows) % 1);
+    const y = top + (bottom - top) * k;
+    ctx.globalAlpha = Math.sin(k * Math.PI) * 0.9;
+    const off = (camX * (0.16 + k * 0.1) + r * 140) % 220;
+    for (let x = -off; x < v.w; x += 220) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + 2);
+      ctx.quadraticCurveTo(x + 30, y - 3, x + 60 + k * 40, y + 1);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+/** Rayos de sol suaves que giran despacio (modo 'lighter'). */
+export function sunRays(ctx, x, y, t, color, len = 900, n = 9) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = color;
+  const rot = t * 0.03;
+  for (let k = 0; k < n; k++) {
+    const a = rot + (k / n) * Math.PI * 2;
+    const w = 0.07 + 0.05 * Math.sin(k * 2.3 + t * 0.4);
+    ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 0.5 + k);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(a - w) * len, y + Math.sin(a - w) * len);
+    ctx.lineTo(x + Math.cos(a + w) * len, y + Math.sin(a + w) * len);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}

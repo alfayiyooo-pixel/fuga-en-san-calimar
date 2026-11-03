@@ -15,7 +15,10 @@ export const industrial = {
   clouds: { color: 'rgba(140, 70, 80, 0.7)', shade: 'rgba(60, 25, 45, 0.6)', rim: 'rgba(255, 150, 100, 0.5)' },
   haze: 'rgba(230, 110, 70, 0.4)',
   skyline: { factor: 0.06, base: 0.8, min: 40, max: 120, color: '#3a1a33', lit: '#ffb060', style: 'factory' },
-  ground: { top: '#9a8f88', body: '#5a524e', line: '#7b726b', edge: '#2c2624', joint: 80, hazard: true },
+  ground: { top: '#9a8f88', body: '#5a524e', line: '#7b726b', edge: '#2c2624', joint: 80, hazard: true, speckle: 'rgba(30, 20, 20, 0.18)', stains: 'rgba(20, 10, 20, 0.22)', cracks: 'rgba(40, 30, 30, 0.35)' },
+  rays: { color: 'rgba(255, 140, 90, 0.06)' },
+
+  foreground: { chance: 0.5, kinds: ['pipe', 'barrels', 'grass'], color: 'rgba(36, 14, 22, 0.94)', rim: 'rgba(110, 50, 40, 0.9)' },
 
   layers: [
     // fábricas lejanas con humo y antorchas
@@ -159,23 +162,36 @@ export const industrial = {
           const rows = 1 + Math.floor(r(1) * 3);
           for (let j = 0; j < rows; j++) {
             const c = CONTAINERS[Math.floor(r(2 + j) * CONTAINERS.length)];
-            const x = sx + (j % 2) * 14;
+            const cw = j === 0 ? 96 + Math.floor(r(8) * 40) : 90 + Math.floor(r(9 + j) * 30);
+            const x = sx + (j % 2) * (6 + r(12) * 20);
             const y = base - (j + 1) * 40;
             ctx.fillStyle = INK;
-            ctx.fillRect(x - 2, y - 2, 124, 42);
+            ctx.fillRect(x - 2, y - 2, cw + 4, 42);
             ctx.fillStyle = c;
-            ctx.fillRect(x, y, 120, 38);
+            ctx.fillRect(x, y, cw, 38);
             ctx.fillStyle = 'rgba(0,0,0,0.2)';
-            for (let px = x + 6; px < x + 120; px += 9) ctx.fillRect(px, y + 3, 3, 32);
+            for (let px = x + 6; px < x + cw; px += 9) ctx.fillRect(px, y + 3, 3, 32);
             ctx.fillStyle = 'rgba(255, 170, 110, 0.35)';
-            ctx.fillRect(x, y, 120, 3);
+            ctx.fillRect(x, y, cw, 3);
+            // puertas con cierres u óxido
+            if (r(13 + j) < 0.5) {
+              ctx.fillStyle = 'rgba(30, 15, 20, 0.45)';
+              ctx.fillRect(x + cw - 22, y + 6, 2, 26);
+              ctx.fillRect(x + cw - 12, y + 6, 2, 26);
+            } else {
+              ctx.fillStyle = 'rgba(140, 60, 30, 0.35)';
+              ctx.beginPath();
+              ctx.ellipse(x + cw * r(16 + j), y + 30, 10, 5, 0, 0, Math.PI * 2);
+              ctx.fill();
+            }
           }
         } else if (k < 0.75) {
-          for (let j = 0; j < 3; j++) {
+          const nb = 2 + Math.floor(r(6) * 3);
+          for (let j = 0; j < nb; j++) {
             const x = sx + j * 26;
             ctx.fillStyle = INK;
             ctx.fillRect(x - 2, base - 40, 26, 40);
-            ctx.fillStyle = j === 1 ? '#3f9a5c' : '#c8463a';
+            ctx.fillStyle = ['#3f9a5c', '#c8463a', '#2e7fb8', '#e0a224'][Math.floor(r(20 + j) * 4)];
             ctx.fillRect(x, base - 38, 22, 38);
             ctx.fillStyle = 'rgba(0,0,0,0.25)';
             ctx.fillRect(x, base - 28, 22, 3);

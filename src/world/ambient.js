@@ -1194,4 +1194,4 @@ const DRAW = {
     if (Math.floor(time * 1.5 + a.seed * 3) % 2 === 0) drawGlow(ctx, x + 88 * s, base - H - 8 * s, 8, 'rgba(255, 80, 80, 0.9)', 0.9);
   },
 };
-export const __ZONES = ZONES; // para pruebas
+export const __ZONES = ZONES; // para las pruebas automáticas

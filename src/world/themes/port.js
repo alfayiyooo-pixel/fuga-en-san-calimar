@@ -2,7 +2,7 @@
 // Cielo malva con luna, faro con haz giratorio, buques con ojos de buey
 // encendidos, grúas pórtico con balizas y reflejos en el agua.
 
-import { sea, sunReflection, beacon, INK } from './shapes.js';
+import { sea, sunReflection, beacon, INK, glints } from './shapes.js';
 import { drawGlow } from '../../fx/sprites.js';
 import { hash } from '../../core/rng.js';
 
@@ -18,12 +18,14 @@ export const port = {
   clouds: { color: 'rgba(120, 90, 150, 0.55)', shade: 'rgba(40, 35, 80, 0.5)', rim: 'rgba(255, 170, 190, 0.4)' },
   haze: 'rgba(170, 90, 140, 0.35)',
   skyline: { factor: 0.05, base: HORIZON, min: 14, max: 60, color: '#1c2252', lit: '#ffe0a0' },
-  ground: { top: '#7a6a5e', body: '#3e342e', line: '#2a221d', edge: '#17110e', joint: 40, bumpers: true },
+  ground: { top: '#7a6a5e', body: '#3e342e', line: '#2a221d', edge: '#17110e', joint: 40, bumpers: true, grain: 'rgba(20, 12, 10, 0.3)', sheen: 'rgba(200, 200, 255, 0.07)' },
+  rays: { color: 'rgba(255, 220, 235, 0.03)' },
 
   backdrop(ctx, v, camX, t, q) {
     const hy = v.h * HORIZON;
     sea(ctx, v, camX, t, hy, v.groundY, '#3d3a7e', '#0f1638', 'rgba(255, 200, 220, 0.5)');
     sunReflection(ctx, v.w * this.celestial.x, hy, 6, t, 'rgba(255, 240, 230, 0.55)');
+    if (q.detail) glints(ctx, v.w * this.celestial.x, hy + 6, 220, v.groundY - hy - 40, t, 'rgba(255, 240, 250, 0.85)', 16);
     // reflejos de las luces del puerto en el agua
     if (q.detail) {
       ctx.globalCompositeOperation = 'lighter';
@@ -39,6 +41,8 @@ export const port = {
       ctx.globalCompositeOperation = 'source-over';
     }
   },
+
+  foreground: { chance: 0.5, kinds: ['crates', 'rope', 'bollards'], color: 'rgba(10, 12, 30, 0.95)', rim: 'rgba(70, 70, 120, 0.9)' },
 
   layers: [
     // buques y faro

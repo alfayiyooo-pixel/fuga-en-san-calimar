@@ -318,6 +318,9 @@ export class Game {
 
       Sound.jet(p.vehicle || p.onFoot ? 0 : p.thrust);
       if (ev.jumped) Sound.hop();
+      if (ev.jumped || ev.doubleJumped) p.squash = 0.9;
+      if (ev.landed) p.squash = -clamp(ev.impact / 800, 0.15, 0.8);
+      p.squash = approach(p.squash ?? 0, 0, 12, dt);
       if (ev.doubleJumped) this.doubleJumpFx(p);
       this.foot.update(dt, this);
       if (ev.landed && ev.impact > CONFIG.player.hardLanding) {
@@ -758,6 +761,7 @@ export class Game {
     if (!menu) this.boss.draw(ctx, cam.x, this);
     if (showPlayer && this.intro.playerVisible) this.player.draw(ctx, cam.x, this.t);
     for (const o of this.obstacles) o.front?.(ctx, cam.x, this);
+    this.parallax.drawForeground(ctx, v, cam.x, this.t, zone.current);
     for (const o of this.obstacles) o.overlay(ctx, this);
     this.arrest.overlay(ctx, this);
     this.boss.overlay(ctx, this);

@@ -1,6 +1,7 @@
 import { hash } from '../core/rng.js';
 import { Quality } from '../core/quality.js';
 import { drawGlow, getRenderScale } from '../fx/sprites.js';
+import { sunRays } from './themes/shapes.js';
 
 const CHUNK = 512;     // ancho de cada tira cacheada (px lógicos)
 const BLEED = 2;      // solape para evitar costuras
@@ -24,6 +25,8 @@ export class Parallax {
   drawBackground(ctx, v, camX, t, theme, hook = null) {
     const q = Quality.settings;
     this.drawCachedSky(ctx, v, t, theme, q);
+    // rayos de luz suaves desde el sol (o la luna)
+    if (theme.rays && q.detail && theme.celestial) sunRays(ctx, v.w * theme.celestial.x, theme.celestial.y, t, theme.rays.color);
     this.drawClouds(ctx, v, camX, t, theme);
     if (theme.skyline) this.drawSkyline(ctx, v, camX, t, theme.skyline, q);
     this.haze(ctx, v, theme.haze, 0.55, 1);
@@ -38,7 +41,11 @@ export class Parallax {
         hook?.('waterNear');
         hook?.('groundFar');
       }
-      if (li === 1) hook?.('ground');
+      if (li === 1) {
+        // perspectiva atmosférica: también la capa media algo más clara que la cercana
+        this.haze(ctx, v, theme.haze, 0.72, 0.22);
+        hook?.('ground');
+      }
     });
   }
 
@@ -347,6 +354,8 @@ export class Parallax {
         ctx.fill();
       }
     }
+    // texturas: vetas y clavos de madera, grava, manchas y grietas
+    if (Quality.settings.detail) this.groundTexture(ctx, v, camX, g, gy);
     // reflejos de neón en el suelo mojado (zonas de noche)
     if (g.reflect) {
       ctx.globalCompositeOperation = 'lighter';
@@ -361,4 +370,220 @@ export class Parallax {
       ctx.globalCompositeOperation = 'source-over';
     }
   }
+
+  groundTexture(ctx, v, camX, g, gy) {
+    const mod = (a, n) => ((a % n) + n) % n;
+    const step = 48;
+    const i0 = Math.floor(camX / step) - 1;
+    const i1 = Math.ceil((camX + v.w) / step) + 1;
+    for (let i = i0; i <= i1; i++) {
+      const x = i * step - camX;
+      const h = (k) => hash(i, 1200 + k);
+      if (g.grain) {
+        ctx.fillStyle = g.grain;
+        ctx.fillRect(x + h(0) * 20, gy + 4 + h(1) * 5, 10 + h(2) * 18, 1);
+        ctx.fillRect(x + h(3) * 30, gy + 26 + h(4) * 30, 14 + h(5) * 20, 1.5);
+      }
+      if (g.nails) {
+        ctx.fillStyle = g.nails;
+        ctx.fillRect(x + 4, gy + 5, 2, 2);
+        ctx.fillRect(x + step - 8, gy + 5, 2, 2);
+      }
+      if (g.speckle) {
+        ctx.fillStyle = g.speckle;
+        for (let k = 0; k < 4; k++) ctx.fillRect(x + h(10 + k) * step, gy + 20 + h(20 + k) * (v.h - gy - 24), 2, 2);
+      }
+      if (g.stains && h(30) < 0.12) {
+        ctx.fillStyle = g.stains;
+        ctx.beginPath();
+        ctx.ellipse(x + h(31) * step, gy + 30 + h(32) * 20, 14 + h(33) * 16, 4 + h(34) * 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (g.cracks && h(40) < 0.18) {
+        ctx.strokeStyle = g.cracks;
+        ctx.lineWidth = 1;
+        const cx = x + h(41) * step;
+        const cy = gy + 24 + h(42) * 24;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + 8, cy + 4);
+        ctx.lineTo(cx + 14, cy + 2);
+        ctx.moveTo(cx + 8, cy + 4);
+        ctx.lineTo(cx + 10, cy + 10);
+        ctx.stroke();
+      }
+    }
+    // brillo húmedo que se desliza (muelle)
+    if (g.sheen) {
+      ctx.fillStyle = g.sheen;
+      for (let x = -mod(camX * 1, 300); x < v.w; x += 300) ctx.fillRect(x, gy + 2, 90, 9);
+    }
+  }
+
+  /**
+   * Primer plano: elementos que pasan rápido por delante (factor > 1),
+   * desenfocados (se pintan a baja resolución y se amplían) y oscuros.
+   * Solo ocupan la franja de abajo para no tapar obstáculos.
+   */
+  drawForeground(ctx, v, camX, t, theme) {
+    const F = theme.foreground;
+    if (!F || !Quality.settings.detail) return;
+    const factor = 1.35;
+    const spacing = 520;
+    const offset = camX * factor;
+    const first = Math.floor(offset / spacing) - 1;
+    const last = Math.ceil((offset + v.w) / spacing) + 1;
+    for (let i = first; i <= last; i++) {
+      if (hash(i, 950) > F.chance) continue;
+      const kind = F.kinds[Math.floor(hash(i, 951) * F.kinds.length)];
+      const variant = Math.floor(hash(i, 952) * 3);
+      const spr = this.fgSprite(theme, kind, variant);
+      const x = i * spacing - offset + hash(i, 953) * 260;
+      if (x > v.w + 20 || x + FG_W < -20) continue;
+      ctx.drawImage(spr, x, v.h - FG_H + 12, FG_W, FG_H);
+    }
+  }
+
+  fgSprite(theme, kind, variant) {
+    const key = `${theme.id}:${kind}:${variant}`;
+    if (!this.fg) this.fg = new Map();
+    let c = this.fg.get(key);
+    if (c) return c;
+    const sc = 0.32; // resolución baja → al ampliarse queda desenfocado
+    c = document.createElement('canvas');
+    c.width = Math.ceil(FG_W * sc);
+    c.height = Math.ceil(FG_H * sc);
+    const cx = c.getContext('2d');
+    cx.scale(sc, sc);
+    FG_DRAW[kind]?.(cx, theme.foreground, variant);
+    this.fg.set(key, c);
+    return c;
+  }
 }
+
+// ---------------------------------------------------------------
+// Primer plano (siluetas; el suelo del sprite es y = FG_H)
+// ---------------------------------------------------------------
+const FG_W = 220;
+const FG_H = 120;
+
+const FG_DRAW = {
+  grass(ctx, F, v) {
+    ctx.fillStyle = F.color;
+    const n = 9 + v * 3;
+    for (let k = 0; k < n; k++) {
+      const x = 30 + (k / n) * 160 + Math.sin(k * 3.1) * 8;
+      const h = 40 + ((k * 37) % 30) + v * 6;
+      const bend = Math.sin(k * 1.7) * 18;
+      ctx.beginPath();
+      ctx.moveTo(x - 5, FG_H);
+      ctx.quadraticCurveTo(x + bend * 0.3, FG_H - h * 0.6, x + bend, FG_H - h);
+      ctx.quadraticCurveTo(x + bend * 0.2 + 3, FG_H - h * 0.5, x + 5, FG_H);
+      ctx.fill();
+    }
+    ctx.fillStyle = F.rim;
+    ctx.beginPath();
+    ctx.ellipse(110, FG_H, 100, 12, 0, Math.PI, 0);
+    ctx.fill();
+  },
+  posts(ctx, F, v) {
+    ctx.fillStyle = F.color;
+    const xs = [40, 170];
+    for (const x of xs) ctx.fillRect(x - 7, FG_H - 70 - v * 5, 14, 70 + v * 5);
+    ctx.strokeStyle = F.rim;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(xs[0], FG_H - 60);
+    ctx.quadraticCurveTo(105, FG_H - 30 - v * 6, xs[1], FG_H - 60);
+    ctx.stroke();
+    FG_DRAW.grass(ctx, F, 0);
+  },
+  bush(ctx, F, v) {
+    ctx.fillStyle = F.color;
+    ctx.beginPath();
+    const blobs = [[60, 34], [100, 44], [145, 36], [180, 26]].slice(0, 3 + (v % 2));
+    for (const [x, r] of blobs) ctx.arc(x, FG_H - r * 0.9 + 10, r + v * 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = F.rim;
+    for (const [x, r] of blobs) {
+      ctx.beginPath();
+      ctx.arc(x - r * 0.3, FG_H - r * 1.4 + 10, r * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (F.flowers) {
+      ctx.fillStyle = F.flowers;
+      for (let k = 0; k < 10; k++) ctx.fillRect(40 + ((k * 53) % 150), FG_H - 20 - ((k * 31) % 50), 6, 6);
+    }
+  },
+  bollards(ctx, F, v) {
+    ctx.fillStyle = F.color;
+    for (let k = 0; k < 3; k++) {
+      const x = 40 + k * 66 + v * 4;
+      ctx.fillRect(x - 10, FG_H - 54, 20, 54);
+      ctx.beginPath();
+      ctx.ellipse(x, FG_H - 54, 12, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = F.rim;
+      ctx.fillRect(x - 10, FG_H - 42, 20, 5);
+      ctx.fillStyle = F.color;
+    }
+  },
+  pipe(ctx, F, v) {
+    ctx.fillStyle = F.color;
+    const y = FG_H - 46 - v * 6;
+    ctx.fillRect(0, y, FG_W, 24);
+    for (const x of [30, 120, 200]) ctx.fillRect(x - 6, y - 4, 12, 32);
+    ctx.fillRect(60, y + 24, 10, FG_H - y - 24);
+    ctx.fillRect(160, y + 24, 10, FG_H - y - 24);
+    ctx.strokeStyle = F.rim;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.arc(95, y - 16, 14, 0, Math.PI * 2);
+    ctx.moveTo(95, y - 2);
+    ctx.lineTo(95, y);
+    ctx.stroke();
+    ctx.fillStyle = F.rim;
+    ctx.fillRect(0, y + 2, FG_W, 3);
+  },
+  barrels(ctx, F, v) {
+    for (let k = 0; k < 2 + (v % 2); k++) {
+      const x = 40 + k * 56;
+      ctx.fillStyle = F.color;
+      ctx.fillRect(x, FG_H - 66, 46, 66);
+      ctx.fillStyle = F.rim;
+      ctx.fillRect(x, FG_H - 52, 46, 5);
+      ctx.fillRect(x, FG_H - 24, 46, 5);
+    }
+  },
+  crates(ctx, F, v) {
+    ctx.fillStyle = F.color;
+    ctx.fillRect(30, FG_H - 60, 70, 60);
+    ctx.fillRect(100 + v * 6, FG_H - 46, 56, 46);
+    if (v === 2) ctx.fillRect(50, FG_H - 100, 46, 40);
+    ctx.strokeStyle = F.rim;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(36, FG_H - 54, 58, 48);
+    ctx.beginPath();
+    ctx.moveTo(36, FG_H - 54);
+    ctx.lineTo(94, FG_H - 6);
+    ctx.stroke();
+  },
+  rope(ctx, F, v) {
+    ctx.fillStyle = F.color;
+    ctx.fillRect(60, FG_H - 50, 30, 50);
+    ctx.beginPath();
+    ctx.ellipse(75, FG_H - 50, 22, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = F.rim;
+    ctx.lineWidth = 6;
+    for (let k = 0; k < 3; k++) {
+      ctx.beginPath();
+      ctx.ellipse(150, FG_H - 8 - k * 7, 40 - k * 6, 9, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.moveTo(75, FG_H - 40);
+    ctx.quadraticCurveTo(110, FG_H - 10, 120, FG_H - 14);
+    ctx.stroke();
+  },
+};

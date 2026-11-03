@@ -32,7 +32,11 @@ export const finance = {
   ground: {
     top: '#6a6f8f', body: '#2c2f45', line: '#4c5070', edge: '#14162a', joint: 64, curb: '#ffd23f',
     reflect: ['rgba(255, 61, 127, 0.35)', 'rgba(25, 227, 208, 0.3)'],
+    speckle: 'rgba(170, 180, 230, 0.12)', stains: 'rgba(120, 140, 255, 0.1)',
   },
+  rays: { color: 'rgba(190, 180, 255, 0.03)' },
+
+  foreground: { chance: 0.45, kinds: ['bush', 'bollards'], color: 'rgba(10, 8, 26, 0.94)', rim: 'rgba(60, 50, 110, 0.9)' },
 
   layers: [
     // torres lejanas con ventanas tenues
@@ -141,7 +145,8 @@ export const finance = {
         if (k < 0.3) {
           ctx.fillStyle = '#3a3e58';
           ctx.fillRect(sx - 16, base - 16, 32, 16);
-          tree(ctx, sx, base - 14, 110, '#2a1c2a', '#173a3a', '#21524a');
+          const pal = [['#173a3a', '#21524a'], ['#1d3a2a', '#2a5a3a'], ['#2a2a4a', '#3a3a6a']][Math.floor(r(3) * 3)];
+          tree(ctx, sx, base - 14, 90 + r(2) * 50, '#2a1c2a', pal[0], pal[1]);
         } else if (k < 0.55) {
           streetLamp(ctx, sx, base, '#1a1c30', '#fff3c8', true);
         } else if (k < 0.92) {

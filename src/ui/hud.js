@@ -161,36 +161,38 @@ export class Hud {
     const R = this.radioData;
     if (!R) return;
     const k = Math.min(1, R.time * 4, (R.life - R.time) * 3);
-    const w = Math.min(v.w - 40, 620);
+    // compacta y pegada al borde de abajo, por debajo de la línea por la que corres
+    const w = Math.min(v.w - 40, 500);
     const x = v.w / 2 - w / 2;
-    const y = v.h - 56 + (1 - k) * 40;
+    const H = 26;
+    const y = v.h - H - 6 + (1 - k) * 30;
     ctx.save();
-    ctx.globalAlpha = Math.max(0, k);
-    ctx.fillStyle = 'rgba(27, 16, 48, 0.88)';
+    ctx.globalAlpha = Math.max(0, k) * 0.95;
+    ctx.fillStyle = 'rgba(27, 16, 48, 0.82)';
     ctx.beginPath();
-    ctx.roundRect(x, y, w, 40, 12);
+    ctx.roundRect(x, y, w, H, 9);
     ctx.fill();
-    ctx.font = `12px ${FONT}`;
-    const lw = ctx.measureText(t('radio.name')).width + 16;
+    ctx.font = `10px ${FONT}`;
+    const lw = ctx.measureText(t('radio.name')).width + 12;
     ctx.fillStyle = '#ff3d4f';
     ctx.beginPath();
-    ctx.roundRect(x + 6, y + 6, lw, 28, 8);
+    ctx.roundRect(x + 4, y + 4, lw, H - 8, 6);
     ctx.fill();
     ctx.fillStyle = '#fff4dc';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(t('radio.name'), x + 14, y + 21);
-    ctx.font = "600 14px 'Rubik', sans-serif";
+    ctx.fillText(t('radio.name'), x + 10, y + H / 2 + 1);
+    ctx.font = "600 12px 'Rubik', sans-serif";
     // el texto largo se desplaza como un rótulo de noticias
-    const tx = x + lw + 16;
-    const avail = w - lw - 26;
+    const tx = x + lw + 12;
+    const avail = w - lw - 20;
     const full = ctx.measureText(R.text).width;
     ctx.save();
     ctx.beginPath();
-    ctx.rect(tx, y, avail, 40);
+    ctx.rect(tx, y, avail, H);
     ctx.clip();
     const off = full > avail ? Math.min(full - avail, Math.max(0, R.time - 0.8) * 60) : 0;
-    ctx.fillText(R.text, tx - off, y + 21);
+    ctx.fillText(R.text, tx - off, y + H / 2 + 1);
     ctx.restore();
     ctx.restore();
   }
@@ -232,6 +234,7 @@ export class Hud {
   draw(ctx, game, loop) {
     const v = game.view;
     if (this.party > 0) this.drawParty(ctx, v, game.t);
+    this.drawPanels(ctx, game, v);
     outlinedText(ctx, t('hud.distance', { n: fmt(game.distance) }), 18, 14, 32);
     this.drawBucks(ctx, game);
     this.drawRecordHint(ctx, game, v);
@@ -263,6 +266,38 @@ export class Hud {
       ctx.fillStyle = '#7CFFB2';
       lines.forEach((l, i) => ctx.fillText(l, 20, 154 + i * 16));
     }
+  }
+
+  /** Fondos semitransparentes detrás de los contadores (se leen sobre cualquier fondo). */
+  drawPanels(ctx, game, v) {
+    const fill = 'rgba(18, 10, 38, 0.36)';
+    const line = 'rgba(255, 244, 220, 0.12)';
+    ctx.save();
+    ctx.font = `32px ${FONT}`;
+    const dw = ctx.measureText(t('hud.distance', { n: fmt(game.distance) })).width;
+    ctx.font = `26px ${FONT}`;
+    const tw = ctx.measureText(fmt(game.bucks)).width;
+    let right = 58 + tw + 52;
+    if (game.player.onFoot && game.foot.bonusActive) {
+      ctx.font = `15px ${FONT}`;
+      right = 58 + tw + 56 + ctx.measureText(t('hud.footBonus', { n: CONFIG.foot.bucksMult })).width + 30;
+    }
+    const w = Math.max(dw + 28, right, 150);
+    const h = game.tokens.magnetTime > 0 ? 176 : 122;
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = line;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(6, 6, w, h, 16);
+    ctx.fill();
+    ctx.stroke();
+    // estrellas
+    const x0 = v.w / 2 - 2 * 34;
+    ctx.beginPath();
+    ctx.roundRect(x0 - 26, 8, 4 * 34 + 52, 44, 22);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
   }
 
   drawBucks(ctx, game) {

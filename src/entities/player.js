@@ -3,6 +3,7 @@ import { clamp, rand, approach } from '../core/rng.js';
 import { drawFugitive } from '../characters/fugitive.js';
 import { drawCar, drawBike, drawScooterRide, drawCart } from '../characters/vehicles.js';
 import { emitTrail, DEFAULT_TRAIL } from '../characters/trails.js';
+import { Quality } from '../core/quality.js';
 
 /**
  * El fugitivo con el jetpack básico.
@@ -318,12 +319,49 @@ export class Player {
     ctx.fill();
   }
 
+  /**
+   * Dibuja al personaje. En calidad alta se pinta en un lienzo aparte y se
+   * copia con un contorno luminoso suave que lo separa del fondo.
+   */
   draw(ctx, camX, t) {
+    const V = CONFIG.player.visual;
+    if (!Quality.high || !V.outline) return this.drawBody(ctx, camX, t);
+    const k = Math.max(1, ctx.getTransform().a);
+    const W = 300;
+    const H = 260;
+    const ox = 150;
+    const oy = 160;
+    if (!this.buf) this.buf = document.createElement('canvas');
+    const b = this.buf;
+    if (b.width !== Math.ceil(W * k)) {
+      b.width = Math.ceil(W * k);
+      b.height = Math.ceil(H * k);
+    }
+    const bx = b.getContext('2d');
+    bx.setTransform(1, 0, 0, 1, 0, 0);
+    bx.clearRect(0, 0, b.width, b.height);
+    bx.setTransform(k, 0, 0, k, 0, (oy - this.y) * k);
+    this.drawBody(bx, this.x - ox, t);
+    ctx.save();
+    ctx.shadowColor = V.outline;
+    ctx.shadowBlur = V.outlineBlur * k;
+    ctx.drawImage(b, this.x - camX - ox, this.y - oy, W, H);
+    ctx.restore();
+  }
+
+  drawBody(ctx, camX, t) {
     const sx = this.x - camX;
+    const V = CONFIG.player.visual;
     ctx.save();
     // parpadeo mientras eres invulnerable tras un golpe
     if (this.blink && Math.floor(t * 14) % 2 === 0) ctx.globalAlpha = 0.4;
     ctx.translate(sx, this.y);
+    // algo más grande que la caja de choque, apoyado en los pies,
+    // con estiramiento al saltar y aplastamiento al aterrizar
+    const q = this.dead ? 0 : this.squash ?? 0;
+    ctx.translate(0, this.h / 2);
+    ctx.scale(V.scale * (1 - q * V.squash), V.scale * (1 + q * V.squash));
+    ctx.translate(0, -this.h / 2);
     if (this.vehicle === 'car') {
       ctx.rotate(this.onGround ? 0 : clamp(this.vy / 2400, -0.15, 0.15));
       ctx.translate(0, -6);
