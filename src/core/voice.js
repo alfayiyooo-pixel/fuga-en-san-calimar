@@ -76,6 +76,14 @@ class Voices {
     this.request({ keys, lang, text, voice: 'radio', moment: null, priority: 0, radio: true, onStart });
   }
 
+  /**
+   * Grito de un agente a pie: audio/voces/policia_grito_<n>_<idioma>.mp3 si
+   * existe; si no, la voz del navegador. Prioridad media (por debajo de los personajes).
+   */
+  shout(n, lang, text) {
+    this.request({ keys: [`policia_grito_${n}_${lang}`], lang, text, voice: 'cop', moment: null, priority: 0.5 });
+  }
+
   request(req) {
     if (Sound.muted || Sound.voiceLevel <= 0) return;
     req.until = performance.now() + CONFIG.audio.voiceQueueWait * 1000;

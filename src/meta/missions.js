@@ -25,6 +25,7 @@ export function progressOf(def, stats) {
     case 'respites': return stats.respites;
     case 'minors': return stats.minors;
     case 'drones': return stats.drones;
+    case 'copCrash': return stats.copCrash ?? 0;
     case 'footRun': return stats.footMax;
     case 'noJet': return stats.noJet;
     case 'rides': return stats.rides;

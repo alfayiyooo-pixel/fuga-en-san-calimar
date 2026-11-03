@@ -598,8 +598,17 @@ export class Scooter extends Minor {
 }
 
 // ------------------------------------------------------------
-// AGENTE A PIE — policía floja del principio: corre hacia ti con la porra
+// AGENTE A PIE (policía floja del principio)
+// Camina hacia ti con un cono de visión. Si entras en él te ve: grita algo
+// (bocadillo + voz), y cuando le pasas se da la vuelta y te persigue unos
+// segundos hasta que se rinde agotado. Si en la persecución llega a un
+// obstáculo que tú has saltado, se estampa de forma cómica (pequeña
+// recompensa y "+Humillación"). Ajustes en CONFIG.minors.cop.
 // ------------------------------------------------------------
+const CRASH_ANIMS = ['splat', 'tumble', 'flop'];
+export const COP_SHOUTS = 8;
+const COP_TIRED = 3;
+
 export class Cop extends Minor {
   constructor(g, x) {
     super('cop', 34, 60);
@@ -610,20 +619,99 @@ export class Cop extends Minor {
     this.vx = -rand(this.cfg.speed[0], this.cfg.speed[1]);
     this.jumped = false;
     this.passed = false;
+    this.state = 'patrol'; // patrol → spotted → chase → tired | crash
+    this.dir = -1;         // hacia dónde mira (-1 izquierda)
+    this.bubble = null;    // { text, t, life }
+    this.stateT = 0;
+  }
+
+  /** Durante la persecución no hace daño (viene por detrás). */
+  hits(box) {
+    if (this.state === 'chase' || this.state === 'tired' || this.state === 'crash') return false;
+    return super.hits(box);
+  }
+
+  get box() {
+    const hw = this.w * 0.35;
+    const hh = this.h * 0.45;
+    return { l: this.x - hw, r: this.x + hw, t: this.y - hh, b: this.y + hh };
+  }
+
+  /** ¿Está el jugador dentro del cono de visión? */
+  sees(p) {
+    const C = this.cfg.vision;
+    const ex = this.x - 6;
+    const ey = this.y - 20;
+    const dx = p.x - ex;
+    const dy = p.y - ey;
+    if (dx * this.dir <= 0) return false;
+    const d = Math.hypot(dx, dy);
+    if (d > C.range) return false;
+    const ang = Math.atan2(dy, Math.abs(dx));
+    return Math.abs(ang - C.tilt) < C.half;
+  }
+
+  say(text, life = 1.8) {
+    this.bubble = { text, t: 0, life };
   }
 
   act(dt, g) {
+    const C = this.cfg;
+    const p = g.player;
     const gy = g.view.groundY - this.h / 2;
-    this.x += this.vx * dt;
-    const ahead = this.x - g.player.x;
-    if (!this.jumped && ahead > 0 && ahead < this.cfg.jumpRange && Math.random() < 0.5) {
-      this.jumped = true;
-      this.grounded = false;
-      this.vy = -this.cfg.jump;
-    } else if (!this.jumped && ahead < this.cfg.jumpRange) {
-      this.jumped = true; // esta vez no salta
+    this.stateT += dt;
+    if (this.bubble) {
+      this.bubble.t += dt;
+      if (this.bubble.t > this.bubble.life) this.bubble = null;
     }
-    if (!this.grounded) {
+    if (this.state === 'patrol') {
+      this.x += this.vx * dt;
+      const ahead = this.x - p.x;
+      if (!g.dead && this.sees(p)) {
+        this.state = 'spotted';
+        this.stateT = 0;
+        g.copSpotted(this);
+      } else if (!this.jumped && ahead > 0 && ahead < C.jumpRange && Math.random() < 0.5) {
+        this.jumped = true;
+        this.grounded = false;
+        this.vy = -C.jump;
+      } else if (!this.jumped && ahead < C.jumpRange) {
+        this.jumped = true; // esta vez no salta
+      }
+    } else if (this.state === 'spotted') {
+      // se queda quieto gritando hasta que le pasas
+      this.x += this.vx * 0.3 * dt;
+      if (p.x > this.x + 10 || this.stateT > 3) {
+        this.state = 'chase';
+        this.stateT = 0;
+        this.dir = 1;
+        this.vx = 0;
+      }
+    } else if (this.state === 'chase') {
+      // corre detrás de ti, un poco más lento: se va quedando atrás
+      const target = g.speed * C.chaseSpeed;
+      this.vx += (target - this.vx) * Math.min(1, dt * 4);
+      this.x += this.vx * dt;
+      if (this.stateT > C.chaseTime) {
+        this.state = 'tired';
+        this.stateT = 0;
+        g.copTired(this);
+      } else {
+        for (const o of g.obstacles) {
+          if (o === this || !o.alive || o.minor || !o.hits) continue;
+          if (o.hits(this.box)) {
+            this.crash(o, g);
+            break;
+          }
+        }
+      }
+    } else if (this.state === 'tired') {
+      this.vx += (0 - this.vx) * Math.min(1, dt * 3);
+      this.x += this.vx * dt;
+    } else if (this.state === 'crash') {
+      this.updateCrash(dt, g);
+    }
+    if (!this.grounded && this.state !== 'crash') {
       this.vy += 1700 * dt;
       this.y += this.vy * dt;
       if (this.y >= gy) {
@@ -631,16 +719,186 @@ export class Cop extends Minor {
         this.grounded = true;
       }
     }
-    if (!this.passed && this.x + this.w / 2 < g.player.left) {
+    if (!this.passed && this.x + this.w / 2 < p.left) {
       this.passed = true;
-      g.spotted(CONFIG.wanted.heat.carPass * 0.5, g.player.x, g.player.y - 50);
+      g.spotted(CONFIG.wanted.heat.carPass * 0.5, p.x, p.y - 50);
     }
   }
 
+  /** Se estampa contra un obstáculo: animación al azar. */
+  crash(o, g) {
+    this.state = 'crash';
+    this.stateT = 0;
+    this.anim = pick(CRASH_ANIMS);
+    this.halo = Math.random() < 0.5 ? 'stars' : 'birds';
+    this.rot = 0;
+    this.lying = false;
+    if (this.anim === 'splat') {
+      // se queda pegado a la cara del obstáculo y resbala
+      if (o.static && Number.isFinite(o.x)) this.x = Math.min(this.x, o.x - 12);
+      this.vx = 0;
+      this.vy = 0;
+    } else if (this.anim === 'tumble') {
+      this.vx = -rand(160, 240);
+      this.vy = -rand(380, 480);
+      this.spin = -rand(10, 14);
+      this.grounded = false;
+    } else {
+      // de espaldas al suelo, los pies por alto
+      this.vx = -rand(60, 110);
+      this.vy = -rand(200, 260);
+      this.spin = -5;
+      this.grounded = false;
+    }
+    // la gorra sale volando (no siempre)
+    this.cap = Math.random() < 0.7 ? { x: 0, y: -30, vx: rand(-120, 60), vy: -rand(380, 520), r: 0, spin: rand(-12, 12), land: false } : null;
+    g.copCrash(this);
+  }
+
+  updateCrash(dt, g) {
+    const gy = g.view.groundY - this.h / 2;
+    const T = this.stateT;
+    if (this.anim === 'splat') {
+      // aplastado contra el obstáculo, resbala y cae de espaldas
+      if (T > 0.55 && !this.lying) {
+        this.y = Math.min(gy + 18, this.y + 140 * dt);
+        this.rot = Math.max(-Math.PI / 2, this.rot - dt * 5);
+        this.x -= 30 * dt;
+        if (this.rot <= -Math.PI / 2 + 0.01) this.lying = true;
+      }
+    } else if (!this.grounded) {
+      this.vy += 1600 * dt;
+      this.x += this.vx * dt;
+      this.y += this.vy * dt;
+      this.rot += this.spin * dt;
+      if (this.y >= gy + 14 && this.vy > 0) {
+        this.y = gy + 14;
+        this.grounded = true;
+        this.lying = true;
+        this.rot = -Math.PI / 2;
+        this.vx = 0;
+        g.dust?.(this.x, g.view.groundY, 6);
+      }
+    }
+    if (this.cap && !this.cap.land) {
+      const c = this.cap;
+      c.vy += 1400 * dt;
+      c.x += c.vx * dt;
+      c.y += c.vy * dt;
+      c.r += c.spin * dt;
+      if (this.y + c.y > g.view.groundY - 3) {
+        c.y = g.view.groundY - 3 - this.y;
+        c.land = true;
+        c.r = 0.3;
+      }
+    }
+  }
+
+  draw(ctx, camX, g) {
+    const x = this.x - camX;
+    if (x < -150 || x > g.view.w + 150) return;
+    // cono de visión (sutil) mientras patrulla
+    if (this.state === 'patrol' && !this.ko) this.drawCone(ctx, x);
+    ctx.save();
+    ctx.translate(x, this.y);
+    if (this.ko) {
+      ctx.rotate(this.rot);
+    } else if (this.state !== 'crash' || this.grounded) {
+      ctx.fillStyle = 'rgba(10, 5, 30, 0.3)';
+      ctx.beginPath();
+      ctx.ellipse(0, g.view.groundY - this.y + 2, this.w * 0.45, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    if (this.state === 'crash') {
+      if (this.anim === 'splat' && this.stateT < 0.55) {
+        // aplastado como un dibujo animado
+        const k = Math.min(1, this.stateT * 12);
+        ctx.scale(1 - 0.45 * k, 1 + 0.12 * k);
+      }
+      ctx.rotate(this.rot);
+    }
+    if (this.dir > 0) ctx.scale(-1, 1);
+    // inclinado y jadeando cuando se rinde
+    if (this.state === 'tired') ctx.rotate(-0.35 - Math.sin(this.t * 9) * 0.04);
+    this.paint(ctx, g);
+    ctx.restore();
+    // gorra que sale volando
+    if (this.cap) this.drawCap(ctx, x + this.cap.x, this.y + this.cap.y, this.cap.r);
+    // estrellitas o pajaritos girando
+    if (this.ko) {
+      ctx.save();
+      ctx.translate(x, this.y);
+      dizzy(ctx, this.h / 2 + 6, this.t);
+      ctx.restore();
+    } else if (this.state === 'crash' && (this.lying || this.anim === 'splat')) {
+      const hx = x + (this.lying ? -22 : 0);
+      const hy = this.lying ? g.view.groundY - 22 : this.y - 30;
+      ctx.save();
+      ctx.translate(hx, hy);
+      if (this.halo === 'stars') dizzy(ctx, 6, this.t);
+      else dizzyBirds(ctx, this.t);
+      ctx.restore();
+    }
+    // gotas de sudor al rendirse
+    if (this.state === 'tired') {
+      ctx.fillStyle = '#9fe8ff';
+      for (let k = 0; k < 2; k++) {
+        const ph = (this.t * 1.6 + k * 0.5) % 1;
+        ctx.globalAlpha = 1 - ph;
+        ctx.beginPath();
+        ctx.ellipse(x + 10 + k * 6, this.y - 36 + ph * 14, 2.2, 3.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (this.bubble) drawBubble(ctx, x, this.y - 52, this.bubble);
+  }
+
+  drawCone(ctx, x) {
+    const C = this.cfg.vision;
+    const ex = x - 6;
+    const ey = this.y - 20;
+    const a0 = Math.PI - C.tilt - C.half;
+    const a1 = Math.PI - C.tilt + C.half;
+    const g = ctx.createRadialGradient(ex, ey, 4, ex, ey, C.range);
+    g.addColorStop(0, 'rgba(255, 250, 200, 0.45)');
+    g.addColorStop(0.7, 'rgba(255, 245, 180, 0.16)');
+    g.addColorStop(1, 'rgba(255, 240, 160, 0.04)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.arc(ex, ey, C.range, a0, a1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(40, 30, 80, 0.3)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 6]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  drawCap(ctx, x, y, r) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(r);
+    ctx.beginPath();
+    ctx.moveTo(-10, 4);
+    ctx.quadraticCurveTo(-8, -6, 2, -5);
+    ctx.quadraticCurveTo(10, -4, 9, 4);
+    ctx.closePath();
+    inked(ctx, '#22305e');
+    rr(ctx, -16, 2, 10, 4, 2);
+    inked(ctx, INK);
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillRect(-2, -2, 4, 4);
+    ctx.restore();
+  }
+
   paint(ctx) {
-    const run = !this.ko && this.grounded;
-    const c = this.t * 14;
-    const a = run ? Math.sin(c) * 0.7 : 0.4;
+    const moving = this.state === 'chase' || (this.state === 'patrol' && this.grounded);
+    const run = !this.ko && moving;
+    const c = this.t * (this.state === 'chase' ? 22 : 14);
+    const a = run ? Math.sin(c) * (this.state === 'chase' ? 1 : 0.7) : this.state === 'crash' ? 0.9 : 0.25;
     // piernas
     limb(ctx, -3, 10, a, a - 0.5, 10, 10, 6, '#22305e');
     limb(ctx, 3, 10, -a, -a - 0.5, 10, 10, 6, '#2c3c72');
@@ -653,36 +911,137 @@ export class Cop extends Minor {
     ctx.fill();
     ctx.fillStyle = '#c9ff3d';
     ctx.fillRect(-11, 2, 22, 3); // franja reflectante
-    // brazo con porra levantada
-    const arm = this.ko ? 3 : 2.6 + Math.sin(c * 0.5) * 0.3;
+    // brazo: porra levantada, señalando al verte o colgando al rendirse
+    let arm = this.ko ? 3 : 2.6 + Math.sin(c * 0.5) * 0.3;
+    if (this.state === 'spotted') arm = 1.6 + Math.sin(this.t * 14) * 0.25;
+    if (this.state === 'tired') arm = 0.2;
+    if (this.state === 'crash') arm = 3.6;
     const [hx, hy] = limb(ctx, -6, -8, arm, arm + 0.4, 8, 8, 5, '#3c5bb0');
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(hx, hy);
-    ctx.lineTo(hx - 6, hy - 14);
-    ctx.stroke();
-    ctx.lineCap = 'butt';
+    if (this.state !== 'tired') {
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(hx, hy);
+      ctx.lineTo(hx - 6, hy - 14);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
     // cabeza con gorra y silbato
     ctx.beginPath();
     ctx.arc(0, -21, 9, 0, Math.PI * 2);
     inked(ctx, '#e8b08a');
-    eye(ctx, -4, -22, 2.3, this.ko ? 0 : -1);
-    ctx.fillStyle = '#c0c4cc';
-    ctx.fillRect(-12, -18, 5, 3);
-    ctx.beginPath();
-    ctx.moveTo(-10, -25);
-    ctx.quadraticCurveTo(-8, -35, 2, -34);
-    ctx.quadraticCurveTo(10, -33, 9, -25);
-    ctx.closePath();
-    inked(ctx, '#22305e');
-    rr(ctx, -17, -27, 10, 4, 2);
-    inked(ctx, INK);
-    ctx.fillStyle = '#ffd23f';
-    ctx.fillRect(-3, -31, 4, 4);
+    const xEyes = this.state === 'crash' && (this.lying || this.stateT > 0.1);
+    if (xEyes) {
+      // ojos en X
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-6, -24); ctx.lineTo(-2, -20);
+      ctx.moveTo(-2, -24); ctx.lineTo(-6, -20);
+      ctx.stroke();
+    } else {
+      eye(ctx, -4, -22, this.state === 'spotted' ? 3 : 2.3, this.ko ? 0 : -1);
+    }
+    if (this.state === 'spotted' || this.state === 'chase') {
+      // boca abierta gritando
+      ctx.fillStyle = '#5a1a24';
+      ctx.beginPath();
+      ctx.ellipse(-6, -15, 2.4, 2 + Math.abs(Math.sin(this.t * 12)) * 1.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = '#c0c4cc';
+      ctx.fillRect(-12, -18, 5, 3);
+    }
+    if (!this.cap) {
+      ctx.beginPath();
+      ctx.moveTo(-10, -25);
+      ctx.quadraticCurveTo(-8, -35, 2, -34);
+      ctx.quadraticCurveTo(10, -33, 9, -25);
+      ctx.closePath();
+      inked(ctx, '#22305e');
+      rr(ctx, -17, -27, 10, 4, 2);
+      inked(ctx, INK);
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillRect(-3, -31, 4, 4);
+    } else {
+      // sin gorra: pelo despeinado
+      ctx.strokeStyle = '#3a2418';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let k = -2; k <= 2; k++) {
+        ctx.moveTo(k * 3, -29);
+        ctx.lineTo(k * 4, -34 - (k % 2 ? 2 : 0));
+      }
+      ctx.stroke();
+    }
   }
 }
+
+/** Pajaritos dando vueltas sobre la cabeza. */
+function dizzyBirds(ctx, t) {
+  ctx.strokeStyle = '#fff4dc';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  for (let k = 0; k < 3; k++) {
+    const a = t * 6 + (k * Math.PI * 2) / 3;
+    const bx = Math.cos(a) * 16;
+    const by = -14 + Math.sin(a) * 5;
+    const f = Math.sin(t * 20 + k) * 2;
+    ctx.beginPath();
+    ctx.moveTo(bx - 5, by - f);
+    ctx.quadraticCurveTo(bx - 2, by - 3, bx, by);
+    ctx.quadraticCurveTo(bx + 2, by - 3, bx + 5, by - f);
+    ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+}
+
+/** Bocadillo de texto de cómic. */
+function drawBubble(ctx, x, y, b) {
+  const k = Math.min(1, b.t * 8, (b.life - b.t) * 5);
+  if (k <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = k;
+  ctx.font = "600 13px 'Rubik', sans-serif";
+  const lines = wrapText(ctx, b.text, 170);
+  const w = Math.max(...lines.map((l) => ctx.measureText(l).width)) + 18;
+  const h = lines.length * 16 + 10;
+  const bx = x - w / 2;
+  const by = y - h;
+  ctx.beginPath();
+  ctx.roundRect(bx, by, w, h, 10);
+  ctx.moveTo(x - 6, by + h);
+  ctx.lineTo(x + 2, by + h + 9);
+  ctx.lineTo(x + 6, by + h);
+  ctx.fillStyle = '#fff8ea';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  ctx.fill();
+  ctx.fillStyle = INK;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  lines.forEach((l, i) => ctx.fillText(l, x, by + 6 + i * 16));
+  ctx.restore();
+}
+
+function wrapText(ctx, text, maxW) {
+  const words = text.split(' ');
+  const out = [];
+  let line = '';
+  for (const w of words) {
+    const test = line ? `${line} ${w}` : w;
+    if (ctx.measureText(test).width > maxW && line) {
+      out.push(line);
+      line = w;
+    } else line = test;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+export { COP_TIRED };
 
 /**
  * Crea un enemigo menor (o una bandada) en x. Devuelve el espacio horizontal ocupado.

@@ -279,7 +279,15 @@ export const CONFIG = {
     gapMult: 0.7,           // separación tras un enemigo menor (son fáciles)
     hitbox: 0.78,           // caja de choque respecto al dibujo
     types: { guard: 1, drone: 1.2, dog: 0.8, gull: 1.5, scooter: 0.9 }, // pesos (gaviotas solo en la playa)
-    cop: { speed: [60, 120], jumpRange: 260, jump: 520 }, // agente a pie (policía floja del principio)
+    // agente a pie (policía floja del principio): cono de visión, grito y persecución
+    cop: {
+      speed: [60, 120], jumpRange: 260, jump: 520,
+      vision: { range: 300, half: 0.42, tilt: 0.12 }, // px, semiángulo y caída del cono (rad)
+      chaseSpeed: 0.96,     // velocidad al perseguirte (× la tuya: se va quedando atrás)
+      chaseTime: 4,         // s de persecución antes de rendirse agotado
+      crashReward: { bucks: [10, 18], xp: 4 }, // al estamparse contra un obstáculo (pavos × multiplicador)
+      voiceEvery: 4,        // s mínimos entre gritos con voz (el bocadillo sale siempre)
+    },
     unlockAt: { guard: 0, drone: 30, dog: 90, gull: 0, scooter: 160 },  // m
     reward: { bucks: [4, 9], xp: 3 }, // al derrotarlos (los pavos × multiplicador)
     guard: { walkSpeed: 25, jumpRange: 330, jump: [560, 700], gravity: 1700, jumpCooldown: 1.3 },
@@ -424,6 +432,7 @@ export const CONFIG = {
     // pitch y se multiplica rate (pick = al cogerlo, special = habilidad, lose = al perderlo)
     voices: {
       radio: { pitch: 0.85, rate: 1.12 }, // locutor de Radio Calimar
+      cop: { pitch: 1.25, rate: 1.3 },   // agentes a pie que te persiguen
       veteran: { pitch: 0.55, rate: 0.82, pick: { pitch: 0, rate: 1 }, special: { pitch: -0.1, rate: 0.8 }, lose: { pitch: 0.1, rate: 0.9 } },
       pilot: { pitch: 1.5, rate: 1.2, pick: { pitch: 0, rate: 1 }, special: { pitch: 0.25, rate: 1.15 }, lose: { pitch: 0.2, rate: 1.25 } },
       wild: { pitch: 0.2, rate: 1.1, pick: { pitch: 0.1, rate: 1 }, special: { pitch: 0.3, rate: 0.8 }, lose: { pitch: 0, rate: 1.1 } },
@@ -561,6 +570,7 @@ export const CONFIG = {
       { id: 'm_foot', tier: 'medium', type: 'footRun', n: 800 },
       // total: true → se acumula entre partidas
       { id: 'm_drones', tier: 'medium', type: 'drones', n: 10, total: true },
+      { id: 'm_copcrash', tier: 'medium', type: 'copCrash', n: 5, total: true },
       { id: 'h_stars', tier: 'hard', type: 'starsSurvive', n: 20, stars: 4 },
       { id: 'h_dist', tier: 'hard', type: 'distance', n: 3000 },
       { id: 'h_gem', tier: 'hard', type: 'gems', n: 1 },

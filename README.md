@@ -80,6 +80,8 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 **Enemigos menores** (sobre todo en los primeros metros y con 0-1★; se retiran cuando la policía toma el relevo): guardia de seguridad con linterna que salta al verte, dron de reparto que cruza el cielo, perro callejero que te persigue por el suelo desde atrás (aviso "GUAU!" en el borde izquierdo), bandadas de gaviotas (solo en la playa) y matón en patinete eléctrico que viene de frente y salta. Son fáciles de esquivar, pero **chocar cuenta como golpe**. Se derrotan con gadgets y habilidades (pistola, furia, nitro, coche, moto, cohete…): salen volando con estrellitas de mareo y dan unos pavos (× multiplicador) y algo de XP. Misiones: «Derrota 3 enemigos menores en una partida» y «Elimina 10 drones de reparto» (acumulativa entre partidas). Bloque `minors` de `config.js`.
 
+**Agentes a pie que te persiguen** (al principio, con 1★): llevan un cono de visión sutil. Si entras en él te ven, se paran a gritarte algo gracioso (bocadillo + voz) y, cuando les pasas, se dan la vuelta y te persiguen unos segundos hasta que se rinden agotados (sudando, «¡Me ha dado flato!»). Durante la persecución no hacen daño. Si llegan a un obstáculo que tú has saltado, se estampan de forma cómica: se aplastan contra él y resbalan, ruedan hacia atrás o caen de espaldas, con ojos en X, la gorra saliendo volando y estrellitas o pajaritos girando. Cada estampada da unos pavos (× multiplicador), algo de XP y «+Humillación», y cuenta para la misión «Haz que 5 policías se estampen» (acumulativa). Ajustes en `minors.cop` de `config.js`; gritos en `cop.shout.1..8` de `translations.js`.
+
 **Helicóptero jefe** (al llegar a 5★): persecución de 30 s contra «El Halcón», con barra de tiempo visible. Alterna ataques siempre avisados: láser de puntería y ráfaga, abanico de balas, columnas que caen desde arriba y foco que barre. Si sobrevives: +600 pavos, +10 💎, +150 XP, fanfarria de victoria y bajas a 2★ (bloque `boss`).
 
 **Escondites** (con 2★ o más, cada 380-700 m): **túnel de lavado** y **callejón oscuro** a ras de suelo, y **planta de parking** a media altura (solo con jetpack). Si lo atraviesas de punta a punta, pierdes una estrella con destello y sonido de alivio. Los pavos van por la otra ruta, así que esconderse es una decisión (bloque `hideouts`).
@@ -255,6 +257,23 @@ Para usar grabaciones propias, copia archivos **MP3** en [`audio/voces/`](audio/
 | Bruno | `bruno_coger_es.mp3` · `bruno_coger_en.mp3` | `bruno_habilidad_es.mp3` · `bruno_habilidad_en.mp3` | `bruno_perder_es.mp3` · `bruno_perder_en.mp3` |
 
 Si el archivo existe se reproduce ese audio; si no, la voz del navegador. Puedes poner solo algunos. Haz commit y push y GitHub Pages los servirá. Las frases de respaldo están en [`audio/voces/LEEME.md`](audio/voces/LEEME.md). (En la consola verás un aviso 404 por cada archivo que falte: es normal.)
+
+### Gritos de los agentes a pie
+
+Usan el mismo sistema de voces: si existe `audio/voces/policia_grito_<n>_<idioma>.mp3` se usa ese archivo; si no, la voz del navegador (tono y velocidad en `audio.voices.cop`). Como mucho un grito con voz cada 4 s (`minors.cop.voiceEvery`); el bocadillo sale siempre.
+
+| n | Español (`_es.mp3`) | English (`_en.mp3`) |
+|---|---|---|
+| 1 | ¡Alto ahí, ladrón de pavos! | Stop right there, buck thief! |
+| 2 | ¡Mi jefe me va a matar! | My boss is going to kill me! |
+| 3 | ¡Espera, que voy en chanclas! | Wait up, I'm in flip-flops! |
+| 4 | ¡Que alguien me sujete el café! | Somebody hold my coffee! |
+| 5 | ¡Si hoy ni me tocaba turno! | This isn't even my shift! |
+| 6 | ¡Devuelve esa bolsa, que es del banco! | Give that bag back, it belongs to the bank! |
+| 7 | ¡Corre, corre, que te pillo… en cinco minutos! | Run, run! I'll catch you… in five minutes! |
+| 8 | ¡Alto en nombre de la ley… y de mi madre! | Stop in the name of the law… and my mom! |
+
+Archivos: `policia_grito_1_es.mp3` … `policia_grito_8_es.mp3` y `policia_grito_1_en.mp3` … `policia_grito_8_en.mp3`.
 
 ### Radio Calimar
 

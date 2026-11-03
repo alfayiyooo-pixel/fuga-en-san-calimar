@@ -18,7 +18,9 @@ import { Respite } from './systems/respite.js';
 import { Powers } from './systems/powers.js';
 import { Combo } from './systems/combo.js';
 import { drawGlow } from './fx/sprites.js';
-import { minorKoFx } from './entities/minors.js';
+import { minorKoFx, COP_SHOUTS, COP_TIRED } from './entities/minors.js';
+import { Voice } from './core/voice.js';
+import { getLang } from './core/i18n.js';
 import { Foot } from './systems/foot.js';
 import { Intro } from './systems/intro.js';
 import { Ambient } from './world/ambient.js';
@@ -433,6 +435,7 @@ export class Game {
       respites: this.respite.count ?? 0,
       minors: this.stats.minors,
       drones: this.stats.drones,
+      copCrash: this.stats.copCrash ?? 0,
       footMax: Math.floor(this.foot.max),
       noJet: Math.floor(this.foot.noJet(this)),
       rides: this.foot.rides,
@@ -570,6 +573,42 @@ export class Game {
   earn(source, amount) {
     this.bucks += amount;
     this.earnings[source] = (this.earnings[source] ?? 0) + amount;
+  }
+
+  /** Un agente a pie te ve: grita (bocadillo + voz) y te perseguirá. */
+  copSpotted(cop) {
+    const n = 1 + Math.floor(Math.random() * COP_SHOUTS);
+    const text = t(`cop.shout.${n}`);
+    cop.say(text, 2.2);
+    Sound.whistle();
+    // como mucho un grito con voz cada pocos segundos
+    if (this.t - (this.lastCopVoice ?? -99) > CONFIG.minors.cop.voiceEvery) {
+      this.lastCopVoice = this.t;
+      Voice.shout(n, getLang(), text);
+    }
+  }
+
+  /** Se rinde agotado tras perseguirte. */
+  copTired(cop) {
+    cop.say(t(`cop.tired.${1 + Math.floor(Math.random() * COP_TIRED)}`), 1.8);
+  }
+
+  /** Se estampa contra un obstáculo que tú has saltado: humillación y recompensa. */
+  copCrash(cop) {
+    const R = CONFIG.minors.cop.crashReward;
+    const bucks = Math.round(rand(R.bucks[0], R.bucks[1]) * this.combo.level * this.events.bucksMult);
+    this.earn('minors', bucks);
+    this.xpRun += R.xp;
+    this.stats.copCrash = (this.stats.copCrash ?? 0) + 1;
+    this.camera.addShake(0.12);
+    Sound.bonk();
+    Sound.thud(0.6);
+    this.particles.burst(cop.x + 10, cop.y - 10, 10, { color: '#ffd23f', speed: 240, life: 0.6, size: 4, sizeEnd: 0, additive: true, important: true });
+    this.particles.spawn({ x: cop.x + 10, y: cop.y - 10, life: 0.3, size: 8, sizeEnd: 50, color: 'rgba(255, 244, 220, 0.9)', shape: 'ring', additive: true, important: true });
+    const sx = cop.x - this.camera.x;
+    this.popups.add(t('cop.humiliation'), sx, cop.y - 60, { color: '#ff9ad0', size: 22, life: 1.3 });
+    this.popups.add(`+${bucks} 💵  +${R.xp} XP`, sx, cop.y - 30, { color: '#9dffb5', size: 16, life: 1.1, rise: 40 });
+    Sound.coin(4);
   }
 
   /** Enemigo menor derrotado: sale volando, efecto cómico y pequeña recompensa. */
