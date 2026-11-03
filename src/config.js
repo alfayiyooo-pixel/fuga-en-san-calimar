@@ -143,6 +143,22 @@ export const CONFIG = {
     shutter: { length: 120, trigger: [0.35, 0.9], warnTime: 0.25, snapSpeed: 14 }, // s antes de llegar a él
   },
 
+  // ---------------- HELICÓPTERO JEFE (5★) ----------------
+  boss: {
+    duration: 30,           // s que hay que sobrevivir
+    cooldown: 1500,         // m antes de que pueda volver a salir
+    firstAttack: 2.5,       // s hasta el primer ataque
+    gap: [1.0, 1.8],        // s entre ataques
+    carMult: 0.4,           // patrullas mientras dura (el resto de policía se aparta)
+    patterns: ['aimed', 'fan', 'rain', 'spot'],
+    aimed: { warn: 0.9, shots: 5, interval: 0.1 },   // láser de aviso y ráfaga
+    fan: { warn: 0.8, bullets: 7 },                  // abanico
+    rain: { warn: 0.9, columns: 4, waves: 3, speed: 520 }, // columnas que caen desde arriba
+    spot: { duration: 4, catchTime: 0.5, windup: 0.35, shots: 4 }, // foco que barre
+    reward: { bucks: 600, gems: 10, xp: 150 },
+    starsAfter: 2,          // estrellas tras vencerlo
+  },
+
   // ---------------- ESCONDITES ----------------
   // Atravesarlos de punta a punta quita una estrella.
   hideouts: {

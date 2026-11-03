@@ -22,6 +22,7 @@ import { minorKoFx } from './entities/minors.js';
 import { Foot } from './systems/foot.js';
 import { Intro } from './systems/intro.js';
 import { Arrest } from './systems/arrest.js';
+import { Boss } from './systems/boss.js';
 
 /** Pista de música de una zona. */
 export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
@@ -52,6 +53,7 @@ export class Game {
     this.foot = new Foot();
     this.intro = new Intro();
     this.arrest = new Arrest();
+    this.boss = new Boss();
     this.record = 0; // récord de distancia al empezar la partida (lo pone main.js)
     this.buffer = document.createElement('canvas');
     this.t = 0;
@@ -100,6 +102,7 @@ export class Game {
     this.over = false;
     this.deathTimer = 0;
     this.arrest.reset();
+    this.boss.reset();
     this.cause = null;
     this.flash = 0;
     this.fadeIn = 1;
@@ -134,7 +137,9 @@ export class Game {
   get policeLevel() {
     const L = CONFIG.wanted.levels;
     if (this.respite.active) return L[0]; // durante un respiro la policía pierde el rastro
-    const lvl = L[Math.min(this.wanted.stars, L.length - 1)];
+    let lvl = L[Math.min(this.wanted.stars, L.length - 1)];
+    // con el helicóptero jefe, el resto de la policía se aparta un poco
+    if (this.boss.active) lvl = { ...lvl, heli: 0, missile: 0, car: lvl.car * CONFIG.boss.carMult, carPair: 0 };
     // primeros metros: policía flojita (agentes a pie, coches lentos)
     const ease = CONFIG.wanted.ease.find((e) => this.distance < e.until);
     if (!ease) return lvl;
@@ -275,6 +280,7 @@ export class Game {
       p.emitExhaust(dt, this.particles);
       this.wanted.update(dt);
       this.respite.update(dt, this);
+      this.boss.update(dt * this.timeScale, this);
       this.events.update(dt, this);
       this.combo.update(dt);
       this.checkRecord();
@@ -664,10 +670,12 @@ export class Game {
     if (!menu) this.tokens.draw(ctx, cam.x, this);
     this.particles.draw(ctx, cam.x);
     if (!menu) this.arrest.draw(ctx, cam.x, this);
+    if (!menu) this.boss.draw(ctx, cam.x, this);
     if (showPlayer && this.intro.playerVisible) this.player.draw(ctx, cam.x, this.t);
     for (const o of this.obstacles) o.front?.(ctx, cam.x, this);
     for (const o of this.obstacles) o.overlay(ctx, this);
     this.arrest.overlay(ctx, this);
+    this.boss.overlay(ctx, this);
     ctx.restore();
 
     this.popups.draw(ctx);

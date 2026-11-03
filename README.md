@@ -75,6 +75,8 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 **Enemigos menores** (sobre todo en los primeros metros y con 0-1★; se retiran cuando la policía toma el relevo): guardia de seguridad con linterna que salta al verte, dron de reparto que cruza el cielo, perro callejero que te persigue por el suelo desde atrás (aviso "GUAU!" en el borde izquierdo), bandadas de gaviotas (solo en la playa) y matón en patinete eléctrico que viene de frente y salta. Son fáciles de esquivar, pero **chocar cuenta como golpe**. Se derrotan con gadgets y habilidades (pistola, furia, nitro, coche, moto, cohete…): salen volando con estrellitas de mareo y dan unos pavos (× multiplicador) y algo de XP. Misiones: «Derrota 3 enemigos menores en una partida» y «Elimina 10 drones de reparto» (acumulativa entre partidas). Bloque `minors` de `config.js`.
 
+**Helicóptero jefe** (al llegar a 5★): persecución de 30 s contra «El Halcón», con barra de tiempo visible. Alterna ataques siempre avisados: láser de puntería y ráfaga, abanico de balas, columnas que caen desde arriba y foco que barre. Si sobrevives: +600 pavos, +10 💎, +150 XP, fanfarria de victoria y bajas a 2★ (bloque `boss`).
+
 **Escondites** (con 2★ o más, cada 380-700 m): **túnel de lavado** y **callejón oscuro** a ras de suelo, y **planta de parking** a media altura (solo con jetpack). Si lo atraviesas de punta a punta, pierdes una estrella con destello y sonido de alivio. Los pavos van por la otra ruta, así que esconderse es una decisión (bloque `hideouts`).
 
 **Nivel de búsqueda (★1-5):**

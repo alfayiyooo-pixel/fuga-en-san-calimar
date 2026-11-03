@@ -22,7 +22,7 @@ export class Respite {
   /** ¿La partida está "al límite"? */
   eligible(g) {
     const R = CONFIG.respite;
-    return !g.dead && !g.events.active && g.baseSpeed() >= R.minSpeed && g.wanted.stars >= R.minStars;
+    return !g.dead && !g.events.active && !g.boss.active && g.baseSpeed() >= R.minSpeed && g.wanted.stars >= R.minStars;
   }
 
   /** Multiplicador de velocidad que aplica el respiro. */

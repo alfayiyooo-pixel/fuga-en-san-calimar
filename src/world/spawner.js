@@ -30,7 +30,7 @@ export class Spawner {
       // escondite cuando toca y hay bastantes estrellas
       const H = CONFIG.hideouts;
       const m = this.nextX / CONFIG.world.pxPerMeter;
-      if (m >= this.nextHideoutAt && g.wanted.stars >= H.minStars) {
+      if (m >= this.nextHideoutAt && g.wanted.stars >= H.minStars && !g.boss.active) {
         this.nextHideoutAt = m + rand(H.every[0], H.every[1]);
         this.nextX += 120;
         this.nextX += spawnHideout(g, this.nextX) + this.gap(g);

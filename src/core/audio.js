@@ -538,6 +538,19 @@ class AudioFx {
     this.tone({ freq: 300, type: 'square', dur: 0.08, vol: 0.08, slide: 0.5 });
   }
 
+  /** Victoria contra el helicóptero jefe: fanfarria larga. */
+  victory() {
+    const seq = [[0, 0.14], [4, 0.14], [7, 0.14], [12, 0.3], [11, 0.14], [12, 0.14], [16, 0.3], [19, 0.7]];
+    let d = 0;
+    for (const [s, len] of seq) {
+      this.tone({ freq: 523 * 2 ** (s / 12), type: 'square', dur: len, vol: 0.11, delay: d });
+      this.tone({ freq: 262 * 2 ** (s / 12), type: 'sawtooth', dur: len, vol: 0.06, delay: d });
+      d += len * 0.92;
+    }
+    [0, 4, 7, 12].forEach((s) => this.tone({ freq: 131 * 2 ** (s / 12), type: 'triangle', dur: 1.4, vol: 0.08, delay: d - 0.6 }));
+    this.noise({ dur: 1.5, vol: 0.14, freq: 6000, type: 'highpass', delay: 0.4 });
+  }
+
   /** Alivio al esconderse: "fiuuu" + acorde suave. */
   relief() {
     this.noise({ dur: 0.8, vol: 0.14, freq: 900, type: 'bandpass', q: 1, slide: 0.35 });
