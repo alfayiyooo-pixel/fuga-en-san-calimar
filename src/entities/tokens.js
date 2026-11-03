@@ -478,8 +478,9 @@ function tokenHitsObstacle(x, y, obstacles) {
   const nearBox = { l: x - nearR, r: x + nearR, t: y - nearR, b: y + nearR };
   let res = 0;
   for (const o of obstacles) {
-    if (o.hits(box)) return 2;
-    if (o.hits(nearBox)) res = 1;
+    const test = o.blocks ? (b) => o.blocks(b) : (b) => o.hits(b);
+    if (test(box)) return 2;
+    if (test(nearBox)) res = 1;
   }
   return res;
 }

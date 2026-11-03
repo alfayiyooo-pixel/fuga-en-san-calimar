@@ -71,7 +71,7 @@ Al caer, el atracador sale despedido con la velocidad que llevaba: rebota, rueda
 
 Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito Lingote → Las Chimeneas → Colinas Brisa → Puerto Ancla**.
 
-**Obstáculos:** cables eléctricos (fijos, dobles, en puerta o giratorios), carteles que caen, patrullas que vienen de frente, helicópteros con foco que disparan si te detectan y misiles con aviso previo.
+**Obstáculos:** cables eléctricos (fijos, dobles, en puerta o giratorios), patrullas que vienen de frente, helicópteros con foco que disparan si te detectan y misiles con aviso previo. **Peligros de la ciudad** (según la zona, sin repetir el anterior): bola de demolición de una grúa que se balancea (calcula el momento), neones que parpadean y solo dañan encendidos, andamios que se derrumban dejando hueco arriba o abajo, bocas de riego que revientan y te empujan hacia arriba, y toldos de fachada que se cierran de golpe (bloque `hazards` de `config.js`).
 
 **Enemigos menores** (sobre todo en los primeros metros y con 0-1★; se retiran cuando la policía toma el relevo): guardia de seguridad con linterna que salta al verte, dron de reparto que cruza el cielo, perro callejero que te persigue por el suelo desde atrás (aviso "GUAU!" en el borde izquierdo), bandadas de gaviotas (solo en la playa) y matón en patinete eléctrico que viene de frente y salta. Son fáciles de esquivar, pero **chocar cuenta como golpe**. Se derrotan con gadgets y habilidades (pistola, furia, nitro, coche, moto, cohete…): salen volando con estrellitas de mareo y dan unos pavos (× multiplicador) y algo de XP. Misiones: «Derrota 3 enemigos menores en una partida» y «Elimina 10 drones de reparto» (acumulativa entre partidas). Bloque `minors` de `config.js`.
 

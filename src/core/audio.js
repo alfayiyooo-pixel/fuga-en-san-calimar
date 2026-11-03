@@ -514,6 +514,30 @@ class AudioFx {
     for (let k = 0; k < 4; k++) this.tone({ freq: k % 2 ? 1400 : 1150, type: 'square', dur: 0.06, vol: 0.06, delay: k * 0.065 });
   }
 
+  // ---------- peligros de la ciudad ----------
+  swoosh() {
+    this.noise({ dur: 0.45, vol: 0.16, freq: 500, type: 'bandpass', q: 1.5, slide: 3 });
+  }
+
+  neonBuzz() {
+    this.tone({ freq: 120, type: 'sawtooth', dur: 0.25, vol: 0.05 });
+    this.noise({ dur: 0.08, vol: 0.08, freq: 5000, type: 'highpass' });
+  }
+
+  hiss() {
+    this.noise({ dur: 0.4, vol: 0.12, freq: 4000, type: 'highpass' });
+  }
+
+  splash() {
+    this.noise({ dur: 0.9, vol: 0.3, freq: 1600, type: 'bandpass', q: 0.6, slide: 0.5 });
+    this.tone({ freq: 140, type: 'sine', dur: 0.3, vol: 0.2, slide: 0.5 });
+  }
+
+  snap() {
+    this.noise({ dur: 0.1, vol: 0.35, freq: 1200, type: 'bandpass', q: 1 });
+    this.tone({ freq: 300, type: 'square', dur: 0.08, vol: 0.08, slide: 0.5 });
+  }
+
   /** Silbato de policía. */
   whistle() {
     this.tone({ freq: 2600, type: 'sine', dur: 0.5, vol: 0.08, vib: 0 });

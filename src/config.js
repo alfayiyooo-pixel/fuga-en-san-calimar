@@ -97,13 +97,13 @@ export const CONFIG = {
   obstacles: {
     // probabilidad relativa de los obstáculos civiles (la policía depende
     // de las estrellas: ver wanted.levels)
-    weights: { cable: 5, billboard: 2 },
+    weights: { cable: 5, hazard: 2.6 },
     // metros a partir de los que aparece cada tipo
-    unlockAt: { cable: 0, billboard: 70, car: 0, missile: 0, heli: 0 },
+    unlockAt: { cable: 0, hazard: 60, car: 0, missile: 0, heli: 0 },
     // multiplicador de peso por zona
     zoneWeights: {
       beach: {},
-      finance: { billboard: 2 },
+      finance: {},
       industrial: { cable: 1.6 },
       hills: { car: 1.7 },
       port: { missile: 1.6, heli: 1.3 },
@@ -123,6 +123,24 @@ export const CONFIG = {
       bulletSpeed: 560,
       cooldown: 1.4,
     },
+  },
+
+  // ---------------- PELIGROS DE LA CIUDAD ----------------
+  // Sustituyen a los carteles. Peso de cada uno por zona (no se repite el anterior).
+  hazards: {
+    zones: {
+      beach: { wrecking: 0.3, neon: 0.5, scaffold: 0.6, hydrant: 0.8, shutter: 1.3 },
+      finance: { wrecking: 0.6, neon: 1.6, scaffold: 1.0, hydrant: 0.8, shutter: 0.8 },
+      industrial: { wrecking: 1.6, neon: 0.3, scaffold: 1.4, hydrant: 1.0, shutter: 0.4 },
+      hills: { wrecking: 0.5, neon: 0.6, scaffold: 0.8, hydrant: 1.1, shutter: 1.2 },
+      port: { wrecking: 1.4, neon: 0.9, scaffold: 0.7, hydrant: 0.6, shutter: 0.5 },
+    },
+    repeatMult: 0.25,       // peso del mismo peligro que el anterior
+    wrecking: { radius: 28, amp: [0.55, 0.95], period: [1.7, 2.6], lowest: [120, 260], footClearance: 70 }, // s de ciclo, px sobre el suelo
+    neon: { on: [0.9, 1.5], off: [0.7, 1.2], warn: 0.35 },   // s encendido, apagado y parpadeo de aviso
+    scaffold: { triggerTime: 0.8, warnTime: 0.45, heat: 3 }, // s de antelación al derrumbarse
+    hydrant: { triggerTime: 0.9, warnTime: 0.35, duration: 1.6, height: [240, 360], push: 760, heat: 2 },
+    shutter: { length: 120, trigger: [0.35, 0.9], warnTime: 0.25, snapSpeed: 14 }, // s antes de llegar a él
   },
 
   // ---------------- ESCENA INICIAL ----------------

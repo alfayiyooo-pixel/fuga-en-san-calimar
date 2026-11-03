@@ -458,6 +458,7 @@ export class Game {
 
   /** Centro aproximado de un obstáculo (para apuntar y explosiones). */
   centerOf(o) {
+    if (o.center) return o.center;
     switch (o.type) {
       case 'billboard':
       case 'car':

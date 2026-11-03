@@ -1,8 +1,9 @@
 import { CONFIG } from '../config.js';
 import { rand, chance, lerp, pick, clamp } from '../core/rng.js';
-import { Cable, Billboard, PatrolCar, Helicopter, Missile } from '../entities/obstacles.js';
+import { Cable, PatrolCar, Helicopter, Missile } from '../entities/obstacles.js';
 import { spawnMinor } from '../entities/minors.js';
 import { spawnStreet } from '../entities/street.js';
+import { spawnHazard } from '../entities/hazards.js';
 
 /**
  * Genera obstáculos por delante de la cámara.
@@ -101,6 +102,24 @@ export class Spawner {
     return 'guard';
   }
 
+  /** Peligro según la zona, sin repetir el anterior (variado y poco predecible). */
+  chooseHazard(g) {
+    const H = CONFIG.hazards;
+    const weights = H.zones[g.zone.current.id] ?? H.zones.beach;
+    const entries = Object.entries(weights).map(([tp, w]) => [tp, tp === this.lastHazard ? w * H.repeatMult : w]);
+    let roll = Math.random() * entries.reduce((s, [, w]) => s + w, 0);
+    let pickd = entries[0][0];
+    for (const [tp, w] of entries) {
+      roll -= w;
+      if (roll <= 0) {
+        pickd = tp;
+        break;
+      }
+    }
+    this.lastHazard = pickd;
+    return pickd;
+  }
+
   chooseStreet(g) {
     const S = CONFIG.foot.street;
     const entries = Object.entries(S.types).filter(([tp]) => g.distance >= (S.unlockAt[tp] ?? 0) && (tp !== 'awning' || g.player.onFoot));
@@ -121,9 +140,8 @@ export class Spawner {
         return spawnMinor('cop', g, x);
       case 'street':
         return spawnStreet(this.chooseStreet(g), g, x);
-      case 'billboard':
-        g.addObstacle(new Billboard(x));
-        return 150;
+      case 'hazard':
+        return spawnHazard(this.chooseHazard(g), g, x);
       case 'car': {
         g.addObstacle(new PatrolCar(g));
         if (chance(g.policeLevel.carPair)) {
