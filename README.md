@@ -63,6 +63,7 @@ Al caer, el atracador sale despedido con la velocidad que llevaba: rebota, rueda
 - Para que el suelo siga siendo un reto: los obstáculos de calle salen a veces **en serie** (2-3 seguidos, con el hueco justo para aterrizar y volver a saltar) y a veces con un **cable por encima** que un salto normal pasa por debajo pero un doble salto toca (`foot.street.series` y `foot.street.ceilingCable`).
 - A los **250-380 m** aparece el **jetpack** dentro de un grupo de pavos. Puedes ignorarlo: vuelve a salir cada 450-750 m mientras sigas a pie.
 - **Capas de golpe:** a pie → detenido · con jetpack → lo pierdes y sigues a pie · con un personaje → vuelves al jetpack.
+- **Policía más justa a pie:** como un golpe a pie es la detención, la policía aprieta menos que con jetpack: menos patrullas (×0,6) y más lentas, más separación entre obstáculos, ataques con un 50 % más de aviso (patrullas, misiles, helicóptero y jefe), misiles y helicópteros solo desde 4★ y de uno en uno, y el jefe no usa la lluvia de balas. Ajustes separados en `wanted.byMode.foot` y `wanted.byMode.jet` de `config.js`.
 - **A PIE ×2:** mientras no hayas cogido nunca el jetpack, los pavos valen el doble (insignia verde en el HUD).
 - **Obstáculos de calle:** vallas de obra, cubos de basura, coches aparcados y **toldos** (caer encima te lanza muy alto hacia un arco de pavos).
 - **Vehículos a pie:** patinete eléctrico y carrito de la compra (unos segundos, más velocidad y aguantan un golpe).

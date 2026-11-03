@@ -92,10 +92,11 @@ export class Boss {
     if (!this.attack) {
       this.nextAttack -= dt;
       if (this.nextAttack <= 0) {
-        const opts = B.patterns.filter((k) => k !== this.last);
+        const pats = g.policeMode.bossPatterns ?? B.patterns;
+        const opts = pats.filter((k) => k !== this.last);
         const kind = pick(opts);
         this.last = kind;
-        this.attack = { kind, t: 0, fired: 0 };
+        this.attack = { kind, t: 0, fired: 0, slow: g.warnMult };
         const A = this.attack;
         if (kind === 'aimed') A.aim = { x: p.x + g.speed * 0.6, y: p.y };
         if (kind === 'rain') A.cols = Array.from({ length: B.rain.columns }, (_, i) => g.camera.x + g.view.w * (0.28 + i * (0.6 / B.rain.columns)) + rand(-30, 30));
@@ -104,7 +105,9 @@ export class Boss {
       return;
     }
     const A = this.attack;
-    A.t += dt;
+    // durante el aviso el reloj va más lento si vas a pie (más tiempo para reaccionar)
+    const warn = B[A.kind]?.warn ?? 0;
+    A.t += A.t < warn ? dt / (A.slow ?? 1) : dt;
     const gunX = this.x - 40;
     const gunY = this.y + 30;
     if (A.kind === 'aimed') {
@@ -163,7 +166,7 @@ export class Boss {
         A.burst = A.t;
         Sound.spottedAlarm();
       }
-      if (A.burst && A.fired < B.spot.shots && A.t > A.burst + B.spot.windup + A.fired * 0.12) {
+      if (A.burst && A.fired < B.spot.shots && A.t > A.burst + B.spot.windup * (A.slow ?? 1) + A.fired * 0.12) {
         const dx = p.x + g.speed * 0.3 - gunX;
         const dy = p.y - gunY;
         const len = Math.hypot(dx, dy) || 1;

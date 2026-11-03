@@ -299,7 +299,7 @@ export class PatrolCar extends Obstacle {
     this.h = 44;
     this.speed = rand(C.minSpeed, C.maxSpeed) * (g.policeLevel.carSpeed ?? 1);
     const closing = g.speed + this.speed;
-    this.x = g.camera.x + g.view.w + closing * (C.warnTime + delay);
+    this.x = g.camera.x + g.view.w + closing * (C.warnTime * g.warnMult + delay);
     this.y = g.view.groundY - this.h;
     this.passed = false;
     this.wheel = 0;
@@ -497,7 +497,7 @@ export class Helicopter extends Obstacle {
     } else if (this.state === 'lock' || this.state === 'fire') {
       this.beam = approach(this.beam, toPlayer, 10, dt);
       this.timer += dt;
-      if (this.state === 'lock' && this.timer >= H.windup) {
+      if (this.state === 'lock' && this.timer >= H.windup * g.warnMult) {
         this.state = 'fire';
         this.timer = H.shotInterval;
       }
@@ -693,6 +693,7 @@ export class Missile extends Obstacle {
     this.police = true;
     this.state = 'warn';
     this.timer = -delay;
+    this.wm = g.warnMult; // a pie, más tiempo de aviso
     this.offsetY = offsetY;
     this.ty = clamp(g.player.y + offsetY, 60, g.view.groundY - 20);
     this.x = 0;
@@ -719,12 +720,12 @@ export class Missile extends Obstacle {
     if (this.state === 'warn') {
       const target = clamp(g.player.y + this.offsetY, 60, g.view.groundY - 20);
       this.ty = approach(this.ty, target, 5, dt);
-      if (this.timer >= M.warnTime) {
+      if (this.timer >= M.warnTime * this.wm) {
         this.state = 'lock';
         this.timer = 0;
       }
     } else if (this.state === 'lock') {
-      if (this.timer >= M.lockTime) {
+      if (this.timer >= M.lockTime * this.wm) {
         this.state = 'fly';
         this.x = g.camera.x + g.view.w + 40;
         this.y = this.ty;

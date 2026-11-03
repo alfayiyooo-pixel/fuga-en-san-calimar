@@ -300,6 +300,26 @@ export const CONFIG = {
       { until: 500, car: 0.35, missile: 0, heli: 0, carSpeed: 0.55, cop: 1.4 },
       { until: 1000, car: 0.7, missile: 0.4, heli: 0, carSpeed: 0.8, cop: 0.7 },
     ],
+    // AJUSTES POR MODO: se aplican sobre "levels" según vayas a pie o con jetpack.
+    // A pie un golpe es la detención, así que la policía aprieta menos y avisa antes.
+    //   car/missile/heli/carPair: multiplicador del peso · gapMult: separación (más = más aire)
+    //   carSpeed: velocidad de las patrullas · volleyMax: misiles por salva como mucho
+    //   heliShotsMax: disparos extra del helicóptero como mucho
+    //   missileFrom/heliFrom: estrellas mínimas para que salgan misiles / helicópteros
+    //   warnMult: tiempo de aviso de los ataques (patrullas, misiles, helicóptero y jefe)
+    //   bossPatterns: ataques que usa el helicóptero jefe
+    byMode: {
+      jet: {
+        car: 1, missile: 1, heli: 1, carPair: 1, gapMult: 1, carSpeed: 1,
+        volleyMax: 3, heliShotsMax: 2, missileFrom: 2, heliFrom: 3, warnMult: 1,
+        bossPatterns: ['aimed', 'fan', 'rain', 'spot'],
+      },
+      foot: {
+        car: 0.6, missile: 0.5, heli: 0.6, carPair: 0.3, gapMult: 1.15, carSpeed: 0.85,
+        volleyMax: 1, heliShotsMax: 0, missileFrom: 4, heliFrom: 4, warnMult: 1.5,
+        bossPatterns: ['aimed', 'fan', 'spot'],
+      },
+    },
     // policía que aparece en cada nivel (índice = nº de estrellas)
     //   car/missile/heli: peso relativo de cada obstáculo policial (0 = no aparece)
     //   gapMult: multiplicador de la separación entre obstáculos

@@ -146,10 +146,37 @@ export class Game {
     return this.baseSpeed() * this.player.mods.speed * this.respite.speedMult;
   }
 
-  /** Configuración de policía para el nº de estrellas actual. */
+  /** Ajustes de policía del modo actual: a pie o con jetpack (CONFIG.wanted.byMode). */
+  get policeMode() {
+    return CONFIG.wanted.byMode[this.player.onFoot ? 'foot' : 'jet'];
+  }
+
+  /** Multiplicador del tiempo de aviso de los ataques (más a pie). */
+  get warnMult() {
+    return this.policeMode.warnMult ?? 1;
+  }
+
+  /** Configuración de policía para el nº de estrellas actual y el modo (a pie / jetpack). */
   get policeLevel() {
     const L = CONFIG.wanted.levels;
     if (this.respite.active) return L[0]; // durante un respiro la policía pierde el rastro
+    const lvl = this.basePoliceLevel(L);
+    const M = this.policeMode;
+    const s = this.wanted.stars;
+    return {
+      ...lvl,
+      car: lvl.car * M.car,
+      missile: s >= M.missileFrom ? lvl.missile * M.missile : 0,
+      heli: s >= M.heliFrom ? lvl.heli * M.heli : 0,
+      carPair: lvl.carPair * M.carPair,
+      gapMult: lvl.gapMult * M.gapMult,
+      carSpeed: (lvl.carSpeed ?? 1) * M.carSpeed,
+      volley: Math.min(lvl.volley, M.volleyMax),
+      heliShots: Math.min(lvl.heliShots, M.heliShotsMax),
+    };
+  }
+
+  basePoliceLevel(L) {
     let lvl = L[Math.min(this.wanted.stars, L.length - 1)];
     // con el helicóptero jefe, el resto de la policía se aparta un poco
     if (this.boss.active) lvl = { ...lvl, heli: 0, missile: 0, car: lvl.car * CONFIG.boss.carMult, carPair: 0 };
