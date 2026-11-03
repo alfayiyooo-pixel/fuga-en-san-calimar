@@ -24,6 +24,7 @@ import { Intro } from './systems/intro.js';
 import { Arrest } from './systems/arrest.js';
 import { Boss } from './systems/boss.js';
 import { Radio } from './systems/radio.js';
+import { Achievements } from './meta/achievements.js';
 
 /** Pista de música de una zona. */
 export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
@@ -111,6 +112,7 @@ export class Game {
     this.radio.reset();
     this.photo = null;
     this.photoRequest = false;
+    this.saved = false;
     this.radioIntro = true;
     this.cause = null;
     this.flash = 0;
@@ -362,6 +364,7 @@ export class Game {
     this.missionTimer -= dt;
     if (this.missionTimer <= 0) {
       this.missionTimer = 0.5;
+      for (const a of Achievements.check(this)) this.hud.achievement(a.def, a.gems);
       for (const def of Missions.check(this.missionStats())) {
         Sound.missionDone();
         this.popups.add(t('mission.done'), this.view.w / 2, 250, { color: '#9dffb5', size: 28, life: 2, rise: 10 });

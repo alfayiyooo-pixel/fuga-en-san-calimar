@@ -2,6 +2,7 @@ import { t, fmt } from '../core/i18n.js';
 import { CONFIG } from '../config.js';
 import { billSprite, goldSprite, caseSprite, magnetSprite, orbSprite, gemSprite } from '../entities/tokens.js';
 import { drawSprite, drawGlow } from '../fx/sprites.js';
+import { Sound } from '../core/audio.js';
 
 const FONT = "'Bungee', Impact, sans-serif";
 const INK = '#1b1030';
@@ -101,6 +102,56 @@ export class Hud {
     this.starFlash = 1;
   }
 
+  /** Aviso de logro conseguido (tarjeta arriba a la derecha). */
+  achievement(def, gems) {
+    (this.achQueue ??= []).push({ def, gems, time: 0 });
+    Sound.achievement();
+  }
+
+  drawAchievement(ctx, v, dt = 0) {
+    const q = this.achQueue;
+    if (!q?.length) return;
+    const A = q[0];
+    const life = 3.2;
+    const k = Math.min(1, A.time * 5, (life - A.time) * 4);
+    const w = 300;
+    const x = v.w - w - 16 + (1 - Math.max(0, k)) * 80;
+    const y = 96;
+    const col = { bronze: '#d08a4a', silver: '#c9d2e0', gold: '#ffd23f' }[A.def.tier];
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, k);
+    drawGlow(ctx, x + 30, y + 30, 50, 'rgba(255, 210, 63, 0.8)', 0.4);
+    ctx.fillStyle = 'rgba(27, 16, 48, 0.92)';
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, 60, 14);
+    ctx.fill();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.arc(x + 30, y + 30, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(A.def.icon, x + 30, y + 31);
+    ctx.textAlign = 'left';
+    ctx.font = `11px ${FONT}`;
+    ctx.fillStyle = col;
+    ctx.fillText(t('ach.unlocked'), x + 60, y + 18);
+    ctx.font = "800 15px 'Rubik', sans-serif";
+    ctx.fillStyle = '#fff4dc';
+    let name = t(`ach.${A.def.id}`);
+    while (name.length > 4 && ctx.measureText(name).width > w - 120) name = name.slice(0, -2) + '…';
+    ctx.fillText(name, x + 60, y + 38);
+    ctx.font = `13px ${FONT}`;
+    ctx.fillStyle = '#9ff8ff';
+    ctx.textAlign = 'right';
+    ctx.fillText(`+${A.gems} 💎`, x + w - 12, y + 18);
+    ctx.restore();
+  }
+
   /** Rótulo de Radio Calimar con la frase del locutor. */
   radio(text) {
     this.radioData = { text, time: 0, life: Math.min(9, 3 + text.length * 0.07) };
@@ -145,6 +196,10 @@ export class Hud {
   }
 
   update(dt) {
+    if (this.achQueue?.length) {
+      this.achQueue[0].time += dt;
+      if (this.achQueue[0].time > 3.2) this.achQueue.shift();
+    }
     if (this.radioData) {
       this.radioData.time += dt;
       if (this.radioData.time > this.radioData.life) this.radioData = null;
@@ -185,6 +240,7 @@ export class Hud {
     game.powers.drawHud(ctx, game);
     this.drawBanner(ctx, v);
     this.drawRadio(ctx, v);
+    this.drawAchievement(ctx, v);
     if (game.respite.active) this.drawRespite(ctx, game, v);
     else if (game.events.active) this.drawEvent(ctx, game, v);
     this.drawStars(ctx, game, v);

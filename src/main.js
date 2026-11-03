@@ -27,6 +27,8 @@ import { SettingsScreen, appCard } from './ui/settings.js';
 import { makeHeadline, paperHtml, sharePaper } from './ui/newspaper.js';
 import { Pwa } from './core/pwa.js';
 import { CreditsScreen } from './ui/credits.js';
+import { AchievementsScreen } from './ui/achievements.js';
+import { Achievements } from './meta/achievements.js';
 
 // ---------- arranque ----------
 Save.load();
@@ -222,6 +224,28 @@ function openShop(tab, opts) {
 screens.on('btn-shop', () => {
   Sound.click();
   openShop('items');
+});
+
+// ---------- logros ----------
+const achScreen = new AchievementsScreen(document.getElementById('screen-achievements'), { onClose: () => toMenu() });
+screens.on('btn-achievements', () => {
+  Sound.click();
+  state = 'menu';
+  screens.show('achievements');
+  applyToDom(document.getElementById('screen-achievements'));
+  achScreen.open();
+});
+// fuera de la partida (compras, prestigio, final): aviso con el toast
+Achievements.onUnlock((list) => {
+  if (state === 'playing') return; // en partida lo muestra el HUD
+  list.forEach((a, i) => setTimeout(() => {
+    Sound.achievement();
+    toast(`🏅 ${t('ach.unlocked')} ${t(`ach.${a.def.id}`)}  +${a.gems} 💎`);
+  }, 900 + i * 2700));
+  refreshWallet();
+});
+Profile.onChange(() => {
+  if (state !== 'playing') Achievements.check();
 });
 
 // ---------- ajustes ----------
@@ -426,6 +450,8 @@ function endRun() {
   const xpRoulette = roulettePrize?.xp ?? 0;
   const xpTotal = xpDist + game.xpRun + xpMissions + xpRoulette;
   const ups = Progression.addXp(xpTotal);
+  Achievements.commitRun(game, claimed.length);
+  Achievements.check();
   if (ups.length) setTimeout(() => Sound.levelUp(), 600);
   Save.save();
   lastResult = {
@@ -559,6 +585,7 @@ document.querySelectorAll('.lang-btn').forEach((btn) => {
     if (!document.getElementById('screen-missions').classList.contains('hidden')) progress.render();
     if (!document.getElementById('screen-settings').classList.contains('hidden')) settings.render();
     if (!document.getElementById('screen-credits').classList.contains('hidden')) credits.render();
+    if (!document.getElementById('screen-achievements').classList.contains('hidden')) achScreen.render();
     if (state === 'menu' && !document.getElementById('screen-shop').classList.contains('hidden')) shop.render();
     if (state === 'menu' && !document.getElementById('screen-wardrobe').classList.contains('hidden')) wardrobe.render();
     fillOver();

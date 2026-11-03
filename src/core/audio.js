@@ -555,6 +555,12 @@ class AudioFx {
     this.tone({ freq: 300, type: 'square', dur: 0.08, vol: 0.08, slide: 0.5 });
   }
 
+  /** Logro conseguido: campanas brillantes. */
+  achievement() {
+    [0, 7, 12, 16, 19].forEach((s, i) => this.tone({ freq: 784 * 2 ** (s / 12), type: 'triangle', dur: 0.35, vol: 0.09, delay: i * 0.07 }));
+    this.tone({ freq: 1568, type: 'sine', dur: 0.9, vol: 0.06, delay: 0.35 });
+  }
+
   /** Victoria contra el helicóptero jefe: fanfarria larga. */
   victory() {
     const seq = [[0, 0.14], [4, 0.14], [7, 0.14], [12, 0.3], [11, 0.14], [12, 0.14], [16, 0.3], [19, 0.7]];

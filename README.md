@@ -163,6 +163,10 @@ Al perder, si tienes fichas 🪙, aparece la **ruleta de la suerte** antes del r
 
 Ajustes en los bloques `progression`, `missions` y `daily` de `config.js`.
 
+### Logros y medallas
+
+Apartado **🏅 Logros** en el menú con 33 logros permanentes (distintos de las misiones), en bronce, plata y oro: distancia en una partida y total, 5 estrellas, vencer al helicóptero (1 y 5 veces), cada escondite y 25 en total, 1.000 m sin jetpack, vehículos a pie, los tres personajes, habilidades especiales, enemigos menores y drones, pavos, multiplicador x5, esquivas al límite, diamantes, primera compra, vestuario completo (del atracador y de un personaje), nivel 10, prestigio I y V, 25 misiones y 100 partidas. Al conseguir uno sale un aviso y se cobran diamantes: bronce 5 💎, plata 15 💎, oro 40 💎 (`achievements.reward`). Lista en [`src/meta/achievements.js`](src/meta/achievements.js).
+
 ### Tienda
 
 - **Personajes**: trajes, accesorios, estelas y efectos de transformación para los tres personajes (y traje y estela para el atracador básico). Los normales con pavos; los legendarios animados con 💎 (piden confirmación con dos toques); los de prestigio no se compran. Vista previa animada antes de comprar.

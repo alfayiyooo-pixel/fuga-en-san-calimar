@@ -14,13 +14,14 @@ export class Screens {
       roulette: document.getElementById('screen-roulette'),
       settings: document.getElementById('screen-settings'),
       credits: document.getElementById('screen-credits'),
+      achievements: document.getElementById('screen-achievements'),
       hudButtons: document.getElementById('hud-buttons'),
     };
   }
 
   /** Muestra una pantalla (o ninguna con null) y oculta el resto. */
   show(name) {
-    for (const key of ['menu', 'pause', 'over', 'shop', 'wardrobe', 'missions', 'daily', 'roulette', 'settings', 'credits']) {
+    for (const key of ['menu', 'pause', 'over', 'shop', 'wardrobe', 'missions', 'daily', 'roulette', 'settings', 'credits', 'achievements']) {
       if (!this.el[key]) continue;
       this.el[key].classList.toggle('hidden', key !== name);
     }

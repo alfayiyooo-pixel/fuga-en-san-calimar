@@ -25,6 +25,9 @@ const DEFAULTS = {
   tickets: 0,         // fichas de la ruleta (solo se ganan jugando)
   nextBoost: false,   // premio de la ruleta: imán al empezar la próxima partida
   missions: { active: [], lastDiscard: 0 },
+  achievements: {},   // logros conseguidos: id → fecha
+  // acumulados de todas las partidas (para los logros)
+  life: { bossWins: 0, hideouts: { wash: 0, alley: 0, parking: 0 }, peakStars: 0, noJetBest: 0, rides: 0, specials: 0, minors: 0, drones: 0, multBest: 1, near: 0, missions: 0 },
   daily: { day: 0, last: '' }, // día del ciclo que toca cobrar y fecha del último cobro
   best: {
     distance: 0,

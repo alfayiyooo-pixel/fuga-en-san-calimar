@@ -143,6 +143,11 @@ export const CONFIG = {
     shutter: { length: 120, trigger: [0.35, 0.9], warnTime: 0.25, snapSpeed: 14 }, // s antes de llegar a él
   },
 
+  // ---------------- LOGROS ----------------
+  achievements: {
+    reward: { bronze: 5, silver: 15, gold: 40 }, // 💎 por medalla
+  },
+
   // ---------------- RADIO CALIMAR ----------------
   radio: {
     enabled: true,
