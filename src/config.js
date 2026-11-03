@@ -77,6 +77,20 @@ export const CONFIG = {
 
   // ---------------- FASE B ----------------
 
+  // ---------------- VIDA EN EL FONDO ----------------
+  // Personas, coches, barcos, aviones… que cruzan el decorado sin interactuar.
+  ambient: {
+    enabled: true,
+    alpha: 0.92,            // opacidad (más apagados que los peligros de verdad)
+    maxHigh: 10,            // elementos a la vez en calidad alta…
+    maxLow: 4,              // …y en calidad baja
+    // s entre apariciones en cada banda (aleatorio en el rango)
+    every: { sky: [6, 12], waterFar: [7, 14], far: [10, 18], waterNear: [4, 9], groundFar: [2.5, 5], ground: [2.5, 5.5] },
+    perBand: { sky: 2, waterFar: 2, far: 1, waterNear: 2, groundFar: 3, ground: 3 }, // máximo a la vez por banda
+    policeEvery: [9, 15],   // s entre policías de fondo con 1★ (con N★, N veces más a menudo)
+    policeMax: 3,           // máximo de policías de fondo a la vez (1★: 1 · 3★: 2 · 5★: 3)
+  },
+
   zones: {
     length: 500,        // metros que dura cada zona
     transition: 45,     // metros de fundido entre zonas

@@ -21,6 +21,7 @@ import { drawGlow } from './fx/sprites.js';
 import { minorKoFx } from './entities/minors.js';
 import { Foot } from './systems/foot.js';
 import { Intro } from './systems/intro.js';
+import { Ambient } from './world/ambient.js';
 import { Arrest } from './systems/arrest.js';
 import { Boss } from './systems/boss.js';
 import { Radio } from './systems/radio.js';
@@ -54,6 +55,7 @@ export class Game {
     this.events = new Events();
     this.foot = new Foot();
     this.intro = new Intro();
+    this.ambient = new Ambient();
     this.arrest = new Arrest();
     this.boss = new Boss();
     this.radio = new Radio();
@@ -709,7 +711,7 @@ export class Game {
   }
 
   drawScenery(ctx, theme) {
-    this.parallax.drawBackground(ctx, this.view, this.camera.x, this.t, theme);
+    this.parallax.drawBackground(ctx, this.view, this.camera.x, this.t, theme, (band) => this.ambient.draw(ctx, band, theme.id, this.t));
     this.parallax.drawGround(ctx, this.view, this.camera.x, theme);
   }
 
@@ -717,6 +719,11 @@ export class Game {
     const v = this.view;
     const cam = this.camera;
     const zone = menu ? zoneAt(0) : this.zone;
+    // vida del fondo: avanza con el reloj del juego (quieta en pausa)
+    const adt = Math.min(0.05, Math.max(0, this.t - (this.ambT ?? this.t)));
+    this.ambT = this.t;
+    const ambZone = zone.blend > 0.5 ? zone.next.id : zone.current.id;
+    this.ambient.update(adt, this, ambZone, menu || this.dead ? 0 : this.wanted.stars, this.player.x - cam.x);
     ctx.save();
     ctx.translate(cam.offsetX, cam.offsetY);
 

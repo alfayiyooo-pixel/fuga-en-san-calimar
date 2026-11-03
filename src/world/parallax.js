@@ -20,16 +20,25 @@ export class Parallax {
     this.chunks = new Map();
   }
 
-  drawBackground(ctx, v, camX, t, theme) {
+  /** hook(banda): dibuja la vida del fondo entre capas (ver world/ambient.js). */
+  drawBackground(ctx, v, camX, t, theme, hook = null) {
     const q = Quality.settings;
     this.drawCachedSky(ctx, v, t, theme, q);
     this.drawClouds(ctx, v, camX, t, theme);
     if (theme.skyline) this.drawSkyline(ctx, v, camX, t, theme.skyline, q);
     this.haze(ctx, v, theme.haze, 0.55, 1);
+    hook?.('sky');
     theme.backdrop?.(ctx, v, camX, t, q);
+    hook?.('waterFar');
     theme.layers.forEach((layer, li) => {
       this.drawLayer(ctx, v, camX, t, layer, li, q, theme);
-      if (li === 0) this.haze(ctx, v, theme.haze, 0.62, 0.55);
+      if (li === 0) {
+        this.haze(ctx, v, theme.haze, 0.62, 0.55);
+        hook?.('far');
+        hook?.('waterNear');
+        hook?.('groundFar');
+      }
+      if (li === 1) hook?.('ground');
     });
   }
 

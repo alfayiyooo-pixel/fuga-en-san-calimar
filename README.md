@@ -72,6 +72,8 @@ Al caer, el atracador sale despedido con la velocidad que llevaba: rebota, rueda
 
 ### La ciudad y los peligros
 
+**Vida en el fondo** (sin interacción): bañistas, paseantes, turistas haciendo fotos (con flash), corredores, niños con pelota y gente que se asusta y huye al pasar el atracador; policía de fondo (patrullas, el quad de la playa y agentes que te señalan) que aumenta con las estrellas; veleros, yates, motos de agua, surfistas, remolcadores y portacontenedores; avionetas con pancarta, aviones con estela, helicóptero de Calimar TV, parapentes, globos, dirigible y gaviotas. Cada zona tiene lo suyo: oficinistas y taxis en el centro, grúas, camiones y carretillas en el industrial, descapotables y gente paseando al perro en las mansiones, grúa pórtico y barcos en el puerto. Aparecen al azar, con un máximo a la vez, y con colores mezclados con el tono de la zona para no distraer de los obstáculos. Código en [`src/world/ambient.js`](src/world/ambient.js); ritmos y límites en el bloque `ambient` de `config.js`.
+
 Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito Lingote → Las Chimeneas → Colinas Brisa → Puerto Ancla**.
 
 **Obstáculos:** cables eléctricos (fijos, dobles, en puerta o giratorios), patrullas que vienen de frente, helicópteros con foco que disparan si te detectan y misiles con aviso previo. **Peligros de la ciudad** (según la zona, sin repetir el anterior): bola de demolición de una grúa que se balancea (calcula el momento), neones que parpadean y solo dañan encendidos, andamios que se derrumban dejando hueco arriba o abajo, bocas de riego que revientan y te empujan hacia arriba, y toldos de fachada que se cierran de golpe (bloque `hazards` de `config.js`).
