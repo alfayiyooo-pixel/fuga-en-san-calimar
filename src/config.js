@@ -487,7 +487,7 @@ export const CONFIG = {
     // multiplicadores de física (1 = jetpack básico); ramp = inercia del empuje
     veteran: {
       physics: { gravity: 0.82, thrust: 0.86, maxRise: 0.85, maxFall: 0.75, speed: 0.95, ramp: 1, hitbox: 0.95 },
-      bulletTime: { duration: 5, timeScale: 0.4, shotCooldown: 0.12 },
+      bulletTime: { duration: 5, timeScale: 0.4, shotCooldown: 0.16, range: 700 }, // dispara solo al objetivo más cercano
       pistol: { duration: 9, range: 560, fireRate: 0.42 },
       vest: { hits: 1 },
     },

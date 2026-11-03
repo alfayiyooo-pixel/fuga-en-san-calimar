@@ -647,7 +647,7 @@ const loop = new Loop(
       }
     }
     if (state === 'playing' || state === 'paused') {
-      game.powers.drawOverlay(ctx, game, input);
+      game.powers.drawOverlay(ctx, game);
       hud.draw(ctx, game, loop);
     }
   },

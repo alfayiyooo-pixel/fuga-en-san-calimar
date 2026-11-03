@@ -1,6 +1,7 @@
-// Entrada de un solo botón: ratón/toque sobre el canvas o teclado.
-// held  → el botón está pulsado ahora mismo.
-// presses → cola de pulsaciones nuevas (para habilidades, disparos...).
+// Entrada de UN SOLO BOTÓN: ratón/toque en cualquier punto del canvas o teclado.
+// held  → el botón está pulsado ahora mismo (saltar / volar).
+// presses → cola de pulsaciones nuevas (solo para descartarlas en la escena inicial).
+// No hay apuntado: dónde toques da igual; las armas apuntan solas.
 
 const FLY_KEYS = new Set(['Space', 'ArrowUp', 'KeyW']);
 
@@ -10,7 +11,6 @@ export class Input {
     this.pointers = new Map(); // id → {x, y} lógico
     this.keys = new Set();
     this.presses = [];
-    this.pointer = { x: 0, y: 0 }; // última posición conocida (para apuntar)
     this.enabled = true;
     this.onKey = null; // callback(code) para atajos (pausa, etc.)
 
@@ -19,13 +19,7 @@ export class Input {
       canvas.setPointerCapture?.(e.pointerId);
       const p = view.toLogical(e.clientX, e.clientY);
       this.pointers.set(e.pointerId, p);
-      this.pointer = p;
-      this.press(p);
-    });
-    canvas.addEventListener('pointermove', (e) => {
-      const p = view.toLogical(e.clientX, e.clientY);
-      this.pointer = p;
-      if (this.pointers.has(e.pointerId)) this.pointers.set(e.pointerId, p);
+      this.press();
     });
     const release = (e) => this.pointers.delete(e.pointerId);
     canvas.addEventListener('pointerup', release);
@@ -38,7 +32,7 @@ export class Input {
         e.preventDefault();
         if (!e.repeat) {
           this.keys.add(e.code);
-          this.press(null);
+          this.press();
         }
       } else if (!e.repeat && this.onKey) {
         this.onKey(e.code);
@@ -48,8 +42,8 @@ export class Input {
     window.addEventListener('blur', () => this.clear());
   }
 
-  press(pos) {
-    if (this.enabled) this.presses.push({ pos, time: performance.now() });
+  press() {
+    if (this.enabled) this.presses.push({ time: performance.now() });
   }
 
   get held() {

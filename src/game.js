@@ -316,7 +316,8 @@ export class Game {
         if (this.pendingTransform <= 0) this.powers.transform(pick(CHARACTER_IDS), this);
       }
       const ev = p.update(dt, this.inputHeld, this.speed * this.timeScale, this.view.groundY);
-      this.powers.update(dt, this, input.consumePresses());
+      input.consumePresses(); // un solo botón: las pulsaciones solo sirven para saltar/volar
+      this.powers.update(dt, this);
 
       Sound.jet(p.vehicle || p.onFoot ? 0 : p.thrust);
       if (ev.jumped) Sound.hop();
@@ -794,6 +795,7 @@ export class Game {
     if (!menu) this.intro.draw(ctx, cam.x, this);
     if (!menu) this.intro.drawCue(ctx, cam.x, this);
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
+    if (!menu) this.powers.drawAim(ctx, cam.x, this);
     if (!menu) this.tokens.draw(ctx, cam.x, this);
     this.particles.draw(ctx, cam.x);
     if (!menu) this.arrest.draw(ctx, cam.x, this);

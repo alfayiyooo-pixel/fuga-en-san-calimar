@@ -12,9 +12,10 @@ Endless runner con jetpack: un fugitivo huye volando por **San Calimar**, una ci
 | Acción | PC | Móvil |
 |---|---|---|
 | Volar (mantener) / caer (soltar) | Espacio, ↑, W o clic | Mantener el dedo en pantalla |
-| Apuntar en el tiempo bala (El Relojero) | Clic donde quieras disparar | Toca donde quieras disparar |
 | Pausa | Esc o P | Botón ❚❚ |
 | Empezar / reintentar | Enter | Botón Jugar |
+
+**Un solo botón:** todo el juego se controla con saltar/volar. Las armas y gadgets que disparan (pistola y tiempo bala de El Relojero, cohete de Bruno) apuntan solos al obstáculo o enemigo más cercano por delante, con una mira amarilla encima del objetivo. Las habilidades especiales se activan solas al llenarse la barra.
 
 Sonido y música se silencian con el botón 🔊.
 
@@ -112,7 +113,7 @@ Las **cápsulas** aparecen dentro de los grupos de pavos. Al cogerla te transfor
 
 | Personaje | Cómo se juega | Habilidad especial | Gadgets |
 |---|---|---|---|
-| **Don Aurelio Vega, "El Relojero"** — atracador retirado, traje, bigote y gafas doradas | Flota: caída suave y lenta, preciso | **Tiempo bala**: todo se ralentiza y cada toque dispara hacia donde apuntas | **Pistola** con silenciador (dispara sola a lo que tienes delante) · **Chaleco** (aguanta un golpe) |
+| **Don Aurelio Vega, "El Relojero"** — atracador retirado, traje, bigote y gafas doradas | Flota: caída suave y lenta, preciso | **Tiempo bala**: todo se ralentiza y dispara solo, en ráfaga, a lo más cercano por delante | **Pistola** con silenciador (dispara sola a lo que tienes delante) · **Chaleco** (aguanta un golpe) |
 | **Vera "Chispa" Rivas** — conductora callejera, bomber naranja y trenza | Rápida y nerviosa: acelera y frena al instante, caja más pequeña | **Conducción perfecta**: baja al suelo en su deportivo "Rayo" y esquiva sola | **Nitro** (invulnerable y atraviesa todo) · **Rampa** (salto hacia un arco de pavos en lo alto) |
 | **Bruno "Petardo" Tramuntana** — caótico, camisa hawaiana y barba pelirroja | Pesado: mucha inercia, empuje brutal y rebota en el suelo | **Modo furia**: atraviesa y destruye todo | **Lanzacohetes** (limpia la pantalla) · **Moto** "Jabalina" (rebota sola y aguanta un golpe) |
 

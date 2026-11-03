@@ -408,7 +408,7 @@ export class Powers {
   // ---------------- LÓGICA POR FRAME ----------------
 
   /** dt real (no afectado por la cámara lenta). */
-  update(dt, g, presses) {
+  update(dt, g) {
     const C = CONFIG.characters;
     const p = g.player;
     this.invuln = Math.max(0, this.invuln - dt);
@@ -430,32 +430,20 @@ export class Powers {
     }
     this.fireTimer -= dt;
 
-    // pistola automática
-    if (this.has('pistol') && this.fireTimer <= 0) {
-      const target = this.findTarget(g, C.veteran.pistol.range);
-      if (target) {
-        this.fire(g, target.x, target.y);
-        this.fireTimer = C.veteran.pistol.fireRate;
+    // UN SOLO BOTÓN: las armas apuntan y disparan solas al obstáculo o
+    // enemigo más cercano por delante (con una mira encima, ver draw()).
+    // Pistola: ritmo normal. Tiempo bala: ráfaga rápida mientras dura.
+    const BT = C.veteran.bulletTime;
+    const gun = this.has('bullettime') ? { range: BT.range, rate: BT.shotCooldown } : this.has('pistol') ? { range: C.veteran.pistol.range, rate: C.veteran.pistol.fireRate } : null;
+    this.aim = gun ? this.findTarget(g, gun.range) : null;
+    if (gun && this.aim) {
+      this.aimT = (this.aimT ?? 0) + dt;
+      if (this.fireTimer <= 0) {
+        this.fire(g, this.aim.x, this.aim.y);
+        this.fireTimer = gun.rate;
       }
-    }
-    // tiempo bala: cada pulsación dispara hacia donde apuntas
+    } else this.aimT = 0;
     if (this.has('bullettime')) {
-      for (const pr of presses) {
-        if (this.fireTimer > 0) continue;
-        let tx;
-        let ty;
-        if (pr.pos) {
-          tx = pr.pos.x + g.camera.x;
-          ty = pr.pos.y;
-        } else {
-          const target = this.findTarget(g, 700);
-          if (!target) continue;
-          tx = target.x;
-          ty = target.y;
-        }
-        this.fire(g, tx, ty);
-        this.fireTimer = C.veteran.bulletTime.shotCooldown;
-      }
       this.tickTimer -= dt;
       if (this.tickTimer <= 0) {
         this.tickTimer = 0.5;
@@ -640,8 +628,13 @@ export class Powers {
     }
   }
 
+  /** Mira del apuntado automático (encima de los obstáculos). */
+  drawAim(ctx, camX, g) {
+    if (this.aim && !g.dead) drawAimMark(ctx, this.aim.x - camX, this.aim.y, g.t, this.has('bullettime'));
+  }
+
   /** Filtros de pantalla de las habilidades. */
-  drawOverlay(ctx, g, input) {
+  drawOverlay(ctx, g) {
     const v = g.view;
     if (this.has('bullettime')) {
       const k = Math.min(1, this.effects.bullettime * 2, (CONFIG.characters.veteran.bulletTime.duration - this.effects.bullettime) * 4);
@@ -653,23 +646,6 @@ export class Powers {
       ctx.fillStyle = `rgba(170, 115, 45, ${0.28 * k})`;
       ctx.fillRect(0, 0, v.w, v.h);
       vignette(ctx, v, `rgba(40, 20, 5, ${0.55 * k})`);
-      // retícula de apuntar
-      const pt = input.pointer;
-      if (pt && pt.x > 0) {
-        ctx.strokeStyle = '#ffd23f';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 14, 0, Math.PI * 2);
-        ctx.moveTo(pt.x - 20, pt.y);
-        ctx.lineTo(pt.x - 8, pt.y);
-        ctx.moveTo(pt.x + 8, pt.y);
-        ctx.lineTo(pt.x + 20, pt.y);
-        ctx.moveTo(pt.x, pt.y - 20);
-        ctx.lineTo(pt.x, pt.y - 8);
-        ctx.moveTo(pt.x, pt.y + 8);
-        ctx.lineTo(pt.x, pt.y + 20);
-        ctx.stroke();
-      }
     }
     if (this.has('rage')) vignette(ctx, v, `rgba(255, 30, 40, ${0.28 + 0.12 * Math.sin(g.t * 12)})`);
     if (this.has('nitro') || this.has('boost')) {
@@ -806,4 +782,27 @@ function vignette(ctx, v, color) {
   g.addColorStop(1, color);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, v.w, v.h);
+}
+
+/** Mira pequeña sobre el objetivo del apuntado automático (esquinas que giran). */
+function drawAimMark(ctx, x, y, t, fast) {
+  const r = 16 + Math.sin(t * (fast ? 14 : 8)) * 2;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(t * (fast ? 3 : 1.5));
+  ctx.strokeStyle = fast ? '#ffb627' : '#ffd23f';
+  ctx.lineWidth = 2.5;
+  for (let k = 0; k < 4; k++) {
+    ctx.rotate(Math.PI / 2);
+    ctx.beginPath();
+    ctx.moveTo(r, r - 7);
+    ctx.lineTo(r, r);
+    ctx.lineTo(r - 7, r);
+    ctx.stroke();
+  }
+  ctx.fillStyle = fast ? '#ffb627' : '#ffd23f';
+  ctx.beginPath();
+  ctx.arc(0, 0, 2.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
