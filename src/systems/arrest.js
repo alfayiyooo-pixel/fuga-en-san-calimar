@@ -31,6 +31,7 @@ export class Arrest {
     this.t = 0;
     this.bx = p.x;
     this.stamped = false;
+    this.photoTaken = false;
     this.subKey = `arrest.sub${Math.floor(Math.random() * A.subtitles) + 1}`;
     // dos agentes llegan corriendo, uno por cada lado
     this.cops = [
@@ -57,6 +58,11 @@ export class Arrest {
     }
     this.car.x = this.carFrom + (this.carTo - this.carFrom) * e;
     this.car.wheel += dt * (1 - k) * 30;
+    // foto para el periódico justo antes del sello
+    if (!this.photoTaken && this.t > A.arriveTime * 0.6) {
+      this.photoTaken = true;
+      g.photoRequest = true;
+    }
     // billetes que salen volando de la bolsa
     if (!this.stamped && this.t > A.arriveTime * 0.7) {
       this.stamped = true;

@@ -24,6 +24,7 @@ import { CONFIG } from './config.js';
 import { Roulette, prizeLabel } from './ui/roulette.js';
 import { grant } from './meta/progression.js';
 import { SettingsScreen, appCard } from './ui/settings.js';
+import { makeHeadline, paperHtml, sharePaper } from './ui/newspaper.js';
 import { Pwa } from './core/pwa.js';
 import { CreditsScreen } from './ui/credits.js';
 
@@ -443,6 +444,25 @@ function endRun() {
     ups,
     claimed,
   };
+  // portada del periódico
+  const P = game.powers;
+  const usedChars = Object.entries(P.uses).sort((a, b) => b[1] - a[1]);
+  const owner = usedChars.length ? usedChars[0][0] : 'base';
+  lastResult.paper = {
+    owner,
+    outfitId: Profile.equippedId(owner, 'suit'),
+    d,
+    zoneId: game.zone.current.id,
+    stars: game.wanted.peak,
+    footOnly: !game.foot.everJet,
+    boss: (game.stats.bossWins ?? 0) > 0,
+    hideouts: Object.values(game.stats.hideouts ?? {}).reduce((a, b) => a + b, 0),
+    newBest,
+    bucks: Math.floor(game.bucks),
+    cause: game.cause,
+    photo: game.photo,
+  };
+  lastResult.news = makeHeadline(lastResult.paper);
   refreshWallet();
   fillOver(true);
   screens.show('over');
@@ -470,6 +490,20 @@ function almostText(r) {
 
 function fillOver(animate = false) {
   if (!lastResult) return;
+  if (lastResult.paper) {
+    lastResult.paper.causeText = causeText(lastResult.cause);
+    if (lastResult.newsLang !== getLang()) {
+      lastResult.news = makeHeadline(lastResult.paper);
+      lastResult.newsLang = getLang();
+    }
+    const el = document.getElementById('over-paper');
+    el.innerHTML = paperHtml(lastResult.paper, lastResult.news);
+    if (animate) {
+      el.style.animation = 'none';
+      void el.offsetWidth;
+      el.style.animation = '';
+    }
+  }
   const a = almostText(lastResult);
   const r = lastResult;
   document.getElementById('over-badge').innerHTML = badgeHtml(Save.data.prestige);
@@ -505,6 +539,12 @@ screens.on('btn-to-menu', toMenu);
 screens.on('btn-pause', pause);
 screens.on('btn-retry', startRun);
 screens.on('btn-over-menu', toMenu);
+screens.on('btn-share', async () => {
+  if (!lastResult?.paper) return;
+  Sound.click();
+  const r = await sharePaper(lastResult.paper, lastResult.news);
+  if (r === 'downloaded') toast(t('news.downloaded'));
+});
 
 document.querySelectorAll('.lang-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
@@ -556,6 +596,15 @@ const loop = new Loop(
     setSpriteScale(view.scale * view.dpr);
     view.begin();
     game.render(ctx, { showPlayer: state !== 'menu', menu: state === 'menu' });
+    // foto para la portada del periódico (sin el HUD)
+    if (game.photoRequest) {
+      game.photoRequest = false;
+      try {
+        game.photo = canvas.toDataURL('image/jpeg', 0.72);
+      } catch {
+        game.photo = null;
+      }
+    }
     if (state === 'playing' || state === 'paused') {
       game.powers.drawOverlay(ctx, game, input);
       hud.draw(ctx, game, loop);

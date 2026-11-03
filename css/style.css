@@ -911,3 +911,45 @@ canvas {
 .credits-list { margin: 0; padding-left: calc(18px * var(--s)); display: flex; flex-direction: column; gap: calc(4px * var(--s)); font-size: calc(13px * var(--s)); }
 .credits-list a { color: #9ff8ff; }
 .credits-list .lic, .dim { color: rgba(255, 244, 220, 0.6); }
+
+/* ---------- PORTADA DEL PERIÓDICO ---------- */
+#screen-over { overflow-y: auto; }
+.over-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: calc(18px * var(--s));
+  align-items: center;
+  width: 100%;
+  max-width: calc(1040px * var(--s));
+}
+.over-side { display: flex; flex-direction: column; align-items: center; gap: calc(8px * var(--s)); min-width: 0; }
+.over-side .screen-title { font-size: calc(30px * var(--s)); }
+#over-cause { display: none; }
+.paper-col { display: flex; flex-direction: column; align-items: center; gap: calc(8px * var(--s)); min-width: 0; }
+.paper {
+  width: 100%;
+  background: #f3ead6;
+  color: #1d1a16;
+  font-family: Georgia, 'Times New Roman', serif;
+  padding: calc(10px * var(--s)) calc(14px * var(--s));
+  border-radius: calc(4px * var(--s));
+  box-shadow: 0 calc(8px * var(--s)) calc(22px * var(--s)) rgba(0, 0, 0, 0.45);
+  transform: rotate(-1.6deg);
+  animation: paperIn 0.6s cubic-bezier(.2, 1.4, .4, 1) both;
+  text-align: center;
+}
+@keyframes paperIn {
+  from { transform: rotate(-200deg) scale(0.1); opacity: 0; }
+  to { transform: rotate(-1.6deg) scale(1); opacity: 1; }
+}
+.paper-mast { font-weight: 900; font-size: calc(26px * var(--s)); letter-spacing: 0.02em; border-bottom: calc(3px * var(--s)) double #1d1a16; padding-bottom: calc(3px * var(--s)); }
+.paper-date { display: flex; justify-content: space-between; gap: 6px; font-style: italic; font-size: calc(10px * var(--s)); border-bottom: 1px solid #1d1a16; padding: calc(3px * var(--s)) 0; }
+.paper-head { margin: calc(6px * var(--s)) 0; font-weight: 900; font-size: calc(19px * var(--s)); line-height: 1.12; text-transform: uppercase; }
+.paper-body { display: grid; grid-template-columns: 1.3fr 1fr; gap: calc(8px * var(--s)); align-items: start; text-align: left; }
+.paper-photo { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; filter: grayscale(1) sepia(0.35) contrast(1.15); border: 2px solid #1d1a16; display: block; }
+.paper-photo.empty { background: #cfc4ad; }
+.paper-sub { margin: 0; font-size: calc(11px * var(--s)); line-height: 1.35; }
+.share-btn { margin-top: calc(4px * var(--s)); }
+@media (max-aspect-ratio: 4/3) {
+  .over-grid { grid-template-columns: 1fr; }
+}

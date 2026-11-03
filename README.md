@@ -138,6 +138,10 @@ Cuando la partida va muy rápida y tienes 4+ estrellas, tras un intervalo aleato
 
 Ajustes en el bloque `score` de `config.js`.
 
+### Portada del «Diario de San Calimar»
+
+La pantalla final es la portada del periódico: titular generado según la partida (personaje más usado, traje equipado, distancia, zona, estrellas, si fuiste solo a pie, si venciste al helicóptero, escondites, pavos, quién te detuvo…), con más de 35 variantes por idioma, y la **foto del momento de la detención** en blanco y negro. Debajo, los datos de siempre (distancia, pavos, récord, «casi lo consigo»). **📤 Compartir portada** genera una imagen 1080×1350 y abre el menú de compartir del móvil (Web Share API); si no está disponible, la descarga. Titulares en `news.h.*` de `translations.js` y lógica en [`src/ui/newspaper.js`](src/ui/newspaper.js).
+
 ### Ruleta final
 
 Al perder, si tienes fichas 🪙, aparece la **ruleta de la suerte** antes del resumen (1 ficha por tirada). Premios: pavos (incluido un premio gordo), diamantes, experiencia, fichas, **revivir** (vuelves a la partida donde caíste, una vez por partida) o una **mejora temporal** (empiezas la siguiente partida con imán). Las fichas solo se ganan jugando (niveles, misiones y recompensa diaria): nunca se compran con dinero real. Probabilidades en el bloque `roulette` de `config.js`.

@@ -109,6 +109,8 @@ export class Game {
     this.arrest.reset();
     this.boss.reset();
     this.radio.reset();
+    this.photo = null;
+    this.photoRequest = false;
     this.radioIntro = true;
     this.cause = null;
     this.flash = 0;
