@@ -35,6 +35,21 @@ export class Wanted {
     this.warnBeep = 0;
   }
 
+  /** Escondite: pierdes una estrella de golpe. Devuelve true si había alguna. */
+  dropStar() {
+    if (this.stars <= 0) return false;
+    const prev = this.stars;
+    const n = prev - 1;
+    this.pending = 0;
+    this.heat = n > 0 ? this.thresholds[n - 1] + 0.5 : 0;
+    this.stars = n;
+    this.lostFlash = 1;
+    this.warned = n - 1;
+    this.sinceIncident = 0;
+    this.onChange?.(n, prev);
+    return true;
+  }
+
   /** Pone directamente un nº de estrellas (al empezar la partida). */
   setStars(n) {
     if (n <= 0) return;

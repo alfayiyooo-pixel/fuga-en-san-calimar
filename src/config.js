@@ -143,6 +143,17 @@ export const CONFIG = {
     shutter: { length: 120, trigger: [0.35, 0.9], warnTime: 0.25, snapSpeed: 14 }, // s antes de llegar a él
   },
 
+  // ---------------- ESCONDITES ----------------
+  // Atravesarlos de punta a punta quita una estrella.
+  hideouts: {
+    minStars: 2,            // solo aparecen con al menos estas estrellas
+    from: 300,              // m a partir de los que pueden salir
+    every: [380, 700],      // m entre escondites (aleatorio)
+    wash: { length: 300, height: 120 },    // túnel de lavado (alto de la entrada, px)
+    alley: { length: 380, height: 130 },   // callejón oscuro
+    parking: { length: 340, height: [170, 290] }, // planta de parking (de… a… px sobre el suelo)
+  },
+
   // ---------------- ESCENA INICIAL ----------------
   intro: {
     duration: 5,            // s de escena antes de tomar el control

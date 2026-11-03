@@ -88,7 +88,7 @@ export class Game {
     this.xpRun = 0;   // experiencia ganada en esta partida (orbes, distancia, misiones)
     this.gemsRun = 0; // diamantes recogidos en esta partida
     // estadísticas de la partida (para las misiones)
-    this.stats = { minors: 0, drones: 0, cases: 0, specials: 0, gadgets: 0, air: 0, airMax: 0, starCur: [0, 0, 0, 0, 0, 0], starTime: [0, 0, 0, 0, 0, 0] };
+    this.stats = { hideouts: { wash: 0, alley: 0, parking: 0 }, minors: 0, drones: 0, cases: 0, specials: 0, gadgets: 0, air: 0, airMax: 0, starCur: [0, 0, 0, 0, 0, 0], starTime: [0, 0, 0, 0, 0, 0] };
     this.missionTimer = 0;
     this.orbsRun = 0;
     this.powers.applyMods(this.player);
@@ -665,6 +665,7 @@ export class Game {
     this.particles.draw(ctx, cam.x);
     if (!menu) this.arrest.draw(ctx, cam.x, this);
     if (showPlayer && this.intro.playerVisible) this.player.draw(ctx, cam.x, this.t);
+    for (const o of this.obstacles) o.front?.(ctx, cam.x, this);
     for (const o of this.obstacles) o.overlay(ctx, this);
     this.arrest.overlay(ctx, this);
     ctx.restore();

@@ -4,6 +4,7 @@ import { Cable, PatrolCar, Helicopter, Missile } from '../entities/obstacles.js'
 import { spawnMinor } from '../entities/minors.js';
 import { spawnStreet } from '../entities/street.js';
 import { spawnHazard } from '../entities/hazards.js';
+import { spawnHideout } from '../entities/hideouts.js';
 
 /**
  * Genera obstáculos por delante de la cámara.
@@ -14,6 +15,7 @@ export class Spawner {
   reset(startX = 0) {
     this.nextX = startX + CONFIG.spawner.firstAt * CONFIG.world.pxPerMeter;
     this.lastType = null;
+    this.nextHideoutAt = CONFIG.hideouts.from;
   }
 
   update(g) {
@@ -25,6 +27,16 @@ export class Spawner {
       return;
     }
     while (this.nextX < ahead) {
+      // escondite cuando toca y hay bastantes estrellas
+      const H = CONFIG.hideouts;
+      const m = this.nextX / CONFIG.world.pxPerMeter;
+      if (m >= this.nextHideoutAt && g.wanted.stars >= H.minStars) {
+        this.nextHideoutAt = m + rand(H.every[0], H.every[1]);
+        this.nextX += 120;
+        this.nextX += spawnHideout(g, this.nextX) + this.gap(g);
+        this.lastType = 'hideout';
+        continue;
+      }
       const type = this.choose(g);
       const len = this.spawn(type, g, this.nextX);
       this.lastType = type;

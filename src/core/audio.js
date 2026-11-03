@@ -538,6 +538,12 @@ class AudioFx {
     this.tone({ freq: 300, type: 'square', dur: 0.08, vol: 0.08, slide: 0.5 });
   }
 
+  /** Alivio al esconderse: "fiuuu" + acorde suave. */
+  relief() {
+    this.noise({ dur: 0.8, vol: 0.14, freq: 900, type: 'bandpass', q: 1, slide: 0.35 });
+    [0, 4, 7, 12].forEach((s, i) => this.tone({ freq: 392 * 2 ** (s / 12), type: 'sine', dur: 1.1, vol: 0.08, delay: 0.15 + i * 0.07, attack: 0.04 }));
+  }
+
   /** Silbato de policía. */
   whistle() {
     this.tone({ freq: 2600, type: 'sine', dur: 0.5, vol: 0.08, vib: 0 });
