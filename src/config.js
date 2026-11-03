@@ -143,6 +143,23 @@ export const CONFIG = {
     shutter: { length: 120, trigger: [0.35, 0.9], warnTime: 0.25, snapSpeed: 14 }, // s antes de llegar a él
   },
 
+  // ---------------- RADIO CALIMAR ----------------
+  radio: {
+    enabled: true,
+    cooldown: 14,           // s mínimos entre dos frases (salvo las "always")
+    // chance: prob. de que hable en ese momento · lines: nº de frases (radio.<momento>.<n>)
+    moments: {
+      inicio: { chance: 1, lines: 4, always: true },
+      estrellas: { chance: 0.55, lines: 4 },
+      zona: { chance: 0.5, lines: 4 },
+      record: { chance: 1, lines: 4, always: true },
+      helicoptero: { chance: 1, lines: 3, always: true },
+      jefe: { chance: 1, lines: 4, always: true },
+      escondite: { chance: 0.8, lines: 3 },
+      detenido: { chance: 0.7, lines: 4 },
+    },
+  },
+
   // ---------------- HELICÓPTERO JEFE (5★) ----------------
   boss: {
     duration: 30,           // s que hay que sobrevivir
@@ -350,6 +367,7 @@ export const CONFIG = {
     // pitch 0-2 y rate 0.1-10 base por personaje; en cada momento se suma
     // pitch y se multiplica rate (pick = al cogerlo, special = habilidad, lose = al perderlo)
     voices: {
+      radio: { pitch: 0.85, rate: 1.12 }, // locutor de Radio Calimar
       veteran: { pitch: 0.55, rate: 0.82, pick: { pitch: 0, rate: 1 }, special: { pitch: -0.1, rate: 0.8 }, lose: { pitch: 0.1, rate: 0.9 } },
       pilot: { pitch: 1.5, rate: 1.2, pick: { pitch: 0, rate: 1 }, special: { pitch: 0.25, rate: 1.15 }, lose: { pitch: 0.2, rate: 1.25 } },
       wild: { pitch: 0.2, rate: 1.1, pick: { pitch: 0.1, rate: 1 }, special: { pitch: 0.3, rate: 0.8 }, lose: { pitch: 0, rate: 1.1 } },
@@ -361,6 +379,7 @@ export const CONFIG = {
   // audio/musica/<pista>.mp3 (ver audio/musica/LEEME.md).
   music: {
     crossfade: 2.5,         // s de fundido cruzado al cambiar de zona
+    duck: 0.4,              // volumen de la música mientras habla la radio o un personaje
     zoneTracks: { beach: 'playa', finance: 'centro', industrial: 'industrial', hills: 'mansiones', port: 'puerto' },
     starBoost: 0.03,        // volumen extra por estrella
     tenseFrom: 3,           // estrellas desde las que entra la capa de tensión

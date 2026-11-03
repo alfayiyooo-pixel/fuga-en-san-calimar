@@ -101,7 +101,54 @@ export class Hud {
     this.starFlash = 1;
   }
 
+  /** Rótulo de Radio Calimar con la frase del locutor. */
+  radio(text) {
+    this.radioData = { text, time: 0, life: Math.min(9, 3 + text.length * 0.07) };
+  }
+
+  drawRadio(ctx, v) {
+    const R = this.radioData;
+    if (!R) return;
+    const k = Math.min(1, R.time * 4, (R.life - R.time) * 3);
+    const w = Math.min(v.w - 40, 620);
+    const x = v.w / 2 - w / 2;
+    const y = v.h - 56 + (1 - k) * 40;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, k);
+    ctx.fillStyle = 'rgba(27, 16, 48, 0.88)';
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, 40, 12);
+    ctx.fill();
+    ctx.font = `12px ${FONT}`;
+    const lw = ctx.measureText(t('radio.name')).width + 16;
+    ctx.fillStyle = '#ff3d4f';
+    ctx.beginPath();
+    ctx.roundRect(x + 6, y + 6, lw, 28, 8);
+    ctx.fill();
+    ctx.fillStyle = '#fff4dc';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t('radio.name'), x + 14, y + 21);
+    ctx.font = "600 14px 'Rubik', sans-serif";
+    // el texto largo se desplaza como un rótulo de noticias
+    const tx = x + lw + 16;
+    const avail = w - lw - 26;
+    const full = ctx.measureText(R.text).width;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tx, y, avail, 40);
+    ctx.clip();
+    const off = full > avail ? Math.min(full - avail, Math.max(0, R.time - 0.8) * 60) : 0;
+    ctx.fillText(R.text, tx - off, y + 21);
+    ctx.restore();
+    ctx.restore();
+  }
+
   update(dt) {
+    if (this.radioData) {
+      this.radioData.time += dt;
+      if (this.radioData.time > this.radioData.life) this.radioData = null;
+    }
     if (this.bannerData) {
       this.bannerData.time += dt;
       if (this.bannerData.time > this.bannerData.life) this.bannerData = null;
@@ -137,6 +184,7 @@ export class Hud {
     this.drawFlyers(ctx);
     game.powers.drawHud(ctx, game);
     this.drawBanner(ctx, v);
+    this.drawRadio(ctx, v);
     if (game.respite.active) this.drawRespite(ctx, game, v);
     else if (game.events.active) this.drawEvent(ctx, game, v);
     this.drawStars(ctx, game, v);

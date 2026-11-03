@@ -62,13 +62,30 @@ class AudioFx {
   }
 
   /** Reproduce un audio ya decodificado por el bus de voces. Devuelve su duración. */
-  playVoice(buf) {
+  playVoice(buf, radio = false, delay = 0) {
     if (!this.ready) return 0;
     const src = this.ctx.createBufferSource();
     src.buffer = buf;
-    src.connect(this.voiceBus);
-    src.start();
+    if (radio) {
+      // sonido de radio: banda estrecha
+      const hp = this.ctx.createBiquadFilter();
+      hp.type = 'highpass';
+      hp.frequency.value = 350;
+      const lp = this.ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 3400;
+      src.connect(hp).connect(lp).connect(this.voiceBus);
+    } else {
+      src.connect(this.voiceBus);
+    }
+    src.start(this.ctx.currentTime + delay);
     return buf.duration;
+  }
+
+  /** "Kshhh" de radio antes de que hable el locutor. */
+  radioStatic() {
+    this.noise({ dur: 0.18, vol: 0.12, freq: 2500, type: 'bandpass', q: 0.8 });
+    this.tone({ freq: 1800, type: 'sine', dur: 0.05, vol: 0.04 });
   }
 
   get ready() {

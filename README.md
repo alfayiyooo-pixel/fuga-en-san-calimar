@@ -209,6 +209,23 @@ Para usar grabaciones propias, copia archivos **MP3** en [`audio/voces/`](audio/
 
 Si el archivo existe se reproduce ese audio; si no, la voz del navegador. Puedes poner solo algunos. Haz commit y push y GitHub Pages los servirá. Las frases de respaldo están en [`audio/voces/LEEME.md`](audio/voces/LEEME.md). (En la consola verás un aviso 404 por cada archivo que falte: es normal.)
 
+### Radio Calimar
+
+De vez en cuando un locutor comenta la huida (con un rótulo de noticias abajo). Usa el mismo sistema que las voces: si existe el archivo, lo reproduce con filtro de radio; si no, la voz del navegador con una de las 3-4 frases de cada momento (`radio.<momento>.<n>` en `translations.js`). La música baja mientras habla y nunca se solapa con los personajes (los personajes tienen prioridad). Probabilidades y tiempo mínimo entre frases en el bloque `radio` de `config.js`.
+
+| Momento | Cuándo | Archivos (`audio/voces/`) |
+|---|---|---|
+| `inicio` | al empezar (escena del furgón) | `radio_inicio_es.mp3` · `radio_inicio_en.mp3` |
+| `estrellas` | al subir de estrellas (desde 2★) | `radio_estrellas_es.mp3` · `radio_estrellas_en.mp3` |
+| `zona` | al cambiar de zona | `radio_zona_es.mp3` · `radio_zona_en.mp3` |
+| `record` | al pasar tu récord | `radio_record_es.mp3` · `radio_record_en.mp3` |
+| `helicoptero` | cuando aparece el helicóptero jefe | `radio_helicoptero_es.mp3` · `radio_helicoptero_en.mp3` |
+| `jefe` | al vencer al helicóptero | `radio_jefe_es.mp3` · `radio_jefe_en.mp3` |
+| `escondite` | al esconderte | `radio_escondite_es.mp3` · `radio_escondite_en.mp3` |
+| `detenido` | al ser detenido | `radio_detenido_es.mp3` · `radio_detenido_en.mp3` |
+
+Opcional: variantes `radio_<momento>_2_<idioma>.mp3`, `_3_`, `_4_`; el juego elige una al azar entre las que existan.
+
 ## Gráficos y rendimiento
 
 Todo el arte está **generado por código** (sin imágenes externas, así que no hay licencias de terceros que declarar):

@@ -490,7 +490,15 @@ export class MusicEngine {
 
   applyLevel() {
     if (!this.ctx) return;
-    this.out.gain.setTargetAtTime(this.vol, this.ctx.currentTime, 0.05);
+    const k = this.ducked ? CONFIG.music.duck : 1;
+    this.out.gain.setTargetAtTime(this.vol * k, this.ctx.currentTime, this.ducked ? 0.12 : 0.35);
+  }
+
+  /** Baja la música mientras habla alguien (radio o personajes). */
+  duck(on) {
+    if (this.ducked === on) return;
+    this.ducked = on;
+    this.applyLevel();
   }
 
   /** Cambia a una pista con fundido cruzado. */

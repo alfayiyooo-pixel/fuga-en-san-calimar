@@ -34,3 +34,10 @@ Si un archivo existe, el juego lo usa; si no, usa la voz del navegador (Web Spee
 
 Consejos: 1-2 segundos, sin silencio al principio ni al final, volumen normalizado (unos -3 dB de pico).
 Las frases nunca se solapan: si una está sonando, la siguiente espera un momento o se descarta.
+
+## Radio Calimar (locutor)
+
+Patrón: `radio_[momento]_[idioma].mp3` (y variantes opcionales `radio_[momento]_2_[idioma].mp3`, `_3_`, `_4_`).
+Momentos: `inicio`, `estrellas`, `zona`, `record`, `helicoptero`, `jefe`, `escondite`, `detenido`.
+Se reproducen con un filtro de "radio" y la música baja mientras suenan. Las frases de respaldo
+están en `src/i18n/translations.js` (claves `radio.<momento>.<n>`).

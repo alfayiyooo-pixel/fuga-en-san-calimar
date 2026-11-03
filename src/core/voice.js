@@ -64,11 +64,24 @@ class Voices {
    * moment: 'coger' | 'habilidad' | 'perder'; text: frase de respaldo.
    */
   say(id, moment, lang, text) {
-    if (Sound.muted || Sound.voiceLevel <= 0 || !VOICE_NAMES[id]) return;
-    const req = { id, moment, lang, text, until: performance.now() + CONFIG.audio.voiceQueueWait * 1000 };
+    if (!VOICE_NAMES[id]) return;
+    this.request({ keys: [`${VOICE_NAMES[id]}_${moment}_${lang}`], lang, text, voice: id, moment, priority: 1 });
+  }
+
+  /**
+   * Frase del locutor de la radio. keys: archivos candidatos (sin .mp3),
+   * se usa uno al azar de los que existan. Prioridad baja: nunca pisa a un personaje.
+   */
+  radio(keys, lang, text, onStart) {
+    this.request({ keys, lang, text, voice: 'radio', moment: null, priority: 0, radio: true, onStart });
+  }
+
+  request(req) {
+    if (Sound.muted || Sound.voiceLevel <= 0) return;
+    req.until = performance.now() + CONFIG.audio.voiceQueueWait * 1000;
     if (this.busy) {
-      // solo una en espera: la más reciente sustituye a la anterior
-      this.queued = req;
+      // solo una en espera: la nueva la sustituye salvo que sea menos importante
+      if (!this.queued || (req.priority ?? 0) >= (this.queued.priority ?? 0)) this.queued = req;
       this.schedule();
       return;
     }
@@ -93,34 +106,45 @@ class Voices {
     }, 120);
   }
 
-  async play({ id, moment, lang, text }) {
+  async play(req) {
     // se marca ocupado ya, para que no entre otra mientras se carga el archivo
     this.busyUntil = performance.now() + 4000;
-    const key = `${VOICE_NAMES[id]}_${moment}_${lang}`;
-    let buf = this.cache.get(key);
-    if (buf === undefined || buf instanceof Promise) buf = await this.load(key);
+    const bufs = (await Promise.all(req.keys.map((k) => {
+      const c = this.cache.get(k);
+      return c === undefined || c instanceof Promise ? this.load(k) : c;
+    }))).filter(Boolean);
     if (Sound.muted) {
       this.busyUntil = 0;
       return;
     }
-    if (buf) {
-      const dur = Sound.playVoice(buf);
-      this.busyUntil = performance.now() + (dur + CONFIG.audio.voiceGap) * 1000;
+    Sound.music.duck(true);
+    req.onStart?.();
+    if (bufs.length) {
+      const buf = bufs[Math.floor(Math.random() * bufs.length)];
+      if (req.radio) Sound.radioStatic();
+      const dur = Sound.playVoice(buf, req.radio, req.radio ? 0.18 : 0);
+      this.busyUntil = performance.now() + (dur + (req.radio ? 0.18 : 0) + CONFIG.audio.voiceGap) * 1000;
+      clearTimeout(this.duckTimer);
+      this.duckTimer = setTimeout(() => Sound.music.duck(false), (dur + 0.25) * 1000);
     } else {
       this.busyUntil = 0;
-      this.speak(id, moment, lang, text);
+      if (req.radio) Sound.radioStatic();
+      this.speak(req.voice, req.moment, req.lang, req.text, req.radio ? 180 : 0);
     }
   }
 
-  speak(id, moment, lang, text) {
-    if (!('speechSynthesis' in window)) return;
+  speak(id, moment, lang, text, delayMs = 0) {
+    if (!('speechSynthesis' in window)) {
+      Sound.music.duck(false);
+      return;
+    }
     const synth = window.speechSynthesis;
     synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
     const full = lang === 'es' ? 'es-ES' : 'en-US';
     u.lang = full;
     const v = CONFIG.audio.voices[id] ?? {};
-    const m = v[MOMENT_KEY[moment]] ?? {};
+    const m = (moment && v[MOMENT_KEY[moment]]) || {};
     u.pitch = Math.max(0, Math.min(2, (v.pitch ?? 1) + (m.pitch ?? 0)));
     u.rate = Math.max(0.1, Math.min(10, (v.rate ?? 1) * (m.rate ?? 1)));
     u.volume = Math.min(1, Sound.voiceLevel);
@@ -129,20 +153,22 @@ class Voices {
     if (voice) u.voice = voice;
     this.speaking = true;
     // por si el navegador no dispara 'end' (pasa en algunos móviles)
-    const safety = setTimeout(() => this.done(), 5000);
+    const safety = setTimeout(() => this.done(), 9000);
     u.onend = u.onerror = () => {
       clearTimeout(safety);
       this.done();
     };
-    synth.speak(u);
+    setTimeout(() => synth.speak(u), delayMs);
   }
 
   done() {
     this.speaking = false;
     this.busyUntil = performance.now() + CONFIG.audio.voiceGap * 1000;
+    Sound.music.duck(false);
   }
 
   stop() {
+    Sound.music.duck(false);
     this.queued = null;
     clearTimeout(this.timer);
     this.speaking = false;

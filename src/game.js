@@ -23,6 +23,7 @@ import { Foot } from './systems/foot.js';
 import { Intro } from './systems/intro.js';
 import { Arrest } from './systems/arrest.js';
 import { Boss } from './systems/boss.js';
+import { Radio } from './systems/radio.js';
 
 /** Pista de música de una zona. */
 export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
@@ -54,6 +55,10 @@ export class Game {
     this.intro = new Intro();
     this.arrest = new Arrest();
     this.boss = new Boss();
+    this.radio = new Radio();
+    this.onBossStart = () => this.radio.trigger('helicoptero', this.runTime, this);
+    this.onBossWin = () => this.radio.trigger('jefe', this.runTime, this);
+    this.onHideout = () => this.radio.trigger('escondite', this.runTime, this);
     this.record = 0; // récord de distancia al empezar la partida (lo pone main.js)
     this.buffer = document.createElement('canvas');
     this.t = 0;
@@ -103,6 +108,8 @@ export class Game {
     this.deathTimer = 0;
     this.arrest.reset();
     this.boss.reset();
+    this.radio.reset();
+    this.radioIntro = true;
     this.cause = null;
     this.flash = 0;
     this.fadeIn = 1;
@@ -199,6 +206,7 @@ export class Game {
       this.hud.flashStars();
       this.camera.addShake(0.2);
       Sound.starUp();
+      if (stars >= 2) this.radio.trigger('estrellas', this.runTime, this);
       this.popups.add(t('wanted.up', { n: stars }), this.view.w / 2, 112, { color: '#ffd23f', size: 30, life: 1.6, rise: 16 });
     } else if (!this.respite.active) {
       Sound.starDown();
@@ -213,6 +221,10 @@ export class Game {
 
     // escena inicial: el jugador aún no controla nada
     if (this.intro.active) {
+      if (this.radioIntro && this.intro.t > 1.2) {
+        this.radioIntro = false;
+        this.radio.trigger('inicio', 0, this);
+      }
       if (this.intro.update(dt, this, input)) {
         // empieza la partida de verdad: obstáculos y pavos desde aquí
         this.spawner.reset(p.x);
@@ -243,7 +255,10 @@ export class Game {
         } else if (ev === 'slide' && Math.random() < sdt * 30) {
           this.dust(p.x - 10, p.bottom - 4, 1);
         }
-        if (p.stopped || this.deathTimer > CONFIG.death.maxSlide) this.arrest.start(this);
+        if (p.stopped || this.deathTimer > CONFIG.death.maxSlide) {
+          this.arrest.start(this);
+          this.radio.trigger('detenido', this.runTime, this);
+        }
       } else {
         this.speed = 0;
         this.arrest.update(dt, this);
@@ -328,6 +343,7 @@ export class Game {
       this.hud.banner(t('zone.enter'), t(this.zone.current.nameKey));
       Sound.whoosh();
       Sound.music.play(zoneTrack(this.zone.current.id));
+      if (!this.dead) this.radio.trigger('zona', this.runTime, this);
     }
   }
 
@@ -387,6 +403,7 @@ export class Game {
     this.hud.banner(t('record.new'), t('record.sub'));
     this.hud.celebrate();
     Sound.fanfare();
+    this.radio.trigger('record', this.runTime, this);
     // confeti desde arriba a lo ancho de la pantalla
     const colors = ['#ffd23f', '#ff3d7f', '#19c3b1', '#7b5cff', '#fff4dc', '#5fcf7a'];
     for (let i = 0; i < 70; i++) {
