@@ -172,6 +172,19 @@ Ajustes en los bloques `progression`, `missions` y `daily` de `config.js`.
 
 Precios en el bloque `shop` de `config.js`; artículos en [`src/meta/catalog.js`](src/meta/catalog.js).
 
+### Disfraces nuevos
+
+Dos disfraces nuevos por personaje (uno de pavos y uno legendario con 💎) y un extra de pavos cada uno, todos originales:
+
+| Personaje | Pavos | Extra (pavos) | Legendario 💎 |
+|---|---|---|---|
+| Atracador | Turista con chanclas y riñonera | Mascota «Pollo Calimar» | Disfraz de abuela |
+| Aurelio | Mago de casino | Fantasma de la ópera bufa | Astronauta retro |
+| Vera | Repartidora de pizza | Piloto de rally de dunas | Aviadora de los años 30 |
+| Bruno | Disfraz de calabaza | Domador de circo | Luchador enmascarado |
+
+Se dibujan por código en [`src/characters/costumes.js`](src/characters/costumes.js) (capa, torso y cabeza) y salen en los titulares del periódico.
+
 ### Vestuario
 
 Pantalla propia desde el menú (👕 Vestuario): un apartado por personaje, con el personaje grande y animado. Se equipa lo comprado (traje, accesorio, estela y efecto de transformación, que se puede probar). Lo no comprado aparece con candado y un botón que lleva directo a ese artículo en la tienda.

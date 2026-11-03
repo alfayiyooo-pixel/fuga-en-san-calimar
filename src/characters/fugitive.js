@@ -7,6 +7,7 @@
 
 import { INK, limb, rr, inked, vgrad, hgrad, shoe, hand, flame } from './kit.js';
 import { drawGlow } from '../fx/sprites.js';
+import { drawCostumeBack, drawCostumeTorso, drawCostumeHead, HIDES_ACC } from './costumes.js';
 
 export const STYLES = {
   base: {
@@ -98,6 +99,8 @@ export function drawFugitive(ctx, p, t, styleId = 'base', look = null) {
   const shX = 2;
   const shY = -12 + P.bob;
 
+  if (S.costume) drawCostumeBack(ctx, S.costume, t, P.bob);
+
   // ---- miembros de detrás ----
   const [bhx, bhy] = limb(ctx, shX - 2, shY + 1, P.arms.b1, P.arms.b2, 8, 8, 5.5, S.armBack);
   hand(ctx, bhx, bhy, S.glove);
@@ -124,6 +127,7 @@ export function drawFugitive(ctx, p, t, styleId = 'base', look = null) {
   ctx.translate(0, P.bob);
   ctx.rotate(P.lean);
   drawTorso(ctx, S, t);
+  if (S.costume) drawCostumeTorso(ctx, S.costume, t);
   if (p.vest) drawVest(ctx);
   ctx.restore();
 
@@ -140,7 +144,8 @@ export function drawFugitive(ctx, p, t, styleId = 'base', look = null) {
   ctx.translate(3, -26 + P.bob);
   ctx.rotate(P.lean * 0.6);
   drawHead(ctx, S.head, t, p.pose?.fly ?? 0, (p.pose?.fall ?? 0) > 0.5);
-  if (S.acc) drawAccessory(ctx, S.acc, t);
+  if (S.costume) drawCostumeHead(ctx, S.costume, t);
+  if (S.acc && !(S.costume && HIDES_ACC.has(S.costume))) drawAccessory(ctx, S.acc, t);
   ctx.restore();
 
   // ---- brazo de delante ----
@@ -306,7 +311,7 @@ function nozzle(ctx, x, y, color, w = 10) {
 export function resolveStyle(styleId, look, t) {
   const S = { ...(STYLES[styleId] || STYLES.base) };
   if (!look) return S;
-  for (const k of ['jacket', 'jacketLight', 'jacketDark', 'arm', 'armBack', 'pants', 'pantsBack', 'pattern', 'tie', 'stripe', 'anim']) {
+  for (const k of ['jacket', 'jacketLight', 'jacketDark', 'arm', 'armBack', 'pants', 'pantsBack', 'pattern', 'tie', 'stripe', 'anim', 'costume', 'shoe', 'sole', 'glove', 'scarf']) {
     if (look[k] !== undefined) S[k] = look[k];
   }
   S.acc = look.acc ?? null;
