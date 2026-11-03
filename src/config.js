@@ -400,6 +400,9 @@ export const CONFIG = {
     crossfade: 2.5,         // s de fundido cruzado al cambiar de zona
     duck: 0.4,              // volumen de la música mientras habla la radio o un personaje
     zoneTracks: { beach: 'playa', finance: 'centro', industrial: 'industrial', hills: 'mansiones', port: 'puerto' },
+    // tema de cada personaje: suena mientras vas transformado (se mezcla con las estrellas igual que la zona)
+    charTracks: { veteran: 'aurelio', pilot: 'vera', wild: 'bruno' },
+    charFade: 1.2,          // s de fundido al transformarte y al volver a la música de la zona
     starBoost: 0.03,        // volumen extra por estrella
     tenseFrom: 3,           // estrellas desde las que entra la capa de tensión
     calm: { lowpass: 1200, volume: 1.1 }, // respiro: filtro y volumen
@@ -411,8 +414,12 @@ export const CONFIG = {
       drive: { tempo: 1.12, pitch: 1.06, rate: 1.08, lowpass: 18000, highpass: 220, distortion: 0 },    // Vera: más rápido y brillante
       rage: { tempo: 1.05, pitch: 1, rate: 1.03, lowpass: 9000, highpass: 20, distortion: 0.55 },       // Bruno: distorsión
     },
-    // opcional por pista: { file: 'otro.mp3', loopStart: 1.2, loopEnd: 63.8 } (s) para bucles exactos
-    files: {},
+    // opcional por pista: { file: 'otro.mp3', loopStart: 1.2, loopEnd: 63.8, gain: 0.8 }
+    //   file: nombre en audio/musica/ · loopStart/loopEnd: bucle exacto (s) · gain: volumen del archivo
+    // Las pistas sin entrada buscan audio/musica/<pista>.mp3 (menu, playa, …, aurelio, vera, bruno).
+    files: {
+      menu: { file: 'serenata_mexicana.mp3', loopEnd: 202.3, gain: 0.25 }, // el final de la pista tiene 2 s de silencio
+    },
   },
 
   // ---------------- PERSONAJES ----------------

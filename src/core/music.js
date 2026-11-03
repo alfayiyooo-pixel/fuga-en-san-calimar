@@ -1,8 +1,10 @@
-// MÚSICA POR ZONAS
+// MÚSICA POR ZONAS, MENÚ Y PERSONAJES
 //
-// Seis temas generados con Web Audio API (estilo retro/sintetizador), uno por
-// zona y otro para el menú. Si existe audio/musica/<pista>.mp3 se usa ese
-// archivo (en bucle) en lugar del tema generado.
+// Temas generados con Web Audio API: uno por zona (estilo retro/sintetizador),
+// el del menú y uno por personaje (estilo serenata y corrido mexicano, suenan
+// mientras vas transformado). Si existe audio/musica/<pista>.mp3 (o el
+// archivo indicado en CONFIG.music.files) se usa ese archivo en bucle en lugar
+// del tema generado.
 //
 // Cambios de pista con fundido cruzado (CONFIG.music.crossfade s).
 // Capas dinámicas:
@@ -16,7 +18,14 @@
 
 import { CONFIG } from '../config.js';
 
-export const MUSIC_TRACKS = ['menu', 'playa', 'centro', 'industrial', 'mansiones', 'puerto'];
+export const MUSIC_TRACKS = ['menu', 'playa', 'centro', 'industrial', 'mansiones', 'puerto', 'aurelio', 'vera', 'bruno'];
+
+/** Nota del acorde inmediatamente por debajo (para la segunda voz en terceras/sextas). */
+function below(n, chord) {
+  const pcs = new Set(chord.map((c) => ((c % 12) + 12) % 12));
+  for (let m = n - 3; m > n - 10; m--) if (pcs.has(((m % 12) + 12) % 12)) return m;
+  return n - 4;
+}
 
 const mtof = (n) => 440 * 2 ** ((n - 69) / 12);
 
@@ -156,6 +165,51 @@ class Kit {
     this.osc(t, this.f(n), 0.25, { type: 'sine', vol, attack: 0.002, slide: 0.55 });
   }
 
+  // ---- instrumentos de mariachi y conjunto norteño ----
+
+  /** Trompeta: sierra brillante con ataque suave y vibrato. */
+  trumpet(t, n, dur, vol = 0.045) {
+    const f = this.f(n);
+    this.osc(t, f, dur, { type: 'sawtooth', vol, attack: 0.025, lp: 2800, q: 1.4, vib: 0.006 });
+    this.osc(t, f, dur, { type: 'sawtooth', vol: vol * 0.55, attack: 0.04, lp: 1700, detune: 9 });
+  }
+
+  /** Violines (sección): dos sierras desafinadas con arco lento y vibrato. */
+  violin(t, n, dur, vol = 0.03) {
+    const f = this.f(n);
+    for (const d of [-6, 6]) this.osc(t, f, dur, { type: 'sawtooth', vol, attack: Math.min(0.12, dur * 0.3), lp: 3600, q: 0.9, vib: 0.009, detune: d });
+  }
+
+  /** Acordeón: cuadradas desafinadas (el batido hace el trémolo). */
+  accordion(t, n, dur, vol = 0.03) {
+    const f = this.f(n);
+    for (const d of [-11, 11]) this.osc(t, f, dur, { type: 'square', vol, attack: 0.02, lp: 2400, q: 0.8, detune: d });
+    this.osc(t, f * 2, dur, { type: 'sawtooth', vol: vol * 0.35, attack: 0.02, lp: 3000 });
+  }
+
+  /** Rasgueo de vihuela / bajo sexto: las cuerdas del acorde una tras otra. */
+  strum(t, chord, vol = 0.03, dur = 0.16, up = false, bright = 9) {
+    const notes = up ? [...chord].reverse() : chord;
+    notes.forEach((n, i) => this.pluck(t + i * 0.011, n, dur, vol, bright));
+  }
+
+  /** Guitarrón: bajo pulsado, redondo. */
+  guitarron(t, n, dur, vol = 0.13) {
+    this.pluck(t, n, dur, vol * 0.7, 2.5);
+    this.osc(t, this.f(n), dur, { type: 'triangle', vol: vol * 0.6, attack: 0.004 });
+  }
+
+  /** Tuba de banda: grave y con cuerpo. */
+  tuba(t, n, dur, vol = 0.14) {
+    this.osc(t, this.f(n), dur, { type: 'sawtooth', vol, attack: 0.015, lp: 420, q: 2 });
+  }
+
+  /** Güiro: raspado corto. */
+  guiro(t, vol = 0.03, long = false) {
+    const n = long ? 5 : 3;
+    for (let i = 0; i < n; i++) this.noise(t + i * 0.018, 0.02, vol, 3200, 'bandpass', 3);
+  }
+
   /** Golpe metálico (frecuencias inarmónicas). */
   clang(t, freq = 420, vol = 0.07) {
     const f = freq * this.pm;
@@ -170,25 +224,195 @@ class Kit {
 // L = { stars, calm, k (kit), spb (s por paso) }
 // ------------------------------------------------------------
 const TRACKS = {
-  // Menú: tema con identidad, melodía pegadiza en La menor → Do
+  // Menú: SERENATA (vals ranchero en 3/4, Re mayor). Violines cantan la
+  // primera mitad, las trompetas contestan; vihuela en los tiempos 2 y 3.
   menu: {
-    bpm: 112,
-    prog: [[57, 60, 64], [53, 57, 60], [48, 52, 55], [55, 59, 62], [57, 60, 64], [53, 57, 60], [50, 53, 57], [52, 56, 59]],
-    lead: [69, null, 72, 76, null, 74, 72, null, 71, null, 72, 74, null, 72, 71, 67,
-           69, null, 72, 76, null, 79, 76, null, 74, null, 72, 71, null, 69, 68, null],
+    bpm: 138,
+    vol: 2.2,
+    steps: 12, // 3 tiempos de 4 pasos
+    D: [62, 66, 69], G: [55, 59, 62], A7: [57, 61, 64, 67],
+    get prog() {
+      return [this.D, this.A7, this.A7, this.D, this.D, this.G, this.A7, this.D];
+    },
+    // [nota, tiempos] por compás (melodía original)
+    mel: [
+      [[74, 1], [78, 1], [76, 1]],
+      [[73, 2], [69, 1]],
+      [[71, 1], [73, 1], [76, 1]],
+      [[74, 3]],
+      [[78, 1], [81, 1], [78, 1]],
+      [[79, 2], [76, 1]],
+      [[73, 1], [76, 1], [79, 1]],
+      [[78, 2], [74, 1]],
+    ],
+    play(s, bar, t, L, k) {
+      const st = s % 12;
+      const ch = this.prog[bar];
+      const beat = L.spb * 4;
+      // guitarrón en el 1 (tónica / quinta alterna), vihuela en el 2 y el 3
+      if (st === 0) k.guitarron(t, ch[0] - 24 + (bar % 2 ? 7 : 0), beat * 1.6, 0.12);
+      if (st === 4 || st === 8) k.strum(t, ch.map((n) => n + 12), L.calm ? 0.018 : 0.026, 0.2, st === 8);
+      if (!L.calm && st === 10 && bar % 2 === 1) k.strum(t, ch.map((n) => n + 12), 0.018, 0.12, true);
+      // melodía
+      if (st % 4 === 0) {
+        let acc = 0;
+        for (const [n, b] of this.mel[bar]) {
+          if (acc * 4 === st) {
+            const d = beat * b * 0.95;
+            if (bar < 4) {
+              k.violin(t, n, d, 0.026);
+              k.violin(t, below(n, ch), d, 0.016);
+            } else {
+              k.trumpet(t, n, d, L.calm ? 0.03 : 0.042);
+              k.trumpet(t, below(n, ch), d, L.calm ? 0.02 : 0.03);
+            }
+          }
+          acc += b;
+        }
+      }
+      // adorno de violines al final de cada vuelta
+      if (bar === 7 && st >= 6 && st % 2 === 0) k.violin(t, ch[(st / 2) % 3] + 24, L.spb * 2, 0.012);
+    },
+  },
+
+  // ===== TEMAS DE PERSONAJE (suenan mientras vas transformado) =====
+
+  // Aurelio: CORRIDO NORTEÑO (polka, Sol mayor). Acordeón con la melodía,
+  // bajo sexto a contratiempo y bajo de tónica-quinta.
+  aurelio: {
+    bpm: 118,
+    vol: 1.9,
+    G: [55, 59, 62], C: [60, 64, 67], D7: [57, 62, 66, 60],
+    get prog() {
+      return [this.G, this.C, this.D7, this.G, this.G, this.C, this.D7, this.G];
+    },
+    lead: [
+      [71, 74, 79, null, 78, 76, 74, null],
+      [72, 76, 79, 76, 72, null, 67, null],
+      [74, 78, 81, 78, 74, 72, 69, null],
+      [71, null, 67, 71, 74, null, null, null],
+      [79, 78, 79, 76, 74, 71, 74, null],
+      [76, 72, 76, 79, 84, null, 79, null],
+      [78, 74, 72, 69, 66, 69, 72, null],
+      [71, null, 67, null, null, null, 62, 66],
+    ],
     play(s, bar, t, L, k) {
       const st = s % 16;
       const ch = this.prog[bar];
       if (!L.calm) {
-        if (st % 4 === 0) k.kick(t, 0.38);
-        if (st === 4 || st === 12) k.clap(t, 0.12);
-        if (st % 2 === 1) k.hat(t, 0.03);
+        // tarola de polka
+        if (st === 4 || st === 12) k.snare(t, 0.09 + (L.stars >= 3 ? 0.05 : 0));
+        if (L.stars >= 1 && st % 4 === 2) k.hat(t, 0.025);
+        if (L.stars >= 3 && bar % 4 === 3 && st >= 12) k.snare(t, 0.05 + (st - 12) * 0.02);
       }
-      if (st % 2 === 0) k.bass(t, ch[0] - 24 + (st % 4 === 2 ? 12 : 0), L.spb * 1.8, 0.11);
-      if (st === 0) k.pad(t, ch, L.spb * 16, 0.018, 1400);
-      const ln = this.lead[(bar % 4) * 8 + Math.floor(st / 2)];
-      if (st % 2 === 0 && ln && bar < 6) k.osc(t, k.f(ln), L.spb * 1.8, { type: 'square', vol: 0.045, lp: 3000 });
-      if (bar >= 6 && st % 2 === 0) k.bell(t, ch[(st / 2) % 3] + 12, 0.3, 0.05);
+      // bajo: tónica y quinta en los tiempos
+      if (st % 4 === 0) k.guitarron(t, ch[0] - 24 + (st % 8 === 4 ? 7 : 0), L.spb * 3, 0.13);
+      // bajo sexto a contratiempo
+      if (st % 4 === 2) k.strum(t, ch, L.calm ? 0.016 : 0.024, 0.13, false, 6);
+      // acordeón: melodía en corcheas (con segunda voz desde 1★)
+      const n = this.lead[bar][Math.floor(st / 2)];
+      if (st % 2 === 0 && n) {
+        k.accordion(t, n, L.spb * 1.8, L.calm ? 0.018 : 0.026);
+        if (L.stars >= 1 && !L.calm) k.accordion(t, below(n, ch), L.spb * 1.8, 0.016);
+      }
+      // adorno de acordeón en semicorcheas con 3★
+      if (L.stars >= 3 && !L.calm && bar % 2 === 1 && st >= 12) k.accordion(t, ch[st % 3] + 24, L.spb * 0.9, 0.012);
+    },
+  },
+
+  // Vera: CORRIDO DE MARIACHI ligero y rápido (6/8, La mayor). Trompetas en
+  // terceras, vihuela rasgueando y violines desde 1★.
+  vera: {
+    bpm: 152,
+    vol: 1.15,
+    steps: 12, // 6 corcheas de 2 pasos
+    A: [57, 61, 64], D: [62, 66, 69], E7: [56, 59, 62, 64], Fm: [54, 57, 61],
+    get prog() {
+      return [this.A, this.D, this.E7, this.A, this.Fm, this.D, this.E7, this.A];
+    },
+    lead: [
+      [76, null, 81, 80, 78, 76],
+      [78, null, 74, 78, 81, null],
+      [80, null, 76, 74, 71, 74],
+      [73, 76, 81, null, null, null],
+      [81, null, 78, 73, 78, 81],
+      [83, 81, 78, 74, null, 78],
+      [80, 78, 76, 74, 73, 71],
+      [69, null, 73, 76, 81, null],
+    ],
+    play(s, bar, t, L, k) {
+      const st = s % 12;
+      const ch = this.prog[bar];
+      if (!L.calm) {
+        if (st === 0 || st === 6) k.kick(t, 0.22, 110);
+        if (L.stars >= 1 && st % 2 === 0) k.guiro(t, 0.022, st === 0);
+        if (L.stars >= 3) {
+          if (st === 4 || st === 10) k.snare(t, 0.08);
+          if (bar % 4 === 3 && st >= 6) k.tom(t, 48 + st, 0.12);
+        }
+      }
+      // guitarrón en 1 y 4, vihuela en el resto de corcheas
+      if (st === 0 || st === 6) k.guitarron(t, ch[0] - 24 + (st === 6 ? 7 : 0), L.spb * 4, 0.12);
+      if ([2, 4, 8, 10].includes(st)) k.strum(t, ch.map((n) => n + 12), L.calm ? 0.015 : 0.022, 0.12, st === 4 || st === 10);
+      // trompetas
+      const n = this.lead[bar][st / 2];
+      if (st % 2 === 0 && n) {
+        const nx = this.lead[bar][st / 2 + 1];
+        const d = L.spb * (nx === null ? 3.6 : 1.8);
+        k.trumpet(t, n, d, L.calm ? 0.028 : 0.04);
+        k.trumpet(t, below(n, ch), d, L.calm ? 0.018 : 0.027);
+      }
+      // violines largos desde 1★
+      if (L.stars >= 1 && st === 0) k.violin(t, ch[ch.length - 1] + 12, L.spb * 11, L.calm ? 0.01 : 0.014);
+    },
+  },
+
+  // Bruno: CORRIDO BRAVO (polka rápida en Re menor) con tuba de banda,
+  // trompetas y acordeón en la melodía y tarola que aprieta con las estrellas.
+  bruno: {
+    bpm: 136,
+    vol: 1.15,
+    Dm: [62, 65, 69], Gm: [55, 58, 62], A7: [57, 61, 64, 67],
+    get prog() {
+      return [this.Dm, this.Gm, this.A7, this.Dm, this.Dm, this.Gm, this.A7, this.Dm];
+    },
+    lead: [
+      [74, null, 77, 74, 73, 74, null, 69],
+      [70, 74, 79, null, 77, 74, 70, null],
+      [73, 76, 79, 76, 73, null, 69, null],
+      [74, null, null, 69, 74, 77, 81, null],
+      [81, 79, 77, 79, 81, null, 77, null],
+      [79, 77, 74, 77, 79, 82, 79, null],
+      [76, 73, 76, 79, 85, null, 81, null],
+      [74, null, 69, null, 62, null, null, null],
+    ],
+    play(s, bar, t, L, k) {
+      const st = s % 16;
+      const ch = this.prog[bar];
+      if (!L.calm) {
+        if (st % 8 === 0) k.kick(t, 0.32, 120);
+        if (st % 4 === 2) k.snare(t, 0.07 + (L.stars >= 1 ? 0.03 : 0));
+        if (L.stars >= 3) {
+          if (st % 2 === 1) k.snare(t, 0.025);
+          if (bar % 2 === 1 && st === 14) k.clang(t, 900, 0.03);
+        }
+      }
+      // tuba: tónica y quinta
+      if (st % 4 === 0) k.tuba(t, ch[0] - 24 + (st % 8 === 4 ? 7 : 0), L.spb * 2.6, 0.13);
+      // bajo sexto
+      if (st % 4 === 2) k.strum(t, ch, L.calm ? 0.015 : 0.023, 0.11, false, 7);
+      // melodía: acordeón; trompetas encima desde 1★
+      const n = this.lead[bar][Math.floor(st / 2)];
+      if (st % 2 === 0 && n) {
+        const d = L.spb * 1.7;
+        k.accordion(t, n, d, L.calm ? 0.017 : 0.024);
+        if (L.stars >= 1 && !L.calm) {
+          k.trumpet(t, n, d, 0.03);
+          k.trumpet(t, below(n, ch), d, 0.02);
+        }
+      }
+      // remate de metales al final de cada vuelta
+      if (!L.calm && bar === 7 && (st === 8 || st === 11 || st === 14)) for (const m of [62, 65, 69]) k.trumpet(t, m + 12, L.spb * 1.2, 0.022);
     },
   },
 
@@ -336,7 +560,7 @@ const TRACKS = {
 // ------------------------------------------------------------
 // Reproductor de una pista (generada o archivo)
 // ------------------------------------------------------------
-class TrackPlayer {
+export class TrackPlayer {
   constructor(engine, id, when) {
     this.e = engine;
     this.id = id;
@@ -346,7 +570,11 @@ class TrackPlayer {
     this.gain.connect(engine.input);
     this.buffer = engine.files.get(id) || null;
     this.def = TRACKS[id];
-    this.kit = new Kit(engine, this.gain);
+    // volumen propio del tema generado (def.vol) para igualarlo con el resto
+    this.trim = c.createGain();
+    this.trim.gain.value = this.def?.vol ?? 1;
+    this.trim.connect(this.gain);
+    this.kit = new Kit(engine, this.trim);
     this.step = 0;
     this.next = when;
     this.dead = false;
@@ -360,7 +588,10 @@ class TrackPlayer {
         src.loopEnd = F.loopEnd;
       }
       src.playbackRate.value = engine.rateTarget;
-      src.connect(this.gain);
+      // volumen propio del archivo (para igualarlo con el resto)
+      const fg = c.createGain();
+      fg.gain.value = F.gain ?? 1;
+      src.connect(fg).connect(this.gain);
       src.start(when);
       this.src = src;
     }
@@ -396,13 +627,14 @@ class TrackPlayer {
     const e = this.e;
     const now = e.ctx.currentTime;
     if (this.next < now - 0.25) this.next = now + 0.03; // tras una pausa larga
+    const n = this.def.steps ?? 16; // pasos por compás (16 = 4/4; 12 = 3/4 o 6/8)
     while (this.next < until) {
       const spb = 60 / (this.def.bpm * e.tempoMult) / 4;
-      const bar = Math.floor(this.step / 16) % 8;
+      const bar = Math.floor(this.step / n) % 8;
       const L = { stars: e.stars, calm: e.calm, spb };
-      this.def.play(this.step % 16, bar, this.next, L, this.kit);
+      this.def.play(this.step % n, bar, this.next, L, this.kit);
       this.next += spb;
-      this.step = (this.step + 1) % 128;
+      this.step = (this.step + 1) % (n * 8);
     }
   }
 }

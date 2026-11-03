@@ -34,7 +34,9 @@ export class CreditsScreen {
       const c = CREDITS.music.find((m) => m.track === id);
       const what = c
         ? `${link(c.url, `«${esc(c.title)}»`)} — ${esc(c.author)}${c.license ? ` <span class="lic">(${esc(c.license)})</span>` : ''}`
-        : `<span class="dim">${t('credits.generated')}</span>`;
+        : Sound.music.files.has(id)
+          ? `<span class="dim">${t('credits.fileNoCredit')}</span>`
+          : `<span class="dim">${t('credits.generated')}</span>`;
       return `<li><b>${t(`credits.track.${id}`)}:</b> ${what}</li>`;
     }).join('');
     const voices = CREDITS.voices.length

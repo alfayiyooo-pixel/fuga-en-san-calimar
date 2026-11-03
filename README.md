@@ -201,22 +201,27 @@ Pantalla propia desde el menú (👕 Vestuario): un apartado por personaje, con 
 - El botón 🔊 silencia todo (efectos, música y voces).
 - **⚙ Ajustes** (menú, esquina superior derecha): volumen independiente de **música**, **efectos** y **voces** (se guarda en el navegador), silenciar todo y "Probar voz".
 
-### Música por zonas
+### Música: menú, zonas y personajes
 
 Cada zona tiene su tema y al pasar de una a otra cambian con un **fundido cruzado** de 2,5 s (`music.crossfade`):
 
 | Pista | Zona | Estilo |
 |---|---|---|
-| `menu` | Menú y pantalla final | Tema propio con melodía del juego |
+| `menu` | Menú y pantalla final | Usa `audio/musica/serenata_mexicana.mp3`. Tema generado de reserva: serenata (vals ranchero con violines, trompetas, vihuela y guitarrón) |
 | `playa` | Playa Coral | Relajada y soleada: guitarra a contratiempo, steel drum, shaker |
 | `centro` | Distrito Lingote | Electrónica nocturna: bombo a negras, bajo pulsante, arpegios |
 | `industrial` | Las Chimeneas | Dura y metálica: percusión pesada, golpes de yunque, quintas |
 | `mansiones` | Colinas Brisa | Funk/soul elegante: bajo slap, clavinet, metales, piano eléctrico |
 | `puerto` | Puerto Ancla | Tensa, de película de atracos: ostinato cromático, dron, vibráfono |
+| `aurelio` | Transformado en Aurelio | Corrido norteño: polka con acordeón, bajo sexto y tarola |
+| `vera` | Transformado en Vera | Corrido de mariachi en 6/8: trompetas en terceras, vihuela, güiro y violines |
+| `bruno` | Transformado en Bruno | Corrido bravo en Re menor: tuba de banda, acordeón y trompetas |
+
+Los **temas de personaje** suenan mientras vas transformado: entran con un fundido de 1,2 s y, al perder el personaje, vuelve la música de la zona (`music.charTracks`, `music.charFade`). Se mezclan con las estrellas igual que los de zona.
 
 **Capas dinámicas:** con 1★ entran más instrumentos y desde 3★ más percusión y tensión; en el **respiro** la música se calma (sin batería, filtrada); y cada habilidad especial la cambia: **tiempo bala** de Aurelio = música lenta y grave, **conducción** de Vera = más rápida y brillante, **furia** de Bruno = distorsión. Todo en el bloque `music` de `config.js`.
 
-**Sustituirla por archivos:** copia MP3 en [`audio/musica/`](audio/musica/) con los nombres `menu.mp3`, `playa.mp3`, `centro.mp3`, `industrial.mp3`, `mansiones.mp3`, `puerto.mp3`. Si existe el archivo se usa (en bucle sin cortes); si no, el tema generado. Detalles del bucle exacto en [`audio/musica/LEEME.md`](audio/musica/LEEME.md). Si la licencia pide atribución, añade autor y licencia en [`src/credits.js`](src/credits.js): salen en **⚙ Ajustes → 📜 Créditos**.
+**Sustituirla por archivos:** copia MP3 en [`audio/musica/`](audio/musica/) con los nombres `playa.mp3`, `centro.mp3`, `industrial.mp3`, `mansiones.mp3`, `puerto.mp3`, `aurelio.mp3`, `vera.mp3`, `bruno.mp3` (el menú usa `serenata_mexicana.mp3`, ver `music.files` en `config.js`). El service worker las guarda para que suenen sin conexión. Si existe el archivo se usa (en bucle sin cortes); si no, el tema generado. Detalles del bucle exacto en [`audio/musica/LEEME.md`](audio/musica/LEEME.md). Si la licencia pide atribución, añade autor y licencia en [`src/credits.js`](src/credits.js): salen en **⚙ Ajustes → 📜 Créditos**.
 
 ### Voces de los personajes (añadir tus propios audios)
 

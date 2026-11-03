@@ -3,7 +3,7 @@ import { Input } from './core/input.js';
 import { Loop } from './core/loop.js';
 import { Save } from './core/storage.js';
 import { setLang, detectLanguage, applyToDom, fmt, t, getLang } from './core/i18n.js';
-import { Game, zoneTrack } from './game.js';
+import { Game } from './game.js';
 import { Hud } from './ui/hud.js';
 import { Screens } from './ui/screens.js';
 import { causeText } from './entities/obstacles.js';
@@ -308,7 +308,7 @@ const roulette = new Roulette(document.getElementById('screen-roulette'), {
       input.enabled = true;
       screens.show(null);
       screens.showHudButtons(true);
-      Sound.music.play(zoneTrack(game.zone.current.id));
+      Sound.music.play(game.musicTrack());
       return;
     }
     roulettePrize = prize;
@@ -384,7 +384,7 @@ function startRun() {
   Sound.music.setCalm(false);
   Sound.music.setFx(null);
   Sound.music.setStars(0);
-  Sound.music.play(zoneTrack(game.zone.current.id));
+  Sound.music.play(game.musicTrack());
 }
 
 function pause() {
@@ -404,7 +404,7 @@ function resume() {
   state = 'playing';
   input.clear();
   input.enabled = true;
-  Sound.music.play(zoneTrack(game.zone.current.id), { fade: 0.6 });
+  Sound.music.play(game.musicTrack(), { fade: 0.6 });
   screens.show(null);
   screens.showHudButtons(true);
 }

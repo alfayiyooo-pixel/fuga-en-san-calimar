@@ -310,6 +310,9 @@ export class Game {
       // pequeño cambio musical con la habilidad especial activa
       const P = this.powers;
       Sound.music.setFx(P.has('bullettime') ? 'bullettime' : P.has('drive') ? 'drive' : P.has('rage') ? 'rage' : null);
+      // tema del personaje mientras vas transformado; al perderlo, vuelve el de la zona
+      const track = this.musicTrack();
+      if (Sound.music.current && track !== Sound.music.current) Sound.music.play(track, { fade: CONFIG.music.charFade });
     }
 
     this.camera.follow(p.x, this.view.w);
@@ -342,13 +345,18 @@ export class Game {
     this.fadeIn = Math.max(0, this.fadeIn - dt * 2.5);
   }
 
+  /** Pista que debe sonar: la del personaje si vas transformado; si no, la de la zona. */
+  musicTrack() {
+    return CONFIG.music.charTracks[this.powers.char] ?? zoneTrack(this.zone.current.id);
+  }
+
   updateZone() {
     this.zone = zoneAt(this.distance);
     if (this.zone.n !== this.zoneIndex) {
       this.zoneIndex = this.zone.n;
       this.hud.banner(t('zone.enter'), t(this.zone.current.nameKey));
       Sound.whoosh();
-      Sound.music.play(zoneTrack(this.zone.current.id));
+      Sound.music.play(this.musicTrack());
       if (!this.dead) this.radio.trigger('zona', this.runTime, this);
     }
   }

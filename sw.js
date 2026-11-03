@@ -7,7 +7,7 @@
 // en cuanto se ha abierto una vez.
 //
 // Si cambias la lista CORE o quieres forzar limpiar la caché, sube VERSION.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `san-calimar-${VERSION}`;
 const CORE = [
   './',
@@ -20,13 +20,17 @@ const CORE = [
   './icons/apple-touch-icon.png',
   './icons/favicon-32.png',
 ];
+// Música: se guarda al instalar para que suene sin conexión. Las pistas que no
+// existan (se usa el tema generado por código) se ignoran sin romper nada.
+const MUSIC = ['menu', 'playa', 'centro', 'industrial', 'mansiones', 'puerto', 'aurelio', 'vera', 'bruno'].map((id) => `./audio/musica/${id}.mp3`);
+const OPTIONAL = ['./audio/musica/serenata_mexicana.mp3', ...MUSIC];
 const NETWORK_TIMEOUT = 4000; // ms: con una red muy lenta se usa la caché
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches
       .open(CACHE)
-      .then((c) => c.addAll(CORE))
+      .then((c) => c.addAll(CORE).catch(() => {}).then(() => Promise.allSettled(OPTIONAL.map((u) => c.add(u)))))
       .catch(() => {})
       .then(() => self.skipWaiting()),
   );
