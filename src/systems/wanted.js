@@ -35,6 +35,15 @@ export class Wanted {
     this.warnBeep = 0;
   }
 
+  /** Pone directamente un nº de estrellas (al empezar la partida). */
+  setStars(n) {
+    if (n <= 0) return;
+    this.heat = this.thresholds[Math.min(n, this.thresholds.length) - 1];
+    this.stars = n;
+    this.peak = Math.max(this.peak, n);
+    this.warned = n - 1;
+  }
+
   get max() {
     return this.thresholds[this.thresholds.length - 1];
   }

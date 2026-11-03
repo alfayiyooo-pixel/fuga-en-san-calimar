@@ -125,6 +125,17 @@ export const CONFIG = {
     },
   },
 
+  // ---------------- ESCENA INICIAL ----------------
+  intro: {
+    duration: 5,            // s de escena antes de tomar el control
+    jumpAt: 0.9,            // s: el atracador salta del furgón
+    accelTime: 1.0,         // s hasta coger velocidad
+    camTime: 1.8,           // s de paso de cámara del furgón al jugador
+    runDistance: 1250,      // px entre el furgón y el punto de salida (0 m)
+    startStars: 1,          // estrellas con las que empieza la partida
+    skippable: true,        // un toque tras el primer segundo salta la escena
+  },
+
   // ---------------- A PIE (sin jetpack) ----------------
   // Se empieza a pie: ESPACIO/toque = saltar (más alto si mantienes).
   // Capas de golpe: a pie → muerte · con jetpack → a pie · con personaje → jetpack.
@@ -170,6 +181,7 @@ export const CONFIG = {
     gapMult: 0.7,           // separación tras un enemigo menor (son fáciles)
     hitbox: 0.78,           // caja de choque respecto al dibujo
     types: { guard: 1, drone: 1.2, dog: 0.8, gull: 1.5, scooter: 0.9 }, // pesos (gaviotas solo en la playa)
+    cop: { speed: [60, 120], jumpRange: 260, jump: 520 }, // agente a pie (policía floja del principio)
     unlockAt: { guard: 0, drone: 30, dog: 90, gull: 0, scooter: 160 },  // m
     reward: { bucks: [4, 9], xp: 3 }, // al derrotarlos (los pavos × multiplicador)
     guard: { walkSpeed: 25, jumpRange: 330, jump: [560, 700], gravity: 1700, jumpCooldown: 1.3 },
@@ -201,6 +213,12 @@ export const CONFIG = {
       heliSpotted: 9,     // el foco del helicóptero te detecta
       hitPolice: 12,      // chocar con policía con escudo (fase d)
     },
+    // policía más floja en los primeros metros (multiplica a "levels")
+    //   car/missile/heli: peso · carSpeed: velocidad de las patrullas · cop: peso de agentes a pie
+    ease: [
+      { until: 500, car: 0.35, missile: 0, heli: 0, carSpeed: 0.55, cop: 1.4 },
+      { until: 1000, car: 0.7, missile: 0.4, heli: 0, carSpeed: 0.8, cop: 0.7 },
+    ],
     // policía que aparece en cada nivel (índice = nº de estrellas)
     //   car/missile/heli: peso relativo de cada obstáculo policial (0 = no aparece)
     //   gapMult: multiplicador de la separación entre obstáculos

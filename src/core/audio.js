@@ -509,6 +509,11 @@ class AudioFx {
     );
   }
 
+  /** Alarma del furgón: campana eléctrica de dos tonos. */
+  alarmBell() {
+    for (let k = 0; k < 4; k++) this.tone({ freq: k % 2 ? 1400 : 1150, type: 'square', dur: 0.06, vol: 0.06, delay: k * 0.065 });
+  }
+
   // ---------- enemigos menores ----------
   /** Ladrido: dos golpes de sierra con filtro de vocal. */
   bark() {

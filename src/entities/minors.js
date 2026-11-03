@@ -597,6 +597,93 @@ export class Scooter extends Minor {
   }
 }
 
+// ------------------------------------------------------------
+// AGENTE A PIE — policía floja del principio: corre hacia ti con la porra
+// ------------------------------------------------------------
+export class Cop extends Minor {
+  constructor(g, x) {
+    super('cop', 34, 60);
+    this.police = true;
+    this.x = x;
+    this.grounded = true;
+    this.y = g.view.groundY - this.h / 2;
+    this.vx = -rand(this.cfg.speed[0], this.cfg.speed[1]);
+    this.jumped = false;
+    this.passed = false;
+  }
+
+  act(dt, g) {
+    const gy = g.view.groundY - this.h / 2;
+    this.x += this.vx * dt;
+    const ahead = this.x - g.player.x;
+    if (!this.jumped && ahead > 0 && ahead < this.cfg.jumpRange && Math.random() < 0.5) {
+      this.jumped = true;
+      this.grounded = false;
+      this.vy = -this.cfg.jump;
+    } else if (!this.jumped && ahead < this.cfg.jumpRange) {
+      this.jumped = true; // esta vez no salta
+    }
+    if (!this.grounded) {
+      this.vy += 1700 * dt;
+      this.y += this.vy * dt;
+      if (this.y >= gy) {
+        this.y = gy;
+        this.grounded = true;
+      }
+    }
+    if (!this.passed && this.x + this.w / 2 < g.player.left) {
+      this.passed = true;
+      g.spotted(CONFIG.wanted.heat.carPass * 0.5, g.player.x, g.player.y - 50);
+    }
+  }
+
+  paint(ctx) {
+    const run = !this.ko && this.grounded;
+    const c = this.t * 14;
+    const a = run ? Math.sin(c) * 0.7 : 0.4;
+    // piernas
+    limb(ctx, -3, 10, a, a - 0.5, 10, 10, 6, '#22305e');
+    limb(ctx, 3, 10, -a, -a - 0.5, 10, 10, 6, '#2c3c72');
+    // cuerpo
+    rr(ctx, -11, -12, 22, 25, 6);
+    inked(ctx, vgrad(ctx, -12, 13, '#3c5bb0', '#22305e'));
+    ctx.fillStyle = '#ffd23f';
+    ctx.beginPath();
+    ctx.arc(-5, -4, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#c9ff3d';
+    ctx.fillRect(-11, 2, 22, 3); // franja reflectante
+    // brazo con porra levantada
+    const arm = this.ko ? 3 : 2.6 + Math.sin(c * 0.5) * 0.3;
+    const [hx, hy] = limb(ctx, -6, -8, arm, arm + 0.4, 8, 8, 5, '#3c5bb0');
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(hx, hy);
+    ctx.lineTo(hx - 6, hy - 14);
+    ctx.stroke();
+    ctx.lineCap = 'butt';
+    // cabeza con gorra y silbato
+    ctx.beginPath();
+    ctx.arc(0, -21, 9, 0, Math.PI * 2);
+    inked(ctx, '#e8b08a');
+    eye(ctx, -4, -22, 2.3, this.ko ? 0 : -1);
+    ctx.fillStyle = '#c0c4cc';
+    ctx.fillRect(-12, -18, 5, 3);
+    ctx.beginPath();
+    ctx.moveTo(-10, -25);
+    ctx.quadraticCurveTo(-8, -35, 2, -34);
+    ctx.quadraticCurveTo(10, -33, 9, -25);
+    ctx.closePath();
+    inked(ctx, '#22305e');
+    rr(ctx, -17, -27, 10, 4, 2);
+    inked(ctx, INK);
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillRect(-3, -31, 4, 4);
+  }
+}
+
 /**
  * Crea un enemigo menor (o una bandada) en x. Devuelve el espacio horizontal ocupado.
  */
@@ -620,6 +707,9 @@ export function spawnMinor(type, g, x) {
     case 'scooter':
       g.addObstacle(new Scooter(g, x + 40));
       return 90;
+    case 'cop':
+      g.addObstacle(new Cop(g, x + 40));
+      return 80;
   }
   return 0;
 }

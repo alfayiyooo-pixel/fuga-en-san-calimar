@@ -297,7 +297,7 @@ export class PatrolCar extends Obstacle {
     this.police = true;
     this.w = 116;
     this.h = 44;
-    this.speed = rand(C.minSpeed, C.maxSpeed);
+    this.speed = rand(C.minSpeed, C.maxSpeed) * (g.policeLevel.carSpeed ?? 1);
     const closing = g.speed + this.speed;
     this.x = g.camera.x + g.view.w + closing * (C.warnTime + delay);
     this.y = g.view.groundY - this.h;

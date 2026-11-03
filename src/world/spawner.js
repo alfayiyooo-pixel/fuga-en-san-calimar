@@ -58,6 +58,7 @@ export class Spawner {
     consider('car', lvl.car);
     consider('missile', lvl.missile);
     consider('heli', lvl.heli);
+    if (lvl.cop) entries.push(['cop', lvl.cop]);
     // enemigos menores: al principio y con pocas estrellas
     // obstáculos de calle (sobre todo a pie)
     const S = CONFIG.foot.street;
@@ -116,6 +117,8 @@ export class Spawner {
     switch (type) {
       case 'minor':
         return spawnMinor(this.chooseMinor(g), g, x);
+      case 'cop':
+        return spawnMinor('cop', g, x);
       case 'street':
         return spawnStreet(this.chooseStreet(g), g, x);
       case 'billboard':

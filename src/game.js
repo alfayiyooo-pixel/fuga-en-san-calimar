@@ -20,6 +20,7 @@ import { Combo } from './systems/combo.js';
 import { drawGlow } from './fx/sprites.js';
 import { minorKoFx } from './entities/minors.js';
 import { Foot } from './systems/foot.js';
+import { Intro } from './systems/intro.js';
 
 /** Pista de música de una zona. */
 export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
@@ -48,6 +49,7 @@ export class Game {
     this.combo = new Combo();
     this.events = new Events();
     this.foot = new Foot();
+    this.intro = new Intro();
     this.record = 0; // récord de distancia al empezar la partida (lo pone main.js)
     this.buffer = document.createElement('canvas');
     this.t = 0;
@@ -55,6 +57,7 @@ export class Game {
     const q = new URLSearchParams(location.search);
     this.god = q.has('god');
     this.startAt = Number(q.get('start')) || 0;
+    this.noIntro = q.has('nointro') || this.startAt > 0;
     this.reset();
   }
 
@@ -97,6 +100,10 @@ export class Game {
     this.cause = null;
     this.flash = 0;
     this.fadeIn = 1;
+    // se empieza ya buscado (1★) y con la escena del furgón
+    this.wanted.setStars(CONFIG.intro.startStars);
+    if (this.noIntro) this.intro.active = false;
+    else this.intro.start(this);
   }
 
   get distance() {
@@ -124,7 +131,21 @@ export class Game {
   get policeLevel() {
     const L = CONFIG.wanted.levels;
     if (this.respite.active) return L[0]; // durante un respiro la policía pierde el rastro
-    return L[Math.min(this.wanted.stars, L.length - 1)];
+    const lvl = L[Math.min(this.wanted.stars, L.length - 1)];
+    // primeros metros: policía flojita (agentes a pie, coches lentos)
+    const ease = CONFIG.wanted.ease.find((e) => this.distance < e.until);
+    if (!ease) return lvl;
+    return {
+      ...lvl,
+      car: lvl.car * ease.car,
+      missile: lvl.missile * ease.missile,
+      heli: lvl.heli * ease.heli,
+      carPair: lvl.carPair * ease.car,
+      volley: 1,
+      heliShots: 0,
+      carSpeed: ease.carSpeed,
+      cop: this.wanted.stars > 0 ? ease.cop : 0,
+    };
   }
 
   /** Recoger pavos llama la atención de la policía. */
@@ -181,6 +202,22 @@ export class Game {
   update(dt, input) {
     this.t += dt;
     const p = this.player;
+
+    // escena inicial: el jugador aún no controla nada
+    if (this.intro.active) {
+      if (this.intro.update(dt, this, input)) {
+        // empieza la partida de verdad: obstáculos y pavos desde aquí
+        this.spawner.reset(p.x);
+        this.tokens.reset(p.x);
+        this.foot.reset(this);
+      }
+      this.camera.update(dt);
+      this.particles.update(dt);
+      this.popups.update(dt);
+      this.flash = Math.max(0, this.flash - dt * 3);
+      this.fadeIn = Math.max(0, this.fadeIn - dt * 2.5);
+      return;
+    }
 
     if (this.dead) {
       Sound.jet(0);
@@ -605,10 +642,11 @@ export class Game {
     if (!menu) this.drawRecordFlag(ctx, cam.x);
     if (!menu) this.powers.draw(ctx, cam.x, this);
     if (!menu) this.events.draw(ctx, cam.x, this);
+    if (!menu) this.intro.draw(ctx, cam.x, this);
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
     if (!menu) this.tokens.draw(ctx, cam.x, this);
     this.particles.draw(ctx, cam.x);
-    if (showPlayer) this.player.draw(ctx, cam.x, this.t);
+    if (showPlayer && this.intro.playerVisible) this.player.draw(ctx, cam.x, this.t);
     for (const o of this.obstacles) o.overlay(ctx, this);
     ctx.restore();
 
