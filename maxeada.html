@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#ff7a3d">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="San Calimar">
+  <meta name="description" content="Endless runner con jetpack por San Calimar, una ciudad costera inventada.">
+  <title>Fuga en San Calimar · cuenta maxeada</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="game">
+    <div id="stage">
+      <canvas id="canvas" aria-label="Fuga en San Calimar"></canvas>
+
+      <div id="ui">
+        <!-- MENÚ PRINCIPAL -->
+        <section class="screen" id="screen-menu">
+          <div class="corner-buttons">
+            <button class="icon-btn btn-mute" data-i18n-aria="menu.sound">🔊</button>
+            <button class="icon-btn" id="btn-settings" data-i18n-aria="settings.title">⚙</button>
+          </div>
+          <div class="wallet" aria-live="polite">
+            <span class="coin coin-bucks" data-i18n-aria="wallet.bucks">💵 <b class="w-bucks">0</b></span>
+            <span class="coin coin-gems" data-i18n-aria="wallet.gems">💎 <b class="w-gems">0</b></span>
+            <span class="coin coin-tickets" data-i18n-aria="wallet.tickets">🪙 <b class="w-tickets">0</b></span>
+          </div>
+          <button class="level-chip" id="level-chip"></button>
+          <h1 class="logo">
+            <span class="logo-top" data-i18n="game.titleTop"></span>
+            <span class="logo-main" data-i18n="game.titleMain"></span>
+          </h1>
+          <p class="tagline" data-i18n="menu.tagline"></p>
+          <button class="btn btn-primary" id="btn-play" data-i18n="menu.play"></button>
+          <div class="loadout hidden" id="loadout"></div>
+          <div class="menu-row">
+            <button class="btn small" id="btn-shop">🛒 <span data-i18n="menu.shop"></span></button>
+            <button class="btn small" id="btn-wardrobe">👕 <span data-i18n="menu.wardrobe"></span></button>
+            <button class="btn small" id="btn-achievements">🏅 <span data-i18n="ach.menu"></span></button>
+            <button class="btn small" id="btn-progress">🎯 <span data-i18n="menu.progress"></span><span class="dot hidden" id="progress-dot"></span></button>
+          </div>
+          <div class="lang-switch" role="group" data-i18n-aria="menu.language">
+            <button class="lang-btn" data-lang="es">ES</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+          </div>
+          <div class="menu-chips">
+            <button class="chip-btn" id="btn-quality"></button>
+            <button class="chip-btn install hidden" id="btn-install">📲 <span data-i18n="pwa.install"></span></button>
+          </div>
+          <p class="hint" data-i18n="menu.hintFoot"></p>
+        </section>
+
+        <!-- TIENDA -->
+        <section class="screen panel-screen hidden" id="screen-shop"></section>
+
+        <!-- VESTUARIO -->
+        <section class="screen panel-screen hidden" id="screen-wardrobe"></section>
+
+        <!-- MISIONES Y NIVEL -->
+        <section class="screen panel-screen hidden" id="screen-missions"></section>
+
+        <!-- AJUSTES -->
+        <section class="screen panel-screen hidden" id="screen-settings"></section>
+
+        <!-- LOGROS -->
+        <section class="screen panel-screen hidden" id="screen-achievements"></section>
+
+        <!-- CRÉDITOS -->
+        <section class="screen panel-screen hidden" id="screen-credits"></section>
+
+        <!-- RECOMPENSA DIARIA -->
+        <section class="screen hidden" id="screen-daily">
+          <h2 class="screen-title" data-i18n="daily.title"></h2>
+          <div class="daily-track" id="daily-track"></div>
+          <button class="btn btn-primary" id="btn-daily" data-i18n="daily.claim"></button>
+          <p class="hint" data-i18n="daily.note"></p>
+        </section>
+
+        <!-- RULETA -->
+        <section class="screen hidden" id="screen-roulette"></section>
+
+        <!-- PAUSA -->
+        <section class="screen hidden" id="screen-pause">
+          <h2 class="screen-title" data-i18n="pause.title"></h2>
+          <button class="btn btn-primary" id="btn-resume" data-i18n="pause.resume"></button>
+          <button class="btn" id="btn-to-menu" data-i18n="pause.menu"></button>
+        </section>
+
+        <!-- PANTALLA FINAL -->
+        <section class="screen hidden" id="screen-over">
+          <div class="over-grid">
+          <div class="paper-col">
+            <div class="paper" id="over-paper"></div>
+            <button class="btn small share-btn" id="btn-share">📤 <span data-i18n="news.share"></span></button>
+          </div>
+          <div class="over-side">
+          <h2 class="screen-title"><span id="over-badge"></span> <span data-i18n="over.title"></span></h2>
+          <p class="cause" id="over-cause"></p>
+          <div class="new-best hidden" id="over-newbest" data-i18n="over.newBest"></div>
+          <div class="stats">
+            <div class="stat"><span class="stat-label" data-i18n="over.distance"></span><span class="stat-value" id="over-distance"></span></div>
+            <div class="stat"><span class="stat-label" data-i18n="over.bucks"></span><span class="stat-value bucks" id="over-bucks"></span></div>
+            <div class="stat"><span class="stat-label" data-i18n="over.best"></span><span class="stat-value" id="over-best"></span></div>
+          </div>
+          <p class="almost" id="over-almost"></p>
+          <div class="stats-small">
+            <span><span data-i18n="over.stars"></span> <b class="stars" id="over-stars"></b></span>
+            <span><span data-i18n="over.near"></span> <b id="over-near"></b></span>
+            <span><span data-i18n="over.mult"></span> <b id="over-mult"></b></span>
+            <span id="over-gems-wrap" class="hidden">💎 <b id="over-gems"></b></span>
+          </div>
+          <div class="over-progress" id="over-progress"></div>
+          <div class="row">
+            <button class="btn btn-primary" id="btn-retry" data-i18n="over.retry"></button>
+            <button class="btn" id="btn-over-menu" data-i18n="over.menu"></button>
+          </div>
+          </div>
+          </div>
+        </section>
+
+        <!-- BOTONES DURANTE LA PARTIDA -->
+        <div id="hud-buttons" class="hidden">
+          <button class="icon-btn btn-mute" data-i18n-aria="menu.sound">🔊</button>
+          <button class="icon-btn" id="btn-pause" data-i18n-aria="hud.pause">❚❚</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <div id="ios-help" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <h2 class="screen-title small-title" data-i18n="pwa.iosTitle"></h2>
+      <ol class="ios-steps">
+        <li data-i18n-html="pwa.iosStep1"></li>
+        <li data-i18n-html="pwa.iosStep2"></li>
+        <li data-i18n-html="pwa.iosStep3"></li>
+      </ol>
+      <p class="hint small" data-i18n="pwa.iosNote"></p>
+      <button class="btn btn-primary" id="btn-ios-ok" data-i18n="pwa.ok"></button>
+    </div>
+  </div>
+  <div id="rotate"><div class="rotate-icon">📱↻</div><p data-i18n="rotate"></p></div>
+
+  <script>window.SC_MAXED = true; // cuenta de prueba: todo desbloqueado (src/meta/maxed.js)</script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

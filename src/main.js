@@ -29,9 +29,11 @@ import { Pwa } from './core/pwa.js';
 import { CreditsScreen } from './ui/credits.js';
 import { AchievementsScreen } from './ui/achievements.js';
 import { Achievements } from './meta/achievements.js';
+import { applyMaxed } from './meta/maxed.js';
 
 // ---------- arranque ----------
 Save.load();
+applyMaxed(); // cuenta de prueba (maxeada.html o ?maxeada)
 Pwa.init();
 Quality.set(Save.data.settings.quality);
 const canvas = document.getElementById('canvas');

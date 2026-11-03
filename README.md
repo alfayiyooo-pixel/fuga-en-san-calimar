@@ -304,6 +304,8 @@ Los textos (ES/EN) están en [`src/i18n/translations.js`](src/i18n/translations.
 
 ### Opciones de prueba (en la URL)
 
+**Cuenta maxeada:** abre `maxeada.html` (o añade `?maxeada` a la URL) para empezar con 9.999.999 pavos, 99.999 💎, todo el vestuario comprado, mejoras al máximo, 99 consumibles de cada, 999 fichas, nivel 30 y prestigio X. Se rellena una sola vez y después se juega normal. En la misma web que tu partida normal la sustituye (exporta antes tu código en ⚙ Ajustes). Código en [`src/meta/maxed.js`](src/meta/maxed.js).
+
 | Parámetro | Efecto |
 |---|---|
 | `?debug` | FPS, velocidad, física, calor de búsqueda y zona; **panel de deslizadores** para ajustar la física del jetpack en vivo (botón «Copiar valores»); acceso a `game` desde la consola |
