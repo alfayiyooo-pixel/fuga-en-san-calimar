@@ -208,7 +208,16 @@ export const CONFIG = {
   // Capas de golpe: a pie → muerte · con jetpack → a pie · con personaje → jetpack.
   foot: {
     bucksMult: 2,           // multiplicador de pavos mientras no hayas cogido nunca el jetpack
-    jumpVel: 620,           // px/s de impulso del salto (toque ≈ 80 px de alto)
+    jumpVel: 620,           // px/s de impulso del PRIMER salto (toque ≈ 80 px de alto)
+    // DOBLE SALTO: segundo toque en el aire, con voltereta. Se recarga al tocar el suelo
+    // (no en vehículos). Con estos valores: salto largo ≈ 180 px, + doble ≈ 315 px de alto.
+    doubleJump: {
+      enabled: true,
+      vel: 520,             // px/s de impulso del SEGUNDO salto
+      holdTime: 0.15,       // s de "salto largo" del segundo salto (menos que el primero)
+      keepRise: 0.35,       // parte de la subida que se conserva si aún subías
+      flipTime: 0.45,       // s que dura la voltereta
+    },
     holdGravity: 0.42,      // gravedad mientras mantienes pulsado al subir (salto largo ≈ 180 px)
     holdTime: 0.3,          // s máximos de "salto largo"
     gravity: 2000,
@@ -233,6 +242,11 @@ export const CONFIG = {
       weightJet: 1.2,       // …y cuando llevas jetpack
       types: { fence: 1, trash: 1, parked: 0.8, awning: 0.55 },
       unlockAt: { fence: 0, trash: 0, parked: 60, awning: 100 },
+      // con el doble salto, para que sigan siendo un reto:
+      // serie de 2-3 obstáculos con el hueco justo para aterrizar y volver a saltar
+      series: { from: 120, chance: 0.35, count: [2, 2, 3], gapTime: [0.5, 0.8] }, // m, prob., nº, s de hueco a tu velocidad
+      // cable por encima: un salto normal pasa por debajo; un doble salto choca
+      ceilingCable: { from: 220, chance: 0.25, height: 272, overhang: 110 },     // m, prob., px sobre el suelo, px de más a cada lado
     },
   },
 

@@ -390,6 +390,12 @@ class AudioFx {
     this.tone({ freq: 300, type: 'square', dur: 0.1, vol: 0.06, slide: 1.8 });
   }
 
+  /** Doble salto: "fiu" ascendente + soplo de aire. */
+  doubleHop() {
+    this.tone({ freq: 420, type: 'triangle', dur: 0.14, vol: 0.07, slide: 2.4 });
+    this.noise({ dur: 0.16, vol: 0.08, freq: 1800, type: 'bandpass', q: 1.2, slide: 1.8 });
+  }
+
   tick() {
     this.tone({ freq: 2400, type: 'square', dur: 0.02, vol: 0.06 });
   }

@@ -289,6 +289,7 @@ export class Game {
 
       Sound.jet(p.vehicle || p.onFoot ? 0 : p.thrust);
       if (ev.jumped) Sound.hop();
+      if (ev.doubleJumped) this.doubleJumpFx(p);
       this.foot.update(dt, this);
       if (ev.landed && ev.impact > CONFIG.player.hardLanding) {
         Sound.thud(Math.min(1, ev.impact / 700));
@@ -657,6 +658,18 @@ export class Game {
         color: 'rgba(240, 210, 160, 0.7)',
         drag: 4,
       });
+    }
+  }
+
+  /** Efecto del doble salto: anillo de aire y chispas bajo los pies. */
+  doubleJumpFx(p) {
+    Sound.doubleHop();
+    this.stats.doubleJumps = (this.stats.doubleJumps ?? 0) + 1;
+    const y = p.bottom;
+    this.particles.spawn({ x: p.x, y, vx: -this.speed * 0.3, vy: 40, life: 0.35, size: 10, sizeEnd: 34, shape: 'ring', color: 'rgba(255, 255, 255, 0.85)', drag: 3 });
+    for (let k = 0; k < 8; k++) {
+      const a = Math.PI * (0.15 + 0.7 * (k / 7));
+      this.particles.spawn({ x: p.x, y, vx: Math.cos(a) * 160 - this.speed * 0.2, vy: Math.sin(a) * 120, life: rand(0.25, 0.4), size: rand(2, 4), color: k % 2 ? '#ffd23f' : '#fff4dc', drag: 4 });
     }
   }
 

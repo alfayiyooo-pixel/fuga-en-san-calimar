@@ -41,6 +41,8 @@ export class Player {
     this.jumpBuf = 0;
     this.coyote = 0;
     this.jumpHold = 0;
+    this.airJumps = 0;   // dobles saltos disponibles (se recargan al tocar el suelo)
+    this.flip = 0;       // s restantes de la voltereta del doble salto
   }
 
   /** Caja de colisión, algo más pequeña que el dibujo. */
@@ -59,6 +61,7 @@ export class Player {
     const D = CONFIG.death;
     this.dead = true;
     this.thrust = 0;
+    this.flip = 0;
     this.dvx = speed * D.keepSpeed;
     this.vy = -(D.popUp + speed * D.popPerSpeed);
     this.spinRate = 5 + speed / 60;
@@ -120,6 +123,7 @@ export class Player {
   update(dt, held, speed, groundY) {
     if (this.onFoot) return this.updateFoot(dt, held, speed, groundY);
     this.prevHeld = held;
+    this.flip = 0;
     const P = CONFIG.player;
     const m = this.mods;
     const events = { landed: false, impact: 0, bonk: false };
@@ -197,6 +201,7 @@ export class Player {
     this.thrust = 0;
     this.jumpBuf = pressed ? F.buffer : Math.max(0, this.jumpBuf - dt);
     this.coyote = this.onGround ? F.coyote : Math.max(0, this.coyote - dt);
+    if (this.onGround) this.airJumps = F.doubleJump.enabled ? 1 : 0;
     if (this.jumpBuf > 0 && this.coyote > 0) {
       this.vy = -F.jumpVel * (this.mods.jump ?? 1);
       this.onGround = false;
@@ -204,7 +209,17 @@ export class Player {
       this.jumpBuf = 0;
       this.jumpHold = F.holdTime;
       events.jumped = true;
+    } else if (pressed && !this.onGround && this.airJumps > 0 && !this.vehicle) {
+      // doble salto: un segundo toque en el aire (voltereta)
+      const D = F.doubleJump;
+      this.airJumps--;
+      this.vy = Math.min(this.vy, 0) * D.keepRise - D.vel * (this.mods.jump ?? 1);
+      this.jumpBuf = 0;
+      this.jumpHold = D.holdTime;
+      this.flip = D.flipTime;
+      events.doubleJumped = true;
     }
+    this.flip = Math.max(0, this.flip - dt);
     let grav = F.gravity;
     if (this.vy < 0) {
       if (held && this.jumpHold > 0) grav *= F.holdGravity;
@@ -233,6 +248,14 @@ export class Player {
     }
     this.finishStep(dt, speed);
     return events;
+  }
+
+  /** Giro de la voltereta del doble salto (una vuelta hacia delante). */
+  get flipAngle() {
+    if (this.flip <= 0) return 0;
+    const k = 1 - this.flip / CONFIG.foot.doubleJump.flipTime;
+    const e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2; // suave al entrar y al salir
+    return e * Math.PI * 2;
   }
 
   /** Rebote en un toldo (a pie). */
@@ -332,7 +355,7 @@ export class Player {
       ctx.translate(-4, -9);
       drawFugitive(ctx, this, t, this.style, this.look);
     } else {
-      ctx.rotate(this.dead ? this.spin : this.tilt);
+      ctx.rotate(this.dead ? this.spin : this.tilt + this.flipAngle);
       drawFugitive(ctx, this, t, this.style, this.look);
     }
     ctx.restore();

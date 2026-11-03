@@ -143,6 +143,34 @@ export class Spawner {
     return 'fence';
   }
 
+  /**
+   * Obstáculos de calle. A pie (con doble salto) a veces salen en SERIE, con
+   * el hueco justo para aterrizar y volver a saltar, y a veces con un CABLE
+   * por encima que no toca un salto normal pero sí un doble salto: hay que
+   * elegir bien cuándo usarlo.
+   */
+  spawnStreetGroup(g, x) {
+    const S = CONFIG.foot.street;
+    const first = this.chooseStreet(g);
+    if (!g.player.onFoot || first === 'awning') return spawnStreet(first, g, x);
+    const sp = Math.max(g.speed || 0, CONFIG.speed.start);
+    let cx = x;
+    let n = 1;
+    if (g.distance >= S.series.from && chance(S.series.chance)) n = pick(S.series.count);
+    for (let i = 0; i < n; i++) {
+      let tp = i === 0 ? first : this.chooseStreet(g);
+      if (tp === 'awning') tp = 'fence';
+      const w = spawnStreet(tp, g, cx) - 40;
+      cx += w + (i < n - 1 ? sp * rand(S.series.gapTime[0], S.series.gapTime[1]) : 0);
+    }
+    const C = S.ceilingCable;
+    if (g.distance >= C.from && chance(C.chance)) {
+      const len = cx - x + C.overhang * 2;
+      g.addObstacle(new Cable(x + (cx - x) / 2, g.view.groundY - C.height, len, 0));
+    }
+    return cx - x + 40;
+  }
+
   /** Crea el patrón y devuelve cuánto espacio horizontal ocupa. */
   spawn(type, g, x) {
     switch (type) {
@@ -151,7 +179,7 @@ export class Spawner {
       case 'cop':
         return spawnMinor('cop', g, x);
       case 'street':
-        return spawnStreet(this.chooseStreet(g), g, x);
+        return this.spawnStreetGroup(g, x);
       case 'hazard':
         return spawnHazard(this.chooseHazard(g), g, x);
       case 'car': {

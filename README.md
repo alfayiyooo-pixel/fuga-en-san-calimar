@@ -59,6 +59,8 @@ Al caer, el atracador sale despedido con la velocidad que llevaba: rebota, rueda
 ### A pie y jetpack opcional
 
 - **Empiezas a pie**: toque/ESPACIO = saltar (mantén pulsado para saltar más alto; con ~180 px superas un coche aparcado).
+- **Doble salto:** un segundo toque en el aire hace otro salto con voltereta y un soplo de aire (hasta ~315 px de alto). Se recarga al tocar el suelo; en patinete o carrito no hay doble salto. Fuerza del primer y segundo salto: `foot.jumpVel` y `foot.doubleJump.vel`.
+- Para que el suelo siga siendo un reto: los obstáculos de calle salen a veces **en serie** (2-3 seguidos, con el hueco justo para aterrizar y volver a saltar) y a veces con un **cable por encima** que un salto normal pasa por debajo pero un doble salto toca (`foot.street.series` y `foot.street.ceilingCable`).
 - A los **250-380 m** aparece el **jetpack** dentro de un grupo de pavos. Puedes ignorarlo: vuelve a salir cada 450-750 m mientras sigas a pie.
 - **Capas de golpe:** a pie → detenido · con jetpack → lo pierdes y sigues a pie · con un personaje → vuelves al jetpack.
 - **A PIE ×2:** mientras no hayas cogido nunca el jetpack, los pavos valen el doble (insignia verde en el HUD).
