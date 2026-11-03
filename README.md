@@ -179,6 +179,22 @@ Apartado **🏅 Logros** en el menú con 33 logros permanentes (distintos de las
 
 Precios en el bloque `shop` de `config.js`; artículos en [`src/meta/catalog.js`](src/meta/catalog.js).
 
+### Economía (precios y recompensas)
+
+Medida con el simulador [`tools/simular-economia.js`](tools/simular-economia.js) y el desglose de `?debug` en la pantalla final. Una **partida normal** (~1.200 m, jugador medio) da unos **1.600 pavos** en total (recorrido, multiplicador, a pie ×2, eventos, misiones, niveles y ruleta).
+
+| Artículo | Precio | Partidas normales |
+|---|---|---|
+| Accesorio común / raro | 8.000 / 12.000 | 5 / 7,5 |
+| Estela común / rara | 9.000 / 12.000-15.000 | 6-9 |
+| Efecto de transformación | 18.000 | 11 |
+| Traje común / raro | 12.000-14.000 / 18.000-20.000 | 7-12 |
+| Disfraces de pavos | 24.000-32.000 | 15-20 |
+| Mejora, niveles 1→5 | 2.500 · 5.500 · 9.000 · 13.000 · 18.000 (48.000) | ~30 por mejora |
+| Consumibles | escudo 1.000 · arranque 1.500 · transformado 1.800 · revivir 2.500 | ~1 |
+
+Recompensas: **50 × nivel** pavos al subir de nivel, misiones fácil 150 / media 350, ruleta 100 / 250 / 600 y helicóptero jefe 600. La tienda de pavos completa (unos 800.000) se termina hacia el **prestigio IV**; el primer prestigio llega hacia la partida 110. Los artículos de 💎 no cambian.
+
 ### Disfraces nuevos
 
 Dos disfraces nuevos por personaje (uno de pavos y uno legendario con 💎) y un extra de pavos cada uno, todos originales:

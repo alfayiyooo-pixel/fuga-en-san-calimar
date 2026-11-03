@@ -365,14 +365,14 @@ export const CONFIG = {
     spinTime: 3.6,        // s que gira
     // w = probabilidad relativa (los gajos se ven iguales)
     prizes: [
-      { id: 'bucks_s', bucks: 150, w: 26, color: '#5fcf7a' },
+      { id: 'bucks_s', bucks: 100, w: 26, color: '#5fcf7a' },
       { id: 'boost', w: 14, color: '#ff6b7d' },          // mejora temporal: imán al empezar la próxima partida
-      { id: 'bucks_m', bucks: 400, w: 16, color: '#2fa85a' },
+      { id: 'bucks_m', bucks: 250, w: 16, color: '#2fa85a' },
       { id: 'xp', xp: 150, w: 10, color: '#4fb3ff' },
       { id: 'revive', w: 12, color: '#7ff7e8' },          // sigues la partida (una vez por partida)
       { id: 'tickets', tickets: 2, w: 9, color: '#ffd23f' },
       { id: 'gems', gems: 3, w: 6, color: '#9ff8ff' },
-      { id: 'bucks_l', bucks: 1000, w: 5, color: '#1b7a3c' },
+      { id: 'bucks_l', bucks: 600, w: 5, color: '#1b7a3c' },
     ],
     boostMagnet: 15,      // s de imán de la mejora temporal
   },
@@ -506,7 +506,7 @@ export const CONFIG = {
     xpBase: 150,          // a partir del 2: xpBase + xpStep × (nivel − 1)
     xpStep: 50,
     metersPerXp: 10,      // 1 XP cada 10 m recorridos
-    levelBucks: 100,      // al subir a N: N × levelBucks pavos…
+    levelBucks: 50,       // al subir a N: N × levelBucks pavos…
     levelTickets: 1,      // …y fichas de ruleta
     gemLevels: { 5: 10, 10: 20, 15: 10, 20: 20, 25: 10, 30: 50 }, // diamantes extra
     voucherLevels: [10, 20], // vale de "artículo de pavos gratis"
@@ -519,8 +519,8 @@ export const CONFIG = {
     active: 3,
     discardHours: 24,     // se puede descartar una misión gratis cada N horas
     rewards: {
-      easy: { bucks: 200, xp: 40, tickets: 1 },
-      medium: { bucks: 500, xp: 80, tickets: 2 },
+      easy: { bucks: 150, xp: 40, tickets: 1 },
+      medium: { bucks: 350, xp: 80, tickets: 2 },
       hard: { gems: 10, xp: 150, tickets: 3 },
     },
     // tipo → objetivo (las misiones son de una sola partida)
@@ -571,7 +571,7 @@ export const CONFIG = {
   // ---------------- TIENDA ----------------
   shop: {
     // Mejoras permanentes (pavos). Coste del nivel 1→5:
-    upgradeCosts: [300, 700, 1500, 3000, 6000],
+    upgradeCosts: [2500, 5500, 9000, 13000, 18000], // 48.000 por mejora ≈ 30 partidas
     upgrades: {
       gadgetTime: { perLevel: 0.10 },      // +10% de duración de gadgets por nivel
       capsule: { perLevel: 0.15 },         // +15% de probabilidad de cápsula
@@ -581,10 +581,10 @@ export const CONFIG = {
     },
     // Consumibles de un solo uso (se activan antes de la partida)
     consumables: {
-      headstart: { price: 500, meters: 500, speedMult: 4.5 }, // arranque rápido
-      shield: { price: 350 },              // escudo inicial (aguanta un golpe)
-      transform: { price: 600 },           // empezar transformado (personaje aleatorio)
-      revive: { price: 900, invuln: 2.5 }, // revivir una vez
+      headstart: { price: 1500, meters: 500, speedMult: 4.5 }, // arranque rápido
+      shield: { price: 1000 },              // escudo inicial (aguanta un golpe)
+      transform: { price: 1800 },           // empezar transformado (personaje aleatorio)
+      revive: { price: 2500, invuln: 2.5 }, // revivir una vez
     },
     // Packs de diamantes con dinero real — MODO SIMULADO (no se cobra nada)
     payments: { enabled: false, currency: 'EUR' },

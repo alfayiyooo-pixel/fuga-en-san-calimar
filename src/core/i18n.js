@@ -1,7 +1,7 @@
 import { TRANSLATIONS, LANGUAGES } from '../i18n/translations.js';
 
 let current = 'es';
-let numberFmt = new Intl.NumberFormat('es-ES');
+let numberFmt = new Intl.NumberFormat('es-ES', { useGrouping: 'always' });
 const listeners = new Set();
 
 export function detectLanguage() {
@@ -15,7 +15,7 @@ export function getLang() {
 
 export function setLang(lang) {
   current = LANGUAGES.includes(lang) ? lang : 'es';
-  numberFmt = new Intl.NumberFormat(current === 'es' ? 'es-ES' : 'en-US');
+  numberFmt = new Intl.NumberFormat(current === 'es' ? 'es-ES' : 'en-US', { useGrouping: 'always' });
   document.documentElement.lang = current;
   applyToDom();
   listeners.forEach((fn) => fn(current));
