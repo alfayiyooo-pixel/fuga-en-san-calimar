@@ -80,6 +80,18 @@ export const CONFIG = {
 
   // ---------------- FASE B ----------------
 
+  // ---------------- RANKING GLOBAL (Supabase) ----------------
+  // url: la "Project URL" de Supabase · key: la clave pública (anon / publishable).
+  // La clave pública puede ir en el código: las reglas del servidor
+  // (supabase/ranking.sql) solo dejan llamar a las funciones del ranking.
+  online: {
+    enabled: true,
+    url: 'https://xvbehjkjqwrxeudnpdeo.supabase.co',
+    key: 'sb_publishable_FGZV6-OY1fBdo6jiUf2hJA_xqYxjZva',
+    timeout: 8000,          // ms antes de dar la petición por perdida
+    minDistance: 50,        // m mínimos para subir una partida
+  },
+
   // ---------------- VIDA EN EL FONDO ----------------
   // Personas, coches, barcos, aviones… que cruzan el decorado sin interactuar.
   ambient: {

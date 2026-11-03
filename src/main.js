@@ -30,10 +30,13 @@ import { CreditsScreen } from './ui/credits.js';
 import { AchievementsScreen } from './ui/achievements.js';
 import { Achievements } from './meta/achievements.js';
 import { applyMaxed } from './meta/maxed.js';
+import { Online } from './online/ranking.js';
+import { RankingScreen, NickDialog, accountCard } from './ui/ranking.js';
 
 // ---------- arranque ----------
 Save.load();
 applyMaxed(); // cuenta de prueba (maxeada.html o ?maxeada)
+Online.init(); // ranking: reintenta subir lo pendiente
 Pwa.init();
 Quality.set(Save.data.settings.quality);
 const canvas = document.getElementById('canvas');
@@ -228,6 +231,56 @@ screens.on('btn-shop', () => {
   openShop('items');
 });
 
+// ---------- ranking mundial y apodo ----------
+const nickDialog = new NickDialog({ toast: (m) => toast(m) });
+const openNick = (mode, after) => nickDialog.open(mode, {
+  onDone: (r) => {
+    if (r?.submit) applyRankResult(r.submit);
+    after?.(r);
+  },
+});
+const rankScreen = new RankingScreen(document.getElementById('screen-ranking'), { onClose: () => toMenu(), nick: openNick });
+screens.on('btn-ranking', () => {
+  Sound.click();
+  state = 'menu';
+  screens.show('ranking');
+  applyToDom(document.getElementById('screen-ranking'));
+  rankScreen.open();
+  // la primera vez que se abre sin cuenta, se ofrece el apodo (se puede cerrar)
+  if (!Online.account && !Online.data.asked) {
+    Online.data.asked = true;
+    Save.save();
+    openNick('create', () => rankScreen.load(true));
+  }
+});
+
+/** Resultado de subir la puntuación: puesto en la portada y en la pantalla final. */
+function applyRankResult(r) {
+  if (!lastResult || !r) return;
+  lastResult.online = 'ranked';
+  lastResult.rank = { all: r.rank_all, week: r.rank_week };
+  if (lastResult.paper) lastResult.paper.rank = r.rank_all;
+  renderOverOnline(true);
+}
+
+/** Bloque del ranking en la pantalla final. */
+function renderOverOnline(repaintPaper = false) {
+  const el = document.getElementById('over-online');
+  const r = lastResult;
+  if (!el || !r) return;
+  let html = '';
+  if (r.online === 'ranked' && r.rank) html = `<div class="rank-line">${t('over.rankDone', { n: fmt(r.rank.all) })} <span class="small">${t('over.rankWeek', { n: fmt(r.rank.week) })}</span></div>`;
+  else if (r.online === 'sending') html = `<div class="rank-line dim">${t('over.rankSending')}</div>`;
+  else if (r.online === 'pending') html = `<div class="rank-line dim">${t('over.rankPending')}</div>`;
+  else if (r.online === 'nick') html = `<div class="rank-line">${t('over.rankPrompt')} <button class="btn small btn-primary" id="btn-over-nick">${t('over.rankBtn')}</button></div>`;
+  el.innerHTML = html;
+  el.querySelector('#btn-over-nick')?.addEventListener('click', () => {
+    Sound.click();
+    openNick('create');
+  });
+  if (repaintPaper && r.paper && r.news) document.getElementById('over-paper').innerHTML = paperHtml(r.paper, r.news);
+}
+
 // ---------- logros ----------
 const achScreen = new AchievementsScreen(document.getElementById('screen-achievements'), { onClose: () => toMenu() });
 screens.on('btn-achievements', () => {
@@ -285,6 +338,7 @@ Pwa.onChange((what) => {
   if (what === 'installed') toast(t('pwa.thanks'));
   refreshInstall();
 });
+settings.addCard(accountCard({ nick: (mode, after) => openNick(mode, after), toast }));
 settings.addCard(appCard({ onInstall: doInstall, onIosHelp: doInstall, toast }));
 refreshInstall();
 
@@ -491,6 +545,18 @@ function endRun() {
     photo: game.photo,
   };
   lastResult.news = makeHeadline(lastResult.paper);
+  // ranking mundial: si mejoras tu marca, se sube sola (o queda pendiente)
+  const sub = Online.recordRun({ distance: d, duration: game.runTime, hero: owner, prestige: Save.data.prestige });
+  lastResult.online = sub.queued ? (Online.account ? 'sending' : 'nick') : null;
+  const thisRun = lastResult;
+  sub.done.then((res) => {
+    if (lastResult !== thisRun) return;
+    if (res) applyRankResult(res);
+    else if (thisRun.online === 'sending') {
+      thisRun.online = 'pending';
+      renderOverOnline();
+    }
+  });
   // economía (?debug): pavos por fuente, incluidos los de fuera de la partida
   lastResult.econ = {
     ...game.earnings,
@@ -554,6 +620,7 @@ function fillOver(animate = false) {
     Progression.canPrestige ? `<div class="lvl-up">${t('over.prestigeReady')}</div>` : '',
     hud.debug && r.econ ? `<div class="econ-debug">💵 ${Object.entries(r.econ).filter(([, v]) => v).map(([k, v]) => `${k} ${Math.round(v)}`).join(' · ')} · <b>total ${Math.round(Object.values(r.econ).reduce((a, b) => a + b, 0))}</b></div>` : '',
   ].join('');
+  renderOverOnline();
   screens.fillGameOver({
     distance: lastResult.d,
     best: Save.data.best.distance,

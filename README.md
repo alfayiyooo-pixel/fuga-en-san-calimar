@@ -293,6 +293,52 @@ De vez en cuando un locutor comenta la huida (con un rótulo de noticias abajo).
 
 Opcional: variantes `radio_<momento>_2_<idioma>.mp3`, `_3_`, `_4_`; el juego elige una al azar entre las que existan.
 
+## Ranking mundial y cuentas
+
+### Cómo funciona
+- **Cuenta = solo un apodo.** Sin email ni contraseña. Se pide la primera vez que abres **🏆 Ranking** o cuando bates un récord (en la pantalla final), pero siempre se puede cerrar y jugar sin cuenta.
+- Apodos **únicos** (sin distinguir mayúsculas), de **3 a 16** caracteres (letras, números, espacios y `_ . -`), con **filtro de palabras ofensivas** en español e inglés. El filtro está en el juego (`src/online/ranking.js`) y también en el servidor, que es quien decide.
+- Al crearla se muestra un **código de recuperación** (`XXXX-XXXX-XXXX`) que sirve para usar la cuenta en otro dispositivo (**⚙ Ajustes → 🏆 Cuenta del ranking → Usar un código**). Se puede volver a ver en Ajustes. En el servidor solo se guarda cifrado (SHA-256).
+- **No se guarda ningún dato personal** más allá del apodo: ni IP, ni email, ni identificadores del dispositivo.
+- **Ranking:** top 100 por distancia, con pestañas **Todos los tiempos** y **Esta semana** (se reinicia cada lunes a las 00:00, hora de España). Cada fila: posición, apodo, distancia, personaje con el que se consiguió e insignia de prestigio. Tu posición se ve siempre abajo, aunque no estés en el top.
+- Al terminar una partida, si mejoras tu marca (de siempre o de la semana), **se sube sola** y la portada del periódico dice en qué puesto has quedado. **Sin conexión** se guarda y se sube después (al volver la conexión, al abrir el juego o al abrir el ranking). Si aún no tienes apodo, queda guardada y se sube al crearlo.
+
+### Montarlo en Supabase (una vez)
+1. Entra en [supabase.com](https://supabase.com), abre tu proyecto y ve a **SQL Editor → New query**.
+2. Copia **todo** el archivo [`supabase/ranking.sql`](supabase/ranking.sql), pégalo y pulsa **Run**. Debe terminar con *Success. No rows returned*. Se puede volver a ejecutar sin perder datos (recrea las funciones).
+3. Comprueba en **Table Editor** que aparecen `players` y `scores` con la etiqueta **RLS enabled**.
+4. Ya está: la dirección del proyecto y la clave pública están en `config.js` → bloque `online` (`url` y `key`). La clave pública puede ir en el código: con ella solo se pueden llamar las 5 funciones del ranking.
+5. Pruébalo: abre el juego → 🏆 Ranking → elige un apodo → juega una partida de más de 50 m.
+
+### Seguridad y antitrampas
+- Las tablas tienen **RLS activado sin ninguna política** y sin permisos para el rol público: con la clave pública no se pueden leer, escribir, cambiar ni borrar filas directamente. Todo pasa por 5 funciones: `create_player`, `recover_player`, `submit_score`, `leaderboard` y `my_rank`.
+- Para subir una puntuación hay que dar el **código secreto de la cuenta**: nadie puede subir, cambiar ni borrar puntuaciones de otro.
+- `submit_score` rechaza las **puntuaciones imposibles**: más metros de los que permite la duración de la partida a la velocidad máxima del juego (25,6 m/s × 1,25 de margen + 600 m del arranque rápido), partidas de menos de 3 s o de más de 6 h, personajes o prestigios que no existen. Y como mucho **3 envíos por minuto** por jugador. También limita la creación de cuentas a 30 por minuto en total.
+- Los límites están en la función `sc_limits()` del SQL. Si cambias la velocidad máxima del juego (`speed.max` en `config.js`), cámbiala también ahí.
+- Es un antitrampas **básico**: alguien que modifique el juego podría enviar partidas inventadas pero creíbles. Para eso está el borrado manual.
+
+### Borrar a un tramposo
+En Supabase → **SQL Editor** (cambia `Apodo` por el suyo):
+```sql
+-- ver sus puntuaciones
+select s.id, s.distance, s.duration, s.hero, s.created_at
+from scores s join players p on p.id = s.player_id
+where lower(p.nick) = lower('Apodo') order by s.distance desc;
+
+-- recomendado: ocultarlo del ranking y bloquear sus envíos (conserva el apodo ocupado)
+update players set banned = true where lower(nick) = lower('Apodo');
+
+-- borrar solo una puntuación concreta (el id de la consulta de arriba)
+delete from scores where id = 123;
+
+-- borrarlo del todo, con todas sus puntuaciones (el apodo queda libre)
+delete from players where lower(nick) = lower('Apodo');
+
+-- perdonarlo
+update players set banned = false where lower(nick) = lower('Apodo');
+```
+También se puede hacer desde **Table Editor**: tabla `players` → busca el apodo → marca `banned` o borra la fila.
+
 ## Gráficos y rendimiento
 
 **Detalle visual (calidad alta):** variaciones en palmeras (altura, inclinación, grosor, hojas y cocos), sombrillas (tamaño, gajos, toallas), casetas, árboles, setos, contenedores y bidones; rayos de sol suaves; destellos del sol y la luna en el agua, olas que llegan a la orilla y espuma que sube y baja; huellas, conchas y ondas en la arena; vetas, grava, manchas y grietas en el suelo; perspectiva atmosférica (las capas lejanas más claras); y un **primer plano** desenfocado (hierba, postes, arbustos, tuberías, cajas…) que pasa rápido por la franja de abajo sin tapar los obstáculos. El personaje se dibuja un 15 % más grande que su caja de choque, con un contorno luminoso suave y estiramiento/aplastamiento al saltar y aterrizar (`player.visual`). Los contadores tienen un fondo semitransparente y la barra de Radio Calimar es más compacta y va pegada al borde inferior.

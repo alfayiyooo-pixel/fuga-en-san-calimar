@@ -63,7 +63,7 @@ export function paperHtml(n, news) {
     <h3 class="paper-head">${esc(news.headline)}</h3>
     <div class="paper-body">
       ${n.photo ? `<img class="paper-photo" src="${n.photo}" alt="">` : '<div class="paper-photo empty"></div>'}
-      <p class="paper-sub">${esc(news.sub)}<br><em>${esc(n.causeText)}</em></p>
+      <p class="paper-sub">${esc(news.sub)}<br><em>${esc(n.causeText)}</em>${n.rank ? `<br><b class="paper-rank">${esc(t('news.rank', { n: fmt(n.rank) }))}</b>` : ''}</p>
     </div>`;
 }
 
@@ -139,7 +139,7 @@ export async function paperImage(n, news) {
   // foto
   const img = await loadImage(n.photo);
   const py = y + 10;
-  const ph = Math.min(520, H - 290 - py); // deja sitio al pie de foto
+  const ph = Math.min(520, H - (n.rank ? 330 : 290) - py); // deja sitio al pie de foto (y al puesto del ranking)
   ctx.save();
   ctx.beginPath();
   ctx.rect(70, py, W - 140, ph);
@@ -166,6 +166,10 @@ export async function paperImage(n, news) {
   for (const l of wrap(ctx, `${news.sub} ${n.causeText}`, W - 160)) {
     ctx.fillText(l, W / 2, yy);
     yy += 36;
+  }
+  if (n.rank) {
+    ctx.font = "bold 30px Georgia, serif";
+    ctx.fillText(t('news.rank', { n: fmt(n.rank) }), W / 2, yy + 4);
   }
   ctx.fillRect(60, H - 150, W - 120, 2);
   ctx.font = "bold 34px Georgia, serif";
