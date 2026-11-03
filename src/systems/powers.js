@@ -194,7 +194,7 @@ export class Powers {
       this.activate(tk.item, g);
     } else {
       // icono de otro personaje (lo perdiste antes de cogerlo): pequeño premio
-      g.bucks += 5;
+      g.earn('tokens', 5);
       g.popups.add('+5', tk.x - g.camera.x, tk.y - 20, { color: '#ffd23f', size: 22 });
     }
   }

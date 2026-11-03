@@ -192,7 +192,7 @@ export class Boss {
     g.stats.bossWins = (g.stats.bossWins ?? 0) + 1;
     // recompensa
     const R = B.reward;
-    g.bucks += R.bucks;
+    g.earn('boss', R.bucks);
     g.gemsRun += R.gems;
     g.xpRun += R.xp;
     g.wanted.drain(9999, 0);

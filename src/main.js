@@ -489,6 +489,17 @@ function endRun() {
     photo: game.photo,
   };
   lastResult.news = makeHeadline(lastResult.paper);
+  // economía (?debug): pavos por fuente, incluidos los de fuera de la partida
+  lastResult.econ = {
+    ...game.earnings,
+    missions: claimed.reduce((a, c) => a + (c.reward.bucks ?? 0), 0),
+    levels: ups.reduce((a, u) => a + (u.reward.bucks ?? 0), 0),
+    roulette: roulettePrize?.bucks ?? 0,
+  };
+  if (hud.debug) {
+    (window.__econRuns ??= []).push({ d, ...lastResult.econ });
+    console.table(lastResult.econ);
+  }
   refreshWallet();
   fillOver(true);
   screens.show('over');
@@ -539,6 +550,7 @@ function fillOver(animate = false) {
     ...r.ups.map((u) => `<div class="lvl-up">${t('over.levelUp', { n: u.level })} ${rewardText(u.reward)}</div>`),
     ...r.claimed.map((c) => `<div class="m-line">✔ ${missionText(c.def)} · ${rewardText(c.reward)}</div>`),
     Progression.canPrestige ? `<div class="lvl-up">${t('over.prestigeReady')}</div>` : '',
+    hud.debug && r.econ ? `<div class="econ-debug">💵 ${Object.entries(r.econ).filter(([, v]) => v).map(([k, v]) => `${k} ${Math.round(v)}`).join(' · ')} · <b>total ${Math.round(Object.values(r.econ).reduce((a, b) => a + b, 0))}</b></div>` : '',
   ].join('');
   screens.fillGameOver({
     distance: lastResult.d,

@@ -185,6 +185,7 @@ export class Tokens {
       this.rainAcc -= 1;
       const x = g.camera.x + g.view.w * rand(0.35, 1.15);
       const tk = this.add(x, -20, chance(goldChance) ? 'gold' : 'bill');
+      tk.src = g.respite.active ? 'respite' : 'events';
       tk.vy = rand(60, 160);
       tk.falling = true;
     }
@@ -285,8 +286,16 @@ export class Tokens {
     }
 
     // el multiplicador por esquivas al límite multiplica lo que ganas
-    const value = T.values[tk.kind] * g.combo.level * g.events.bucksMult * g.foot.mult(g);
-    g.bucks += value;
+    const base = T.values[tk.kind];
+    const c = g.combo.level;
+    const e = g.events.bucksMult;
+    const f = g.foot.mult(g);
+    const value = base * c * e * f;
+    // desglose por fuente: base (o evento/respiro), multiplicador, evento ×2, a pie ×2
+    g.earn(tk.src ?? 'tokens', base);
+    g.earn('combo', base * (c - 1));
+    g.earn('events', base * c * (e - 1));
+    g.earn('foot', base * c * e * (f - 1));
     if (tk.kind !== 'bill' || this.chain % CONFIG.score.flyEvery === 0) g.hud.flyToCounter(sx, tk.y, tk.kind);
     else g.hud.bumpBucks(false);
     this.chain++;

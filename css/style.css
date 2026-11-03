@@ -982,3 +982,4 @@ canvas {
 .ach-bar span { display: block; height: 100%; background: #9ff8ff; }
 .ach-prog, .ach-date { font-size: calc(10px * var(--s)); color: #9ff8ff; margin-top: 2px; }
 .ach-reward { font-family: 'Bungee', Impact, sans-serif; font-size: calc(12px * var(--s)); color: #9ff8ff; }
+.econ-debug { font: 11px ui-monospace, monospace; color: #7cffb2; background: rgba(0,0,0,0.4); padding: 4px 8px; border-radius: 6px; }

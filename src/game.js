@@ -113,6 +113,8 @@ export class Game {
     this.photo = null;
     this.photoRequest = false;
     this.saved = false;
+    // pavos ganados por fuente (para medir la economía con ?debug)
+    this.earnings = { tokens: 0, combo: 0, foot: 0, events: 0, minors: 0, boss: 0, respite: 0 };
     this.radioIntro = true;
     this.cause = null;
     this.flash = 0;
@@ -524,6 +526,12 @@ export class Game {
     }
   }
 
+  /** Suma pavos de la partida apuntando su fuente. */
+  earn(source, amount) {
+    this.bucks += amount;
+    this.earnings[source] = (this.earnings[source] ?? 0) + amount;
+  }
+
   /** Enemigo menor derrotado: sale volando, efecto cómico y pequeña recompensa. */
   defeatMinor(o) {
     const M = CONFIG.minors;
@@ -531,7 +539,7 @@ export class Game {
     minorKoFx(o, this);
     this.camera.addShake(0.15);
     const bucks = Math.round(rand(M.reward.bucks[0], M.reward.bucks[1]) * this.combo.level * this.events.bucksMult);
-    this.bucks += bucks;
+    this.earn('minors', bucks);
     this.xpRun += M.reward.xp;
     this.stats.minors++;
     if (o.type === 'drone') this.stats.drones++;

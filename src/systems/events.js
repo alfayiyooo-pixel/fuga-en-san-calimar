@@ -112,7 +112,7 @@ export class Events {
     this.timer = rand(...CONFIG.events.interval);
     if (id === 'chase' && success && !g.dead) {
       const r = CONFIG.events.chase.reward;
-      g.bucks += r;
+      g.earn('events', r);
       g.hud.bumpBucks(true);
       g.popups.add(t('event.chase.done', { n: r }), g.view.w / 2, 200, { color: '#9dffb5', size: 26, life: 1.8, rise: 10 });
       Sound.fanfare();
@@ -178,6 +178,7 @@ export class Events {
     const oy = gy - T.h + 10;
     const add = (kind) => {
       const tk = g.tokens.add(ox + rand(-10, 30), oy, kind);
+      tk.src = 'events';
       tk.falling = true;
       tk.vy = rand(-620, -320);
       tk.vx = rand(0, 260) + g.speed * 1.1; // hacia delante, para que caiga en tu camino
