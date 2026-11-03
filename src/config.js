@@ -520,8 +520,22 @@ export const CONFIG = {
   },
 
   death: {
-    slowdown: 2.2,      // frenada tras el golpe
-    overDelay: 1.5,     // s hasta la pantalla final
     slowmo: 0.3,        // velocidad del mundo justo al morir (cámara lenta que se recupera)
+    // física del cuerpo: sale despedido con la velocidad que llevaba
+    keepSpeed: 0.85,    // fracción de la velocidad que conserva
+    popUp: 260,         // impulso vertical base (px/s)…
+    popPerSpeed: 0.45,  // …más esto × velocidad
+    restitution: 0.42,  // rebote (0-1)
+    bounceMin: 140,     // por debajo de esta velocidad vertical ya no rebota
+    bounceKeep: 0.82,   // velocidad horizontal que conserva en cada rebote
+    friction: 380,      // rozamiento al deslizar (px/s²): 350 px/s → ~160 px; 820 → ~900 px
+    rollUntil: 110,     // por encima rueda; por debajo se queda tumbado
+    rollRadius: 16,     // radio para el giro al rodar
+    maxSlide: 4,        // s máximos antes de la detención
+    arrest: {
+      arriveTime: 1.0,  // s que tarda la policía en rodearte
+      duration: 2.8,    // s de escena hasta la pantalla final
+      subtitles: 6,     // nº de subtítulos cómicos (arrest.sub1…)
+    },
   },
 };

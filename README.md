@@ -52,6 +52,10 @@ El juego es una **app web instalable**: se abre a **pantalla completa** desde su
 
 Cada partida empieza con una escena de ~5 s: un furgón blindado del Banco Lingote con las puertas abiertas y la alarma sonando; el atracador salta con la bolsa de dinero y echa a correr. Al aparecer **«¡CORRE!»** tomas el control (un toque tras el primer segundo salta la escena). Se empieza con **1★**. Policía floja al principio: hasta 500 m solo agentes a pie y algún coche lento; de 500 a 1.000 m algo más (misiles ocasionales); después, la curva normal (`intro` y `wanted.ease` en `config.js`).
 
+### Detención
+
+Al caer, el atracador sale despedido con la velocidad que llevaba: rebota, rueda y se desliza por el suelo con rozamiento (a más velocidad, más lejos: ~400 px yendo despacio, más de 1.200 px a toda velocidad). Cuando se para, dos agentes llegan corriendo, frena una patrulla, los billetes salen volando de la bolsa y aparece un gran sello **«¡DETENIDO!»** con un subtítulo de guasa. Sin sangre. Valores en `death` de `config.js`.
+
 ### A pie y jetpack opcional
 
 - **Empiezas a pie**: toque/ESPACIO = saltar (mantén pulsado para saltar más alto; con ~180 px superas un coche aparcado).

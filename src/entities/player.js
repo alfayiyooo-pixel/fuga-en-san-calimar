@@ -51,33 +51,57 @@ export class Player {
     return { l: this.x - hw, r: this.x + hw, t: this.y - hh, b: this.y + hh };
   }
 
-  /** Golpe mortal: sale despedido girando. */
-  kill() {
+  /**
+   * Golpe mortal: sale despedido con la velocidad que llevaba.
+   * Cuanto más rápido iba, más alto sale, más rebota y más lejos rueda.
+   */
+  kill(speed = 350) {
+    const D = CONFIG.death;
     this.dead = true;
     this.thrust = 0;
-    this.vy = -520;
-    this.spinRate = 9;
+    this.dvx = speed * D.keepSpeed;
+    this.vy = -(D.popUp + speed * D.popPerSpeed);
+    this.spinRate = 5 + speed / 60;
+    this.stopped = false;
+    this.bagLost = false;
   }
 
-  /** Física del cuerpo tras el golpe: rebota y rueda hasta pararse. */
-  updateDead(dt, speed, groundY) {
+  /**
+   * Física del cuerpo tras el golpe: vuelo, rebotes con pérdida de energía,
+   * rodar por el suelo (giro = avance / radio) y deslizar con rozamiento.
+   * Devuelve 'bounce' | 'slide' | null.
+   */
+  updateDead(dt, groundY) {
+    const D = CONFIG.death;
     this.vy += CONFIG.player.gravity * dt;
     this.y += this.vy * dt;
-    this.x += speed * dt;
-    this.spin += this.spinRate * dt;
-    const bottom = groundY - this.h / 2 + 8;
-    if (this.y > bottom) {
+    this.x += this.dvx * dt;
+    const bottom = groundY - this.h / 2 + 12;
+    let ev = null;
+    if (this.y >= bottom) {
       this.y = bottom;
-      if (this.vy > 160) {
-        this.vy *= -0.38;
-        this.spinRate *= 0.6;
-        return true; // rebote
+      if (this.vy > D.bounceMin) {
+        this.vy *= -D.restitution;
+        this.dvx *= D.bounceKeep;
+        ev = 'bounce';
+      } else {
+        this.vy = 0;
+        this.onGround = true;
+        this.dvx = Math.max(0, this.dvx - D.friction * dt);
+        ev = this.dvx > 30 ? 'slide' : null;
       }
-      this.vy = 0;
-      this.spinRate *= Math.exp(-6 * dt);
-      this.onGround = true;
+      // en el suelo rueda mientras va rápido; despacio, se queda tumbado
+      if (this.dvx > D.rollUntil) {
+        this.spinRate = this.dvx / D.rollRadius;
+      } else {
+        const lie = Math.round((this.spin - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2;
+        this.spin += (lie - this.spin) * Math.min(1, dt * 8);
+        this.spinRate = 0;
+      }
     }
-    return false;
+    this.spin += this.spinRate * dt;
+    if (this.onGround && this.dvx <= 4 && this.vy === 0) this.stopped = true;
+    return ev;
   }
 
   get left() { return this.x - this.w / 2; }

@@ -106,10 +106,12 @@ export function drawFugitive(ctx, p, t, styleId = 'base', look = null) {
 
   // ---- jetpack ----
   if (p.onFoot) {
-    ctx.save();
-    ctx.rotate(P.lean * 0.5);
-    drawBag(ctx, P.bob, t, p.anim ?? 0);
-    ctx.restore();
+    if (!p.bagLost) {
+      ctx.save();
+      ctx.rotate(P.lean * 0.5);
+      drawBag(ctx, P.bob, t, p.anim ?? 0);
+      ctx.restore();
+    }
   } else if (!p.riding) {
     ctx.save();
     ctx.rotate(P.lean * 0.5);

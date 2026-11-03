@@ -21,6 +21,7 @@ import { drawGlow } from './fx/sprites.js';
 import { minorKoFx } from './entities/minors.js';
 import { Foot } from './systems/foot.js';
 import { Intro } from './systems/intro.js';
+import { Arrest } from './systems/arrest.js';
 
 /** Pista de música de una zona. */
 export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
@@ -50,6 +51,7 @@ export class Game {
     this.events = new Events();
     this.foot = new Foot();
     this.intro = new Intro();
+    this.arrest = new Arrest();
     this.record = 0; // récord de distancia al empezar la partida (lo pone main.js)
     this.buffer = document.createElement('canvas');
     this.t = 0;
@@ -97,6 +99,7 @@ export class Game {
     this.dead = false;
     this.over = false;
     this.deathTimer = 0;
+    this.arrest.reset();
     this.cause = null;
     this.flash = 0;
     this.fadeIn = 1;
@@ -225,12 +228,22 @@ export class Game {
       // cámara lenta dramática al principio de la caída
       const sdt = dt * Math.min(1, CONFIG.death.slowmo + this.deathTimer * 1.5);
       this.deathTimer += dt;
-      this.speed *= Math.exp(-CONFIG.death.slowdown * sdt);
-      if (p.updateDead(sdt, this.speed, this.view.groundY)) {
-        this.camera.addShake(0.15);
-        this.dust(p.x, p.bottom, 8);
+      if (!this.arrest.active) {
+        const ev = p.updateDead(sdt, this.view.groundY);
+        this.speed = p.dvx;
+        if (ev === 'bounce') {
+          this.camera.addShake(0.2);
+          this.dust(p.x, p.bottom, 10);
+          Sound.thud(0.8);
+        } else if (ev === 'slide' && Math.random() < sdt * 30) {
+          this.dust(p.x - 10, p.bottom - 4, 1);
+        }
+        if (p.stopped || this.deathTimer > CONFIG.death.maxSlide) this.arrest.start(this);
+      } else {
+        this.speed = 0;
+        this.arrest.update(dt, this);
+        if (this.arrest.done) this.over = true;
       }
-      if (this.deathTimer > CONFIG.death.overDelay) this.over = true;
       input.consumePresses();
     } else {
       this.runTime += dt;
@@ -523,8 +536,11 @@ export class Game {
     this.dead = false;
     this.over = false;
     this.deathTimer = 0;
+    this.arrest.reset();
     this.cause = null;
     p.dead = false;
+    p.bagLost = false;
+    p.stopped = false;
     p.spin = 0;
     p.spinRate = 0;
     p.y = this.view.groundY - 220;
@@ -569,7 +585,7 @@ export class Game {
     this.powers.applyMods(this.player);
     this.dead = true;
     this.cause = obstacle.type;
-    this.player.kill();
+    this.player.kill(this.speed);
     if (obstacle.type === 'bullet' || obstacle.type === 'missile') obstacle.alive = false;
     this.camera.addShake(0.85);
     this.flash = 1;
@@ -646,8 +662,10 @@ export class Game {
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
     if (!menu) this.tokens.draw(ctx, cam.x, this);
     this.particles.draw(ctx, cam.x);
+    if (!menu) this.arrest.draw(ctx, cam.x, this);
     if (showPlayer && this.intro.playerVisible) this.player.draw(ctx, cam.x, this.t);
     for (const o of this.obstacles) o.overlay(ctx, this);
+    this.arrest.overlay(ctx, this);
     ctx.restore();
 
     this.popups.draw(ctx);

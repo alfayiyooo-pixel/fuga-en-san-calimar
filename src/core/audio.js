@@ -514,6 +514,26 @@ class AudioFx {
     for (let k = 0; k < 4; k++) this.tone({ freq: k % 2 ? 1400 : 1150, type: 'square', dur: 0.06, vol: 0.06, delay: k * 0.065 });
   }
 
+  /** Silbato de policía. */
+  whistle() {
+    this.tone({ freq: 2600, type: 'sine', dur: 0.5, vol: 0.08, vib: 0 });
+    this.tone({ freq: 2650, type: 'square', dur: 0.45, vol: 0.02 });
+  }
+
+  /** Sello de goma contra el papel. */
+  stamp() {
+    this.tone({ freq: 95, type: 'sine', dur: 0.3, vol: 0.4, slide: 0.5 });
+    this.noise({ dur: 0.12, vol: 0.4, freq: 900 });
+  }
+
+  /** "Womp womp" de trombón triste (cómico). */
+  wompWomp() {
+    [[311, 0.35], [294, 0.35], [277, 0.35], [262, 0.9]].reduce((d, [f, len]) => {
+      this.tone({ freq: f, type: 'sawtooth', dur: len, vol: 0.07, delay: d + 0.25, attack: 0.03, slide: len > 0.5 ? 0.94 : 1 });
+      return d + len * 0.85;
+    }, 0);
+  }
+
   // ---------- enemigos menores ----------
   /** Ladrido: dos golpes de sierra con filtro de vocal. */
   bark() {
