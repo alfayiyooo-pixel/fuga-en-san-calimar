@@ -194,13 +194,13 @@ export const CONFIG = {
 
   // ---------------- ESCENA INICIAL ----------------
   intro: {
-    duration: 5,            // s de escena antes de tomar el control
-    jumpAt: 0.9,            // s: el atracador salta del furgón
-    accelTime: 1.0,         // s hasta coger velocidad
-    camTime: 1.8,           // s de paso de cámara del furgón al jugador
-    runDistance: 1250,      // px entre el furgón y el punto de salida (0 m)
+    duration: 4.2,          // s de escena (3-5): no se puede saltar
+    jumpAt: 0.8,            // s: el atracador salta del furgón
+    startSpeed: 140,        // px/s al salir del furgón
+    accelTime: 1.2,         // s hasta la velocidad de la partida
+    camTime: 1.6,           // s de paso de cámara del furgón al jugador
+    cueTime: 0.55,          // s del anillo que marca que ya controlas
     startStars: 1,          // estrellas con las que empieza la partida
-    skippable: true,        // un toque tras el primer segundo salta la escena
   },
 
   // ---------------- A PIE (sin jetpack) ----------------

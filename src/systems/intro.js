@@ -1,11 +1,15 @@
-// ESCENA INICIAL: huida del furgón blindado (~5 s, en cada partida)
+// ESCENA INICIAL: huida del furgón blindado (3-5 s, en cada partida, sin saltar)
 //
 //   0.0  furgón aparcado con las puertas traseras abiertas, alarma sonando
-//   0.9  el atracador salta del furgón con la bolsa de dinero
-//   1.4  echa a correr; la cámara pasa del furgón a seguirle
-//   5.0  "¡CORRE!": el jugador toma el control
+//   jumpAt  el atracador salta del furgón con la bolsa de dinero
+//   …    echa a correr y acelera; la cámara pasa del furgón a seguirle
+//   duration  el jugador toma el control (anillo + "¡CORRE!" pequeño)
 //
-// Tiempos y distancias en CONFIG.intro.
+// Escena y partida son continuas: mismo mundo, misma cámara y misma
+// velocidad. El furgón se coloca de forma que, con el perfil de velocidad de
+// la escena, el atracador llega a x = 0 (0 m) justo al terminar; al tomar el
+// control no se recoloca nada. Durante la escena se ignoran toques y teclas.
+// Tiempos en CONFIG.intro.
 
 import { CONFIG } from '../config.js';
 import { clamp, lerp, rand } from '../core/rng.js';
@@ -19,19 +23,32 @@ const smooth = (k) => k * k * (3 - 2 * k);
 export class Intro {
   constructor() {
     this.active = false;
+    this.controlled = false;
+  }
+
+  /** Velocidad de la escena en el instante T (px/s). */
+  speedAt(T, target) {
+    const I = CONFIG.intro;
+    const k = clamp((T - I.jumpAt) / I.accelTime, 0, 1);
+    return lerp(I.startSpeed, target, smooth(k));
   }
 
   /** Coloca el furgón y al jugador dentro. La partida empieza en x = 0 (0 m). */
   start(g) {
     const I = CONFIG.intro;
     this.active = true;
+    this.controlled = false;
     this.t = 0;
     this.alarmT = 0;
     this.said = {};
     const p = g.player;
-    // el jugador acaba la escena en x = 0: el furgón queda atrás
-    this.truckX = -I.runDistance - 150; // borde izquierdo (cabina)
-    this.doorX = this.truckX + 170;      // puertas traseras
+    // distancia que recorre en la escena con el mismo paso fijo del juego
+    const target = g.targetSpeed();
+    const step = CONFIG.loop.step;
+    let run = 0;
+    for (let T = 0; T < I.duration - 1e-9; T += step) if (T + step > I.jumpAt) run += this.speedAt(T + step, target) * step;
+    this.doorX = -run + 30;               // puertas traseras
+    this.truckX = this.doorX - 170;       // borde izquierdo (caja)
     p.x = this.doorX - 30;
     p.y = g.view.groundY - 70;
     p.vy = 0;
@@ -76,43 +93,50 @@ export class Intro {
         p.onGround = false;
         Sound.hop();
       }
-      // acelera hasta la velocidad inicial
-      const k = clamp((T - I.jumpAt) / I.accelTime, 0, 1);
-      this.speed = g.targetSpeed() * smooth(k) * 0.9 + 140 * (1 - k);
+      this.speed = this.speedAt(T, g.targetSpeed());
       p.update(dt, false, this.speed, gy);
-      // no pasar de x = 0 antes de tiempo (la escena dura lo que dura)
-      if (p.x > -10) p.x = -10;
     }
-    // cámara: del furgón al jugador
+    // cámara: del furgón al jugador (al final ya le sigue exactamente)
     const follow = p.x - g.view.w * CONFIG.player.screenX;
     const k = smooth(clamp((T - I.jumpAt - 0.2) / I.camTime, 0, 1));
     g.camera.x = lerp(this.camFrom, follow, k);
     g.speed = this.speed;
 
-    if (!this.said.go && T > I.duration - 0.7) {
-      this.said.go = true;
-      g.popups.add(t('intro.go'), g.view.w / 2, 200, { color: '#ffd23f', size: 54, life: 1.1, rise: 10 });
-      Sound.powerUp();
-    }
-    // se puede saltar la escena con un toque tras el primer segundo
-    const skip = I.skippable && T > 1 && input.consumePresses().length > 0;
-    if (skip || T >= I.duration) return this.finish(g, skip);
+    // toques y teclas no cuentan durante la escena (ni se acumulan)
     input.consumePresses();
+    if (T >= I.duration - 1e-9) return this.finish(g);
     return false;
   }
 
-  finish(g, skipped) {
+  /** El jugador toma el control: no se mueve nada, solo se avisa con un detalle. */
+  finish(g) {
     this.active = false;
+    this.controlled = true;
     const p = g.player;
-    p.x = Math.max(p.x, 0);
-    p.y = g.view.groundY - p.h / 2;
-    p.vy = 0;
-    p.onGround = true;
-    p.prevHeld = true; // que la pulsación del salto no cuente como salto
-    g.speed = g.targetSpeed();
-    g.camera.follow(p.x, g.view.w);
-    if (skipped) g.popups.add(t('intro.go'), g.view.w / 2, 200, { color: '#ffd23f', size: 54, life: 1.1, rise: 10 });
+    p.prevHeld = true; // si mantienes pulsado, hay que soltar antes de saltar
+    p.jumpBuf = 0;
+    g.speed = this.speed;
+    g.popups.add(t('intro.go'), g.view.w * CONFIG.player.screenX + 40, p.y - 70, { color: '#ffd23f', size: 26, life: 0.9, rise: 30 });
+    Sound.tick();
     return true;
+  }
+
+  /** Anillo que marca el instante en que tomas el control. */
+  drawCue(ctx, camX, g) {
+    if (!this.controlled) return;
+    const age = g.runTime;
+    const life = CONFIG.intro.cueTime;
+    if (age > life) return;
+    const k = age / life;
+    const p = g.player;
+    ctx.save();
+    ctx.globalAlpha = (1 - k) * 0.8;
+    ctx.strokeStyle = '#ffd23f';
+    ctx.lineWidth = 3 * (1 - k) + 1;
+    ctx.beginPath();
+    ctx.arc(p.x - camX, p.y, 24 + 46 * smooth(k), 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   get playerVisible() {

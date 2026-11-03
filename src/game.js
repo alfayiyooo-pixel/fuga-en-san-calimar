@@ -231,12 +231,11 @@ export class Game {
         this.radioIntro = false;
         this.radio.trigger('inicio', 0, this);
       }
-      if (this.intro.update(dt, this, input)) {
-        // empieza la partida de verdad: obstáculos y pavos desde aquí
-        this.spawner.reset(p.x);
-        this.tokens.reset(p.x);
-        this.foot.reset(this);
-      }
+      this.intro.update(dt, this, input);
+      // el mundo ya se genera por delante (entra por la derecha, sin aparecer de golpe)
+      this.spawner.update(this);
+      this.tokens.spawnAhead(this);
+      for (const o of this.obstacles) o.update(dt, this);
       this.camera.update(dt);
       this.particles.update(dt);
       this.popups.update(dt);
@@ -696,6 +695,7 @@ export class Game {
     if (!menu) this.powers.draw(ctx, cam.x, this);
     if (!menu) this.events.draw(ctx, cam.x, this);
     if (!menu) this.intro.draw(ctx, cam.x, this);
+    if (!menu) this.intro.drawCue(ctx, cam.x, this);
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
     if (!menu) this.tokens.draw(ctx, cam.x, this);
     this.particles.draw(ctx, cam.x);
