@@ -39,6 +39,16 @@ const lerp = (a, b, k) => a + (b - a) * k;
 
 /** Pose mezclada (correr / volar / caer) o fija al montar en moto. */
 function pose(p, t) {
+  if (p.standing) {
+    // de pie sobre el patinete, agarrado al manillar
+    const b = Math.sin(t * 14) * 0.03;
+    return {
+      legs: { a1: 0.12, a2: 0.05, b1: -0.18, b2: -0.1 },
+      arms: { f1: 1.5 + b, f2: 1.75, b1: 1.35 + b, b2: 1.65 },
+      lean: 0.16,
+      bob: Math.abs(Math.sin(t * 14)) * -0.8,
+    };
+  }
   if (p.riding) {
     const b = Math.sin(t * 20) * 0.04;
     return {
@@ -95,7 +105,12 @@ export function drawFugitive(ctx, p, t, styleId = 'base', look = null) {
   shoe(ctx, bfx, bfy, P.legs.b2, shade(S.shoe), S.sole);
 
   // ---- jetpack ----
-  if (!p.riding) {
+  if (p.onFoot) {
+    ctx.save();
+    ctx.rotate(P.lean * 0.5);
+    drawBag(ctx, P.bob, t, p.anim ?? 0);
+    ctx.restore();
+  } else if (!p.riding) {
     ctx.save();
     ctx.rotate(P.lean * 0.5);
     drawPack(ctx, S, p, P, t);
@@ -155,6 +170,47 @@ function streamer(ctx, p, P, t, x0, y0, c1, c2, k) {
 }
 
 // ---------------- JETPACKS ----------------
+/** Saco de dinero a la espalda (cuando vas a pie). */
+export function drawBag(ctx, b = 0, t = 0, anim = 0) {
+  const sw = Math.sin(anim) * 1.5;
+  ctx.save();
+  ctx.translate(-17, -2 + b + sw);
+  // nudo y correa
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(6, -14);
+  ctx.lineTo(18, -8);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-9, 10);
+  ctx.quadraticCurveTo(-13, -6, -3, -13);
+  ctx.lineTo(4, -15);
+  ctx.quadraticCurveTo(12, -6, 9, 10);
+  ctx.quadraticCurveTo(0, 16, -9, 10);
+  ctx.closePath();
+  inked(ctx, vgrad(ctx, -15, 14, '#d9c08a', '#a5874f'));
+  ctx.beginPath();
+  ctx.moveTo(-4, -14);
+  ctx.lineTo(0, -19);
+  ctx.lineTo(5, -14);
+  inked(ctx, '#a5874f');
+  // símbolo del dinero
+  ctx.fillStyle = '#2a9d4b';
+  ctx.font = "800 12px 'Rubik', sans-serif";
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('$', 0, 1);
+  // billete asomando
+  ctx.fillStyle = '#5fcf7a';
+  ctx.save();
+  ctx.translate(2, -15);
+  ctx.rotate(-0.4 + Math.sin(t * 9) * 0.15);
+  ctx.fillRect(-5, -4, 10, 6);
+  ctx.restore();
+  ctx.restore();
+}
+
 function drawPack(ctx, S, p, P, t) {
   const b = P.bob;
   if (S.pack === 'tanks') {

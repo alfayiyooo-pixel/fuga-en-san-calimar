@@ -19,6 +19,7 @@ import { Powers } from './systems/powers.js';
 import { Combo } from './systems/combo.js';
 import { drawGlow } from './fx/sprites.js';
 import { minorKoFx } from './entities/minors.js';
+import { Foot } from './systems/foot.js';
 
 /** Pista de música de una zona. */
 export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
@@ -46,6 +47,7 @@ export class Game {
     this.powers = new Powers();
     this.combo = new Combo();
     this.events = new Events();
+    this.foot = new Foot();
     this.record = 0; // récord de distancia al empezar la partida (lo pone main.js)
     this.buffer = document.createElement('canvas');
     this.t = 0;
@@ -59,6 +61,7 @@ export class Game {
   reset() {
     this.runTime = 0;
     this.player.reset(this.startAt * CONFIG.world.pxPerMeter, this.view.groundY);
+    this.foot.reset(this);
     this.speed = this.targetSpeed();
     this.camera.reset();
     this.camera.follow(this.player.x, this.view.w);
@@ -209,7 +212,9 @@ export class Game {
       const ev = p.update(dt, this.inputHeld, this.speed * this.timeScale, this.view.groundY);
       this.powers.update(dt, this, input.consumePresses());
 
-      Sound.jet(p.vehicle ? 0 : p.thrust);
+      Sound.jet(p.vehicle || p.onFoot ? 0 : p.thrust);
+      if (ev.jumped) Sound.hop();
+      this.foot.update(dt, this);
       if (ev.landed && ev.impact > CONFIG.player.hardLanding) {
         Sound.thud(Math.min(1, ev.impact / 700));
         this.camera.addShake(0.25);
@@ -309,6 +314,9 @@ export class Game {
       respites: this.respite.count ?? 0,
       minors: this.stats.minors,
       drones: this.stats.drones,
+      footMax: Math.floor(this.foot.max),
+      noJet: Math.floor(this.foot.noJet(this)),
+      rides: this.foot.rides,
     };
   }
 
@@ -406,6 +414,11 @@ export class Game {
         return { x: o.x + o.w / 2, y: o.y + o.h / 2 };
       case 'missile':
         return { x: o.x + o.w / 2, y: o.y };
+      case 'fence':
+      case 'trash':
+      case 'parked':
+      case 'awning':
+        return { x: o.x + o.w / 2, y: o.y + o.h / 2 };
       default:
         return { x: o.x, y: o.y };
     }
@@ -457,7 +470,13 @@ export class Game {
     const C = CONFIG.shop.consumables;
     if (used.includes('shield')) this.powers.shields.push('bubble');
     if (used.includes('revive')) this.revives = 1;
-    if (used.includes('headstart')) this.powers.startBoost(this, C.headstart.meters);
+    if (used.includes('headstart')) {
+      // el arranque rápido es con jetpack
+      this.foot.everJet = true;
+      this.foot.firstJetAt = 0;
+      this.player.onFoot = false;
+      this.powers.startBoost(this, C.headstart.meters);
+    }
     if (used.includes('transform')) this.pendingTransform = used.includes('headstart') ? 0.3 : 0.8;
   }
 

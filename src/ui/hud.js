@@ -175,6 +175,7 @@ export class Hud {
     const tw = ctx.measureText(fmt(game.bucks)).width;
     ctx.restore();
     this.drawMultiplier(ctx, game, 58 + tw + 30, y);
+    if (game.player.onFoot && game.foot.bonusActive) this.drawFootBadge(ctx, game, 58 + tw + 56, y);
 
     // experiencia ganada en la partida
     const op = 1 + (this.orbPop ?? 0) * 0.3;
@@ -212,6 +213,31 @@ export class Hud {
     if (this.gemPop > 0) drawGlow(ctx, x, y, 34 * p, 'rgba(160, 240, 255, 0.9)', this.gemPop);
     drawSprite(ctx, gemSprite(), x, y, 0.75 * p, 0.75 * p);
     outlinedText(ctx, fmt(game.gemsRun), x + 18, y - 12, 22, '#9ff8ff');
+  }
+
+  /** "A PIE ×2": bonificación de pavos mientras no has cogido el jetpack. */
+  drawFootBadge(ctx, game, x, y) {
+    const label = t('hud.footBonus', { n: CONFIG.foot.bucksMult });
+    const pulse = 1 + 0.06 * Math.sin(game.t * 7);
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(pulse, pulse);
+    ctx.font = `15px ${FONT}`;
+    const w = ctx.measureText(label).width + 22;
+    drawGlow(ctx, w / 2, 0, w * 0.7, 'rgba(127, 255, 160, 0.8)', 0.35 + 0.15 * Math.sin(game.t * 7), 26);
+    ctx.fillStyle = INK;
+    ctx.beginPath();
+    ctx.roundRect(-3, -17, w + 6, 34, 17);
+    ctx.fill();
+    ctx.fillStyle = '#7dffa0';
+    ctx.beginPath();
+    ctx.roundRect(0, -14, w, 28, 14);
+    ctx.fill();
+    ctx.fillStyle = INK;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, 11, 1);
+    ctx.restore();
   }
 
   /** Insignia del multiplicador: "x3", anillo de tiempo y puntos de carga. */

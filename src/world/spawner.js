@@ -2,6 +2,7 @@ import { CONFIG } from '../config.js';
 import { rand, chance, lerp, pick, clamp } from '../core/rng.js';
 import { Cable, Billboard, PatrolCar, Helicopter, Missile } from '../entities/obstacles.js';
 import { spawnMinor } from '../entities/minors.js';
+import { spawnStreet } from '../entities/street.js';
 
 /**
  * Genera obstáculos por delante de la cámara.
@@ -58,6 +59,9 @@ export class Spawner {
     consider('missile', lvl.missile);
     consider('heli', lvl.heli);
     // enemigos menores: al principio y con pocas estrellas
+    // obstáculos de calle (sobre todo a pie)
+    const S = CONFIG.foot.street;
+    entries.push(['street', (g.player.onFoot ? S.weightFoot : S.weightJet) * (this.lastType === 'street' ? 0.7 : 1)]);
     const mw = this.minorWeight(g);
     if (mw > 0) entries.push(['minor', mw * (this.lastType === 'minor' ? 0.6 : 1)]);
 
@@ -96,11 +100,24 @@ export class Spawner {
     return 'guard';
   }
 
+  chooseStreet(g) {
+    const S = CONFIG.foot.street;
+    const entries = Object.entries(S.types).filter(([tp]) => g.distance >= (S.unlockAt[tp] ?? 0) && (tp !== 'awning' || g.player.onFoot));
+    let roll = Math.random() * entries.reduce((s, [, w]) => s + w, 0);
+    for (const [tp, w] of entries) {
+      roll -= w;
+      if (roll <= 0) return tp;
+    }
+    return 'fence';
+  }
+
   /** Crea el patrón y devuelve cuánto espacio horizontal ocupa. */
   spawn(type, g, x) {
     switch (type) {
       case 'minor':
         return spawnMinor(this.chooseMinor(g), g, x);
+      case 'street':
+        return spawnStreet(this.chooseStreet(g), g, x);
       case 'billboard':
         g.addObstacle(new Billboard(x));
         return 150;
@@ -131,6 +148,13 @@ export class Spawner {
     const top = CONFIG.world.ceiling + 14;
     const bottom = g.view.groundY - 14;
     const d = g.difficulty;
+
+    // a pie: solo cables altos (por encima de un salto normal)
+    if (g.player.onFoot) {
+      const len = rand(C.minLen, C.maxLen);
+      g.addObstacle(new Cable(x, rand(top + 10, bottom - 300), len, 0));
+      return len * 0.7;
+    }
 
     // "puerta": un cable desde arriba y otro desde abajo con hueco
     if (d > 0.45 && chance(0.25)) {

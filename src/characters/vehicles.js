@@ -160,3 +160,77 @@ export function drawRamp(ctx, x, groundY, t) {
   const on = Math.floor(t * 6) % 2 === 0;
   drawGlow(ctx, x - 5, groundY - 30, 40, 'rgba(255, 210, 63, 0.9)', on ? 0.6 : 0.25);
 }
+
+/** Patinete eléctrico robado (a pie). Origen: centro del jugador. */
+export function drawScooterRide(ctx, p, t) {
+  const spin = p.x * 0.12;
+  rr(ctx, -20, 25, 40, 5, 2.5);
+  inked(ctx, '#2a2238');
+  ctx.fillStyle = '#19e3d0';
+  ctx.fillRect(-18, 26, 36, 1.6);
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 3.5;
+  ctx.beginPath();
+  ctx.moveTo(18, 27);
+  ctx.lineTo(22, -8);
+  ctx.lineTo(16, -9);
+  ctx.moveTo(22, -8);
+  ctx.lineTo(27, -7);
+  ctx.stroke();
+  for (const wx of [-16, 18]) wheel(ctx, wx, 32, 4.5, spin);
+  drawGlow(ctx, 0, 30, 30, 'rgba(25, 227, 208, 0.8)', 0.35 + 0.15 * Math.sin(t * 10), 6);
+}
+
+/** Carrito de la compra (el muñeco va sentado dentro). Se dibuja delante. */
+export function drawCart(ctx, p, t) {
+  const spin = p.x * 0.12;
+  ctx.save();
+  ctx.translate(2, 6);
+  // cesta de rejilla
+  ctx.beginPath();
+  ctx.moveTo(-22, -6);
+  ctx.lineTo(24, -10);
+  ctx.lineTo(18, 16);
+  ctx.lineTo(-18, 16);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(200, 210, 230, 0.35)';
+  ctx.fill();
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.strokeStyle = '#c9ccd6';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  for (let k = 1; k < 5; k++) {
+    const x = -22 + k * 9.2;
+    ctx.moveTo(x, -6 - k * 0.8);
+    ctx.lineTo(x - (k - 2.5) * 0.6 + (x < 0 ? 1 : -1), 16);
+  }
+  ctx.moveTo(-21, 5);
+  ctx.lineTo(21, 3);
+  ctx.stroke();
+  // asa roja
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-22, -6);
+  ctx.lineTo(-30, -14);
+  ctx.stroke();
+  ctx.strokeStyle = '#ff3d4f';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  // chasis y ruedas
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-16, 16);
+  ctx.lineTo(-14, 22);
+  ctx.moveTo(16, 16);
+  ctx.lineTo(14, 22);
+  ctx.stroke();
+  for (const wx of [-14, 14]) wheel(ctx, wx, 24, 3.5, spin);
+  // chispas de las ruedas
+  ctx.restore();
+}

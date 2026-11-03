@@ -48,6 +48,17 @@ El juego es una **app web instalable**: se abre a **pantalla completa** desde su
 
 ## Cómo se juega
 
+### A pie y jetpack opcional
+
+- **Empiezas a pie**: toque/ESPACIO = saltar (mantén pulsado para saltar más alto; con ~180 px superas un coche aparcado).
+- A los **250-380 m** aparece el **jetpack** dentro de un grupo de pavos. Puedes ignorarlo: vuelve a salir cada 450-750 m mientras sigas a pie.
+- **Capas de golpe:** a pie → detenido · con jetpack → lo pierdes y sigues a pie · con un personaje → vuelves al jetpack.
+- **A PIE ×2:** mientras no hayas cogido nunca el jetpack, los pavos valen el doble (insignia verde en el HUD).
+- **Obstáculos de calle:** vallas de obra, cubos de basura, coches aparcados y **toldos** (caer encima te lanza muy alto hacia un arco de pavos).
+- **Vehículos a pie:** patinete eléctrico y carrito de la compra (unos segundos, más velocidad y aguantan un golpe).
+- Misiones nuevas: «Recorre 400/800 m sin jetpack», «Recorre 1.500 m sin coger el jetpack», «Usa un patinete o carrito».
+- Ajustes en el bloque `foot` de `config.js`.
+
 ### La ciudad y los peligros
 
 Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito Lingote → Las Chimeneas → Colinas Brisa → Puerto Ancla**.

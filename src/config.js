@@ -125,6 +125,39 @@ export const CONFIG = {
     },
   },
 
+  // ---------------- A PIE (sin jetpack) ----------------
+  // Se empieza a pie: ESPACIO/toque = saltar (más alto si mantienes).
+  // Capas de golpe: a pie → muerte · con jetpack → a pie · con personaje → jetpack.
+  foot: {
+    bucksMult: 2,           // multiplicador de pavos mientras no hayas cogido nunca el jetpack
+    jumpVel: 620,           // px/s de impulso del salto (toque ≈ 80 px de alto)
+    holdGravity: 0.42,      // gravedad mientras mantienes pulsado al subir (salto largo ≈ 180 px)
+    holdTime: 0.3,          // s máximos de "salto largo"
+    gravity: 2000,
+    riseCut: 2.2,           // al soltar mientras subes, la subida se corta
+    maxFall: 950,
+    buffer: 0.12,           // s: pulsar justo antes de aterrizar también salta
+    coyote: 0.1,            // s: se puede saltar justo después de dejar el suelo
+    tokenReach: 175,        // altura máxima (sobre el suelo) de los pavos mientras vas a pie
+    awningBounce: 1050,     // px/s de rebote al caer sobre un toldo
+    loseJetInvuln: 1.6,     // s invulnerable al perder el jetpack
+    // cuándo aparece el jetpack para cogerlo (m): primera vez, si lo ignoras, y tras perderlo
+    jetpack: { firstAt: [250, 380], again: [450, 750], afterLoss: [250, 450] },
+    // vehículos a pie: aguantan un golpe y van más rápido unos segundos
+    rides: {
+      from: 80, chance: 0.08, cooldown: 16,  // m, prob. por grupo de pavos, s entre vehículos
+      scooter: { duration: 7, speedMult: 1.25, jumpMult: 1.08 },
+      cart: { duration: 6, speedMult: 1.15, jumpMult: 0.92 },
+    },
+    // obstáculos de calle (sobre todo cuando vas a pie)
+    street: {
+      weightFoot: 6,        // peso total frente a cable (5) cuando vas a pie
+      weightJet: 1.2,       // …y cuando llevas jetpack
+      types: { fence: 1, trash: 1, parked: 0.8, awning: 0.55 },
+      unlockAt: { fence: 0, trash: 0, parked: 60, awning: 100 },
+    },
+  },
+
   // ---------------- ENEMIGOS MENORES ----------------
   // Aparecen sobre todo al principio y con 0-1 estrellas; se van retirando
   // cuando la policía toma el relevo. Chocar con uno cuenta como golpe.
@@ -371,6 +404,8 @@ export const CONFIG = {
       { id: 'e_transform', tier: 'easy', type: 'transforms', n: 1 },
       { id: 'e_case', tier: 'easy', type: 'cases', n: 1 },
       { id: 'e_minors', tier: 'easy', type: 'minors', n: 3 },
+      { id: 'e_foot', tier: 'easy', type: 'footRun', n: 400 },
+      { id: 'e_ride', tier: 'easy', type: 'rides', n: 1 },
       { id: 'm_bucks', tier: 'medium', type: 'bucks', n: 400 },
       { id: 'm_dist', tier: 'medium', type: 'distance', n: 1500 },
       { id: 'm_air', tier: 'medium', type: 'air', n: 1000 },
@@ -378,6 +413,7 @@ export const CONFIG = {
       { id: 'm_special', tier: 'medium', type: 'specials', n: 2 },
       { id: 'm_gadgets', tier: 'medium', type: 'gadgets', n: 3 },
       { id: 'm_mult', tier: 'medium', type: 'multiplier', n: 3 },
+      { id: 'm_foot', tier: 'medium', type: 'footRun', n: 800 },
       // total: true → se acumula entre partidas
       { id: 'm_drones', tier: 'medium', type: 'drones', n: 10, total: true },
       { id: 'h_stars', tier: 'hard', type: 'starsSurvive', n: 20, stars: 4 },
@@ -386,6 +422,7 @@ export const CONFIG = {
       { id: 'h_mult', tier: 'hard', type: 'multiplier', n: 5 },
       { id: 'h_air', tier: 'hard', type: 'air', n: 2000 },
       { id: 'h_respite', tier: 'hard', type: 'respites', n: 1 },
+      { id: 'h_nojet', tier: 'hard', type: 'noJet', n: 1500 },
     ],
   },
 

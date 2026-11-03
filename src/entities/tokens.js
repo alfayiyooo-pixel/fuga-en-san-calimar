@@ -77,6 +77,8 @@ export class Tokens {
   choosePattern(g) {
     const T = CONFIG.tokens;
     const entries = Object.entries(T.patterns).filter(([k]) => {
+      // a pie: solo dibujos planos (al alcance de un salto)
+      if (g.player.onFoot && !['line', 'wave', 'arrow', 'zigzag'].includes(k)) return false;
       if (k === 'word') return g.distance > T.wordFrom && this.lastPattern !== 'word';
       return true;
     });
@@ -114,8 +116,9 @@ export class Tokens {
     const h = size.h * cell;
 
     // elegir la altura: sin tocar obstáculos y, si hay peligro cerca, pegado a él
-    const top = CONFIG.world.ceiling + 24;
-    const bottom = g.view.groundY - 22 - h;
+    // a pie, los pavos quedan al alcance de un salto
+    const top = g.player.onFoot ? g.view.groundY - CONFIG.foot.tokenReach : CONFIG.world.ceiling + 24;
+    const bottom = Math.max(top, g.view.groundY - 22 - h);
     const groupObs = g.obstacles.filter((o) => isStatic(o) && o.right > x - 30 && leftOf(o) < x + w + 30);
     let best = null;
     for (let y0 = top; y0 <= Math.max(top, bottom); y0 += 16) {
@@ -141,7 +144,7 @@ export class Tokens {
       const px = x + p.x * cell;
       const py = best.y0 + p.y * cell;
       const c = tokenHitsObstacle(px, py, groupObs);
-      if (c === 2) continue;
+      if (c === 2 || py > g.view.groundY - 18) continue;
       placed.push(this.add(px, py, 'bill', c === 1));
     }
     if (!placed.length) return w;
@@ -245,7 +248,7 @@ export class Tokens {
           }
         }
       }
-      const r = T.radius + (tk.kind === 'capsule' || tk.kind === 'item' ? big : 0);
+      const r = T.radius + (tk.kind === 'capsule' || tk.kind === 'item' || tk.kind === 'jetpack' || tk.kind === 'ride' ? big : 0);
       if (!g.dead && tk.x > p.left - r && tk.x < p.right + r && tk.y > p.top - r && tk.y < p.bottom + r) this.collect(tk, g);
     }
     this.list = this.list.filter((tk) => tk.alive);
@@ -256,7 +259,7 @@ export class Tokens {
     tk.alive = false;
     const sx = tk.x - g.camera.x;
 
-    if (tk.kind === 'capsule' || tk.kind === 'item') {
+    if (tk.kind === 'capsule' || tk.kind === 'item' || tk.kind === 'jetpack' || tk.kind === 'ride') {
       g.powers.collect(tk, g);
       return;
     }
@@ -282,7 +285,7 @@ export class Tokens {
     }
 
     // el multiplicador por esquivas al límite multiplica lo que ganas
-    const value = T.values[tk.kind] * g.combo.level * g.events.bucksMult;
+    const value = T.values[tk.kind] * g.combo.level * g.events.bucksMult * g.foot.mult(g);
     g.bucks += value;
     if (tk.kind !== 'bill' || this.chain % CONFIG.score.flyEvery === 0) g.hud.flyToCounter(sx, tk.y, tk.kind);
     else g.hud.bumpBucks(false);
@@ -395,6 +398,22 @@ export class Tokens {
         ctx.restore();
         sparkle(ctx, x + 18, y - 22, time * 7, 6);
         sparkle(ctx, x - 20, y + 10, time * 6 + 2, 5);
+      } else if (tk.kind === 'jetpack') {
+        drawGlow(ctx, x, y, 70, 'rgba(255, 170, 60, 0.95)', 0.65 + 0.3 * Math.sin(time * 6));
+        ctx.save();
+        ctx.translate(x, y + Math.sin(time * 4) * 3);
+        ctx.rotate(Math.sin(time * 3) * 0.12);
+        drawJetpackIcon(ctx, time);
+        ctx.restore();
+        sparkle(ctx, x + 20, y - 24, time * 7, 6);
+        sparkle(ctx, x - 22, y + 8, time * 6 + 2, 5);
+      } else if (tk.kind === 'ride') {
+        drawGlow(ctx, x, y, 54, 'rgba(127, 247, 255, 0.9)', 0.55 + 0.3 * Math.sin(time * 6));
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.scale(0.9, 0.9);
+        drawRideIcon(ctx, tk.ride, time);
+        ctx.restore();
       } else if (tk.kind === 'item') {
         const c = CHARACTERS[ITEM_OWNER[tk.item]];
         drawGlow(ctx, x, y, 46, c.rgba, 0.55 + 0.3 * Math.sin(time * 6 + tk.phase));
@@ -448,7 +467,7 @@ function leftOf(o) {
 }
 
 function isStatic(o) {
-  return o.type === 'cable' || (o.type === 'billboard' && o.state === 'hang');
+  return o.static || o.type === 'cable' || (o.type === 'billboard' && o.state === 'hang');
 }
 
 /** 0 = libre, 1 = cerca (arriesgado), 2 = encima del obstáculo. */
@@ -463,6 +482,83 @@ function tokenHitsObstacle(x, y, obstacles) {
     if (o.hits(nearBox)) res = 1;
   }
   return res;
+}
+
+/** Icono del jetpack para recoger (dos bombonas con llama). */
+function drawJetpackIcon(ctx, time) {
+  const fl = 10 + Math.sin(time * 30) * 3;
+  for (const ox of [-9, 9]) {
+    ctx.fillStyle = 'rgba(255, 190, 60, 0.95)';
+    ctx.beginPath();
+    ctx.moveTo(ox - 5, 16);
+    ctx.lineTo(ox, 16 + fl);
+    ctx.lineTo(ox + 5, 16);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(ox - 8, -20, 16, 36, 7);
+    ctx.fillStyle = '#1b1030';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(ox - 5.5, -17.5, 11, 31, 5);
+    const g = ctx.createLinearGradient(ox - 6, 0, ox + 6, 0);
+    g.addColorStop(0, '#8e97ab');
+    g.addColorStop(0.45, '#f1f4fa');
+    g.addColorStop(1, '#7d859a');
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.fillStyle = '#ff3d4f';
+    ctx.fillRect(ox - 5.5, -5, 11, 5);
+  }
+  ctx.fillStyle = '#1b1030';
+  ctx.font = "11px 'Bungee', Impact, sans-serif";
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffd23f';
+  ctx.strokeStyle = '#1b1030';
+  ctx.lineWidth = 3;
+  ctx.strokeText('JET', 0, -26);
+  ctx.fillText('JET', 0, -26);
+}
+
+/** Icono de patinete o carrito para recoger. */
+function drawRideIcon(ctx, kind, time) {
+  ctx.strokeStyle = '#1b1030';
+  ctx.lineCap = 'round';
+  if (kind === 'scooter') {
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(-20, 14);
+    ctx.lineTo(16, 14);
+    ctx.lineTo(12, -18);
+    ctx.lineTo(4, -18);
+    ctx.stroke();
+    ctx.strokeStyle = '#19e3d0';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  } else {
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(-24, -14);
+    ctx.lineTo(-16, -6);
+    ctx.lineTo(20, -10);
+    ctx.lineTo(14, 12);
+    ctx.lineTo(-12, 12);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.strokeStyle = '#c9ccd6';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
+  for (const wx of [-14, 12]) {
+    ctx.fillStyle = '#1b1030';
+    ctx.beginPath();
+    ctx.arc(wx, 19, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#c9ccd6';
+    ctx.beginPath();
+    ctx.arc(wx, 19, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.lineCap = 'butt';
 }
 
 function sparkle(ctx, x, y, phase, size) {

@@ -121,10 +121,16 @@ export class Powers {
     if (this.has('nitro')) m.speed *= this.cfg('pilot').nitro.speedMult;
     if (this.has('rage')) m.speed *= this.cfg('wild').rage.speedMult;
     if (this.has('boost')) m.speed *= CONFIG.shop.consumables.headstart.speedMult;
+    const riding = this.has('ride') && player.onFoot;
+    if (riding) {
+      const R = CONFIG.foot.rides[this.rideKind];
+      m.speed *= R.speedMult;
+      m.jump = R.jumpMult;
+    }
     player.mods = m;
     player.style = this.def ? this.def.style : 'base';
     player.look = player.looks?.[player.style] ?? null;
-    player.vehicle = this.has('drive') ? 'car' : this.has('bike') ? 'bike' : null;
+    player.vehicle = this.has('drive') ? 'car' : this.has('bike') ? 'bike' : riding ? this.rideKind : null;
     player.riding = player.vehicle === 'bike';
     player.vest = this.shields.includes('vest');
     player.aiming = this.has('pistol') || this.has('bullettime');
@@ -137,6 +143,16 @@ export class Powers {
   /** ¿Este grupo de pavos lleva una cápsula o un icono? */
   choosePlacement(g) {
     const C = CONFIG.characters;
+    if (this.char === 'base' && g.player.onFoot) {
+      // a pie: el jetpack (cuando toca) o un vehículo de vez en cuando
+      if (g.foot.jetDue(g)) return { kind: 'jetpack' };
+      const R = CONFIG.foot.rides;
+      if (!this.has('ride') && g.distance >= R.from && g.foot.rideCd <= 0 && chance(R.chance)) {
+        g.foot.rideCd = R.cooldown;
+        return { kind: 'ride', ride: pick(['scooter', 'cart']) };
+      }
+      return null;
+    }
     if (this.char === 'base') {
       if (g.distance >= C.capsuleFrom && this.capsuleCd <= 0 && chance(C.capsuleChance * (g.upg?.capsuleMult ?? 1))) {
         this.capsuleCd = C.capsuleCooldown;
@@ -164,6 +180,14 @@ export class Powers {
 
   /** Se ha recogido una cápsula o un icono. */
   collect(tk, g) {
+    if (tk.kind === 'jetpack') {
+      if (g.player.onFoot) g.foot.equip(g);
+      return;
+    }
+    if (tk.kind === 'ride') {
+      if (g.player.onFoot) g.foot.startRide(tk.ride, g);
+      return;
+    }
     if (tk.kind === 'capsule') {
       this.transform(tk.char, g);
     } else if (ITEM_OWNER[tk.item] === this.char) {
@@ -180,6 +204,12 @@ export class Powers {
   transform(id, g) {
     const C = CONFIG.characters;
     const def = CHARACTERS[id];
+    // un personaje siempre va con su jetpack debajo (capa intermedia)
+    if (g.player.onFoot) {
+      if (!g.foot.everJet) g.foot.firstJetAt = g.distance;
+      g.foot.everJet = true;
+      g.player.onFoot = false;
+    }
     this.char = id;
     this.lastChar = id;
     // se conservan el arranque rápido y la burbuja de los consumibles
@@ -350,6 +380,7 @@ export class Powers {
     if (this.shields.length) {
       const s = this.shields.pop();
       if (s === 'bike') this.effects.bike = 0;
+      if (s === 'ride') this.effects.ride = 0;
       this.invuln = 1.0;
       g.destroyObstacle(o);
       g.camera.addShake(0.4);
@@ -361,6 +392,13 @@ export class Powers {
     if (this.char !== 'base') {
       g.destroyObstacle(o);
       this.detransform(g);
+      if (police) g.wanted.add(CONFIG.wanted.heat.hitPolice);
+      return true;
+    }
+    // con jetpack: lo pierdes y sigues a pie
+    if (!g.player.onFoot) {
+      g.destroyObstacle(o);
+      g.foot.lose(g);
       if (police) g.wanted.add(CONFIG.wanted.heat.hitPolice);
       return true;
     }
@@ -468,6 +506,10 @@ export class Powers {
   }
 
   onEffectEnd(k, g) {
+    if (k === 'ride') {
+      this.shields = this.shields.filter((s) => s !== 'ride');
+      g.popups.add(t('foot.rideEnd'), g.player.x - g.camera.x, g.player.y - 50, { color: '#fff4dc', size: 18, life: 1 });
+    }
     if (k === 'bike') this.shields = this.shields.filter((s) => s !== 'bike');
     if (k === 'drive') g.player.vy = -300;
   }
