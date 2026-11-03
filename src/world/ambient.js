@@ -158,7 +158,8 @@ export class Ambient {
       a.t += dt;
       a.behave?.(a, dt, playerSX);
     }
-    this.list = this.list.filter((a) => a.x > -360 && a.x < v.w + 460 && !(a.life !== undefined && a.t > a.life));
+    // fuera de pantalla, caducados o de otra zona (al cambiar de zona dejan sitio a los nuevos)
+    this.list = this.list.filter((a) => a.zone === zoneId && a.x > -360 && a.x < v.w + 460 && !(a.life !== undefined && a.t > a.life));
 
     const Z = ZONES[zoneId];
     if (!Z) return;
@@ -348,7 +349,7 @@ export class Ambient {
     }
     // aparece por el lado por el que entra en pantalla
     const screenV = a.vx - this.camV * a.f;
-    const margin = 120 + 160 * a.s;
+    const margin = 50 + 70 * a.s;
     a.x = screenV <= 0 ? v.w + margin : -margin;
     this.list.push(a);
   }
