@@ -6,6 +6,12 @@
 // ============================================================
 
 export const CONFIG = {
+  version: '1.5.0',     // versión del juego (se guarda con cada opinión)
+
+  // "Danos tu opinión": longitud máxima del texto y s mínimos entre envíos desde este dispositivo
+  // (el servidor además limita por cuenta y en total: supabase/opiniones.sql)
+  feedback: { enabled: true, maxLength: 500, cooldown: 600 },
+
   view: {
     height: 540,        // alto lógico fijo
     minWidth: 760,      // ancho lógico mínimo (pantallas más estrechas → bandas negras)

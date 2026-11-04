@@ -14,6 +14,7 @@ import { Quality } from './core/quality.js';
 import { createTuner } from './ui/tuner.js';
 import { createDeathPanel } from './ui/deathlog.js';
 import { Haptics } from './core/haptics.js';
+import { FeedbackDialog } from './ui/feedback.js';
 import { Profile } from './meta/profile.js';
 import { Shop } from './ui/shop.js';
 import { Wardrobe } from './ui/wardrobe.js';
@@ -243,6 +244,12 @@ const openNick = (mode, after) => nickDialog.open(mode, {
   },
 });
 const rankScreen = new RankingScreen(document.getElementById('screen-ranking'), { onClose: () => toMenu(), nick: openNick });
+const feedbackDialog = new FeedbackDialog({ toast });
+screens.on('btn-feedback', () => {
+  Sound.click();
+  feedbackDialog.open();
+});
+if (!CONFIG.feedback.enabled) document.getElementById('btn-feedback').classList.add('hidden');
 screens.on('btn-ranking', () => {
   Sound.click();
   state = 'menu';

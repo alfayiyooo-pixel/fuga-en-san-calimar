@@ -355,6 +355,37 @@ Opcional: variantes `radio_<momento>_2_<idioma>.mp3`, `_3_`, `_4_`; el juego eli
 - Se ocultan en **Ajustes → Juego → Marcas de otros**. Ajustes en `online.marks` de `config.js`.
 - **Montarlo:** ejecuta [`supabase/marcas.sql`](supabase/marcas.sql) en el SQL Editor después de `ranking.sql`. Crea la función `ghost_marks`, que solo devuelve apodo y distancia (lo mismo que ya es público en el ranking).
 
+### Opiniones de los jugadores («Danos tu opinión»)
+- **En el juego:** el botón 💬 del menú abre una ventana con una valoración de 1 a 5 estrellas (obligatoria) y texto libre (opcional, máximo 500 caracteres). Se guarda con la fecha, la versión del juego (`version` en `config.js`), el idioma y el apodo si tienes cuenta.
+- **Montarlo:** ejecuta [`supabase/opiniones.sql`](supabase/opiniones.sql) en **SQL Editor → New query → Run**, después de `ranking.sql`.
+- **Seguridad:**
+  - La tabla `feedback` tiene RLS activado y ninguna regla de acceso. Con la clave pública solo se puede **escribir** mediante la función `send_feedback`; nadie puede leer, cambiar ni borrar las opiniones de otros.
+  - El apodo lo pone el servidor tras comprobar el código secreto de la cuenta, así que nadie puede firmar como otro jugador.
+- **Antispam:**
+  - En el servidor: como mucho 3 opiniones por cuenta y hora y 1 por minuto, un tope global de 20 por minuto, y no se aceptan mensajes repetidos en 24 h. Límites en `fb_limits()`.
+  - En el dispositivo: 10 minutos entre envíos (`feedback.cooldown`).
+
+**Cómo leer las opiniones:**
+1. **Table Editor → `feedback`**: la tabla con todas. Ordena por `created_at` y filtra por `rating` o `version` con los botones de la barra.
+2. **SQL Editor**, para resúmenes:
+   ```sql
+   -- las últimas 50
+   select created_at, rating, nick, version, lang, message
+   from feedback order by created_at desc limit 50;
+
+   -- nota media y nº de opiniones por versión
+   select version, round(avg(rating), 2) as media, count(*) as total
+   from feedback group by version order by version desc;
+
+   -- solo las malas (1-2 estrellas) con texto
+   select created_at, rating, message from feedback
+   where rating <= 2 and message <> '' order by created_at desc;
+
+   -- borrar una opinión (spam)
+   delete from feedback where id = 123;
+   ```
+El panel de Supabase entra con permisos de administrador, por eso ahí sí las ves todas.
+
 ### Borrar a un tramposo
 En Supabase → **SQL Editor** (cambia `Apodo` por el suyo):
 ```sql

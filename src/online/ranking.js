@@ -45,7 +45,7 @@ class OnlineError extends Error {
   }
 }
 
-const SERVER_CODES = ['bad_nick', 'nick_taken', 'busy', 'bad_code', 'bad_account', 'banned', 'bad_score', 'impossible_score', 'rate_limited'];
+const SERVER_CODES = ['bad_feedback', 'duplicate', 'bad_nick', 'nick_taken', 'busy', 'bad_code', 'bad_account', 'banned', 'bad_score', 'impossible_score', 'rate_limited'];
 
 async function rpc(name, args) {
   const O = CONFIG.online;
@@ -177,6 +177,12 @@ export const Online = {
 
   leaderboard(period) {
     return rpc('leaderboard', { p_period: period });
+  },
+
+  /** Opinión del jugador (solo escritura). Con cuenta, el servidor añade el apodo. */
+  sendFeedback({ rating, message, version, lang }) {
+    const acc = this.account;
+    return rpc('send_feedback', { p_rating: rating, p_message: message, p_version: version, p_lang: lang, p_id: acc?.id ?? null, p_code: acc?.code ?? null });
   },
 
   /** Marcas para pintar en el recorrido (una petición al empezar la partida). */

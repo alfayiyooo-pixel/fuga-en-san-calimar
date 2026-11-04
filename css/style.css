@@ -1096,3 +1096,13 @@ canvas {
 #deathlog .dl-bin { display: grid; grid-template-columns: 40px 1fr 22px; gap: 4px; align-items: center; }
 #deathlog .dl-bin i { display: block; height: 7px; background: #ff5d6f; border-radius: 3px; }
 #deathlog .dl-bin small { grid-column: 1 / -1; color: #bba; margin: -2px 0 2px 44px; }
+
+/* ---------- OPINIONES ---------- */
+.fb-box { max-width: 440px; }
+.fb-form { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+.fb-stars { display: flex; justify-content: center; gap: 6px; }
+.fb-star { font-size: 34px; line-height: 1; background: none; border: none; color: rgba(255, 244, 220, 0.25); cursor: pointer; padding: 2px 4px; text-shadow: 0 2px 0 var(--ink); }
+.fb-star.on { color: #ffd23f; }
+.fb-text { width: 100%; box-sizing: border-box; resize: vertical; min-height: 84px; font: 15px/1.35 system-ui, sans-serif; color: var(--ink); background: #fff8ea; border: 3px solid var(--ink); border-radius: 10px; padding: 8px 10px; }
+.fb-meta { display: flex; justify-content: space-between; font-size: 12px; opacity: 0.8; }
+@media (max-height: 520px) { .fb-star { font-size: 26px; } .fb-text { min-height: 56px; } }
