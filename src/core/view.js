@@ -31,10 +31,12 @@ export class View {
     const maxDpr = Quality.settings.maxDpr;
     this.w = Math.round(clamp(height * (cw / ch), minWidth, maxWidth));
     this.scale = Math.min(cw / this.w, ch / this.h);
-    this.dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
-
     const cssW = Math.floor(this.w * this.scale);
     const cssH = Math.floor(this.h * this.scale);
+    // tope de píxeles reales del lienzo: en tablets y móviles con mucha densidad
+    // (dpr 3-4) se pintarían millones de píxeles por frame sin verse mejor
+    const cap = Math.sqrt((Quality.settings.maxPixels ?? Infinity) / Math.max(1, cssW * cssH));
+    this.dpr = Math.max(0.35, Math.min(window.devicePixelRatio || 1, maxDpr, cap));
     this.canvas.style.width = `${cssW}px`;
     this.canvas.style.height = `${cssH}px`;
     this.canvas.width = Math.floor(cssW * this.dpr);

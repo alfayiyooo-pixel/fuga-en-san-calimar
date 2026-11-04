@@ -16,6 +16,7 @@
 // Los temas generados son secuencias de 8 compases que se repiten sin cortes
 // (el secuenciador programa las notas por adelantado con el reloj de audio).
 
+import { decodeAudio } from './compat.js';
 import { CONFIG } from '../config.js';
 
 export const MUSIC_TRACKS = ['menu', 'playa', 'centro', 'industrial', 'mansiones', 'puerto', 'aurelio', 'vera', 'bruno'];
@@ -709,7 +710,7 @@ export class MusicEngine {
       const name = CONFIG.music.files[id]?.file ?? `${id}.mp3`;
       fetch(`audio/musica/${name}`)
         .then((r) => (r.ok ? r.arrayBuffer() : null))
-        .then((buf) => (buf ? this.ctx.decodeAudioData(buf) : null))
+        .then((buf) => (buf ? decodeAudio(this.ctx, buf) : null))
         .then((audio) => {
           if (!audio) return;
           this.files.set(id, audio);

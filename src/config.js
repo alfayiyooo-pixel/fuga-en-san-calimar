@@ -6,11 +6,20 @@
 // ============================================================
 
 export const CONFIG = {
-  version: '1.5.0',     // versión del juego (se guarda con cada opinión)
+  version: '1.6.0',     // versión del juego (se guarda con cada opinión)
 
   // "Danos tu opinión": longitud máxima del texto y s mínimos entre envíos desde este dispositivo
   // (el servidor además limita por cuenta y en total: supabase/opiniones.sql)
   feedback: { enabled: true, maxLength: 500, cooldown: 600 },
+
+  // REGISTRO DE ERRORES: se envían a Supabase (supabase/errores.sql), solo escritura.
+  //   maxPerSession: errores distintos como mucho por sesión · keepOffline: guardados sin conexión ·
+  //   ignore: mensajes que no se envían (ruido de extensiones y del navegador) · console: verlos en la consola
+  errorLog: {
+    enabled: true, maxPerSession: 12, keepOffline: 10, console: false,
+    ignore: [/^Script error\.?$/i, /ResizeObserver loop/i, /extension:\/\//i, /webkit-masked-url/i],
+    loopFatal: 90, // frames seguidos con error en el bucle → mensaje "no se ha podido abrir" en vez de quedarse congelado
+  },
 
   view: {
     height: 540,        // alto lógico fijo
@@ -84,10 +93,14 @@ export const CONFIG = {
     // automático: al empezar cada partida se ignoran "skip" s y se miden "window" s;
     // si la media baja de minFps, baja un nivel y vuelve a medir. Además, si a mitad de
     // partida va por debajo de sustainedFps durante sustainedTime s, también baja.
-    auto: { skip: 1, window: 3, minFps: 50, sustainedFps: 45, sustainedTime: 5 },
-    high: { maxDpr: 2, particles: 1, detail: true, blur: true, ambient: 10 },
-    low: { maxDpr: 0.8, particles: 0.5, detail: false, blur: false, ambient: 4 },
-    min: { maxDpr: 0.6, particles: 0.25, detail: false, blur: false, ambient: 1 },
+    // TIRONES: si en stutterWindow s hay stutterFrames frames de más de stutterMs ms
+    // (saltos que se notan aunque la media sea buena), baja en el momento.
+    auto: { skip: 0.5, window: 2, minFps: 50, sustainedFps: 45, sustainedTime: 3, stutterMs: 45, stutterFrames: 5, stutterWindow: 2 },
+    //   maxPixels: tope de píxeles reales del lienzo (en pantallas de mucha densidad) ·
+    //   clouds: 2 = nubes completas, 1 = de una pieza, 0 = sin nubes
+    high: { maxDpr: 2, maxPixels: 2400000, particles: 1, detail: true, blur: true, ambient: 10, clouds: 2 },
+    low: { maxDpr: 0.8, maxPixels: 700000, particles: 0.5, detail: false, blur: false, ambient: 3, clouds: 1 },
+    min: { maxDpr: 0.6, maxPixels: 400000, particles: 0.25, detail: false, blur: false, ambient: 0, clouds: 0 },
   },
 
   // ---------------- CÓDIGO VISUAL DE PELIGRO ----------------
@@ -565,6 +578,7 @@ export const CONFIG = {
     voiceQueueWait: 1.6,    // s que una frase puede esperar en cola si otra está sonando (si no, se descarta)
     voiceGap: 0.25,         // s de silencio mínimo entre dos frases
     jetVolume: 0.06,        // volumen del siseo del jetpack al propulsar
+    maxVoices: 28,          // efectos sonando a la vez como mucho (más se omiten: evita atascos en móviles)
     // voz del navegador (provisional, mientras no haya archivos en audio/voces/):
     // pitch 0-2 y rate 0.1-10 base por personaje; en cada momento se suma
     // pitch y se multiplica rate (pick = al cogerlo, special = habilidad, lose = al perderlo)

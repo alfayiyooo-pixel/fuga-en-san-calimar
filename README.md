@@ -29,6 +29,8 @@ python3 -m http.server 8000
 
 Abre <http://localhost:8000>. (Con Node también vale `npx serve`.)
 
+**Antes de publicar** ejecuta `node tools/build.js` (actualiza la versión del service worker). Para que se compruebe solo en cada `git push`, activa el gancho una vez: `git config core.hooksPath .githooks`.
+
 ## Publicar en GitHub Pages
 
 1. Sube el proyecto a un repositorio de GitHub (este ya está en `alfayiyooo-pixel/fuga-en-san-calimar`).
@@ -44,7 +46,8 @@ El juego es una **app web instalable**: se abre a **pantalla completa** desde su
 
 - **Android (Chrome/Edge):** botón **📲 Instalar app** en el menú (o en ⚙ Ajustes). Si no aparece, menú ⋮ del navegador → «Instalar app». El progreso se mantiene: la app instalada comparte el guardado con el navegador.
 - **iPhone/iPad (Safari):** el botón **📲 Instalar app** muestra cómo hacerlo: Compartir ⬆︎ → «Añadir a pantalla de inicio». Ojo: en iOS la app instalada guarda su progreso **aparte** de Safari; para llevártelo usa ⚙ Ajustes → **Pasar mi progreso** → «Copiar código» en Safari y «Pegar código» en la app.
-- **Actualizaciones:** el service worker ([`sw.js`](sw.js)) usa «primero la red»: con conexión siempre carga lo último publicado (cada push, incluidos audios nuevos) y lo guarda en caché para jugar offline. No hay que tocar nada al publicar; si algún día quieres vaciar la caché de todos, sube `VERSION` en `sw.js`.
+- **Actualizaciones:** el service worker ([`sw.js`](sw.js)) guarda **cada versión del juego como un paquete completo**. Al publicar, ejecuta `node tools/build.js` (el gancho de `git push` lo comprueba): calcula una huella de todos los archivos y la escribe en `sw.js`. Los jugadores descargan la versión nueva entera de una vez (si falla un archivo, siguen con la anterior completa: nunca media versión mezclada, que era una causa de pantalla en blanco con mala conexión) y el juego **se recarga solo en el menú** (nunca en mitad de una partida). Los audios van aparte: primero la red y, sin conexión, lo guardado.
+- **Si a alguien se le queda una versión rota:** en la pantalla de carga hay un botón **«Reparar y recargar»** (borra la caché del juego y el service worker), o se puede abrir la dirección con `?repair` al final.
 - **Icono:** dibujado por código con el protagonista ([`src/ui/appicon.js`](src/ui/appicon.js)); los PNG de [`icons/`](icons/) se regeneran con `node tools/generar-iconos.js` (servidor local en marcha y Playwright instalado).
 
 ## Cómo se juega
@@ -408,6 +411,44 @@ update players set banned = false where lower(nick) = lower('Apodo');
 ```
 También se puede hacer desde **Table Editor**: tabla `players` → busca el apodo → marca `banned` o borra la fila.
 
+## Compatibilidad, carga y errores
+
+**Pantalla de carga.** Aparece al instante (está en el propio `index.html`) con una barra que avanza según se descargan los archivos del juego y un aviso con «Reintentar» / «Reparar y recargar» si tarda más de 20 s.
+
+**Navegadores.** El juego necesita un navegador de los últimos años: Chrome/Edge 85+, Safari 14+ (iPhone con iOS 14 o posterior), Samsung Internet 14+ o Firefox 79+. El arranque ([`src/boot.js`](src/boot.js)) está escrito en JavaScript antiguo para funcionar en cualquier navegador y:
+- comprueba que el navegador puede con el juego; si no, muestra «Este navegador es demasiado antiguo… ábrelo en Chrome o Safari» en vez de una pantalla en blanco;
+- si un archivo del juego falla al cargar, o el juego se rompe al arrancar, muestra «No se ha podido abrir el juego» con «Reintentar» y «Reparar y recargar»;
+- detecta los **navegadores internos de apps** (Instagram, Facebook, WhatsApp, TikTok…). Si allí falla, el mensaje dice que lo abras en Chrome o Safari (menú ⋯ → «Abrir en el navegador») con un botón para copiar el enlace; si funciona, sale un aviso en el menú que se puede cerrar (en esos navegadores el guardado se puede perder).
+
+Arreglos de compatibilidad ([`src/core/compat.js`](src/core/compat.js)): `roundRect` del canvas (no existe en Safari < 16 ni Chrome < 99; sin él el marcador fallaba en cada frame y el juego se quedaba congelado), la decodificación de audio de Safari 14 y `inset` en el CSS. Además, un error en mitad de la partida ya no congela el juego: se registra y el juego sigue; solo si falla en todos los frames sale el mensaje de error.
+
+**Registro de errores.** Los errores de JavaScript y de carga se guardan en Supabase con el navegador y modelo (user agent), la versión del juego (`version` en `config.js`), la pantalla (tamaño, ventana y densidad), si es **web, PWA o APK**, el idioma y el estado del juego (menú/partida, calidad, metros y zona). Sin apodo, cuenta ni ningún dato personal. Solo se pueden **escribir**: con la clave pública nadie puede leerlos. Un mismo error repetido no crea filas nuevas, suma 1 a `hits`. Sin conexión se guardan (como mucho 10) y se envían en el siguiente arranque. Ajustes en `errorLog` de `config.js`.
+
+Para activarlo, ejecuta [`supabase/errores.sql`](supabase/errores.sql) en **SQL Editor → New query → Run** (una vez; se puede repetir).
+
+**Cómo consultarlos.** En **Table Editor → `client_errors`** (ordena por `last_at`), o en **SQL Editor**:
+```sql
+-- los errores más frecuentes de la última semana
+select kind, message, source, version, sum(hits) as veces, count(*) as navegadores, max(last_at) as ultima
+from client_errors where last_at > now() - interval '7 days'
+group by kind, message, source, version order by veces desc limit 30;
+
+-- lo que ve un jugador concreto (por su móvil o navegador)
+select last_at, hits, kind, message, source, platform, screen, context, ua
+from client_errors where ua ilike '%iPhone OS 15%' or ua ilike '%SamsungBrowser%' order by last_at desc limit 50;
+
+-- quién no consigue ni abrir el juego (navegador no compatible, carga lenta o rota)
+select last_at, kind, message, platform, ua, context from client_errors
+where kind in ('unsupported', 'fatal', 'timeout') order by last_at desc limit 50;
+
+-- web, app instalada o APK
+select platform, sum(hits) from client_errors group by platform;
+
+-- limpiar los antiguos
+delete from client_errors where last_at < now() - interval '60 days';
+```
+Pista: `context` dice en qué estaba el juego (`playing q=auto/low d=1830 z=port` = jugando, calidad automática en baja, a 1.830 m en el puerto) y `inapp=Instagram` si venía del navegador de Instagram.
+
 ## Gráficos y rendimiento
 
 **Detalle visual (calidad alta):** variaciones en palmeras (altura, inclinación, grosor, hojas y cocos), sombrillas (tamaño, gajos, toallas), casetas, árboles, setos, contenedores y bidones; rayos de sol suaves; destellos del sol y la luna en el agua, olas que llegan a la orilla y espuma que sube y baja; huellas, conchas y ondas en la arena; vetas, grava, manchas y grietas en el suelo; perspectiva atmosférica (las capas lejanas más claras); y un **primer plano** desenfocado (hierba, postes, arbustos, tuberías, cajas…) que pasa rápido por la franja de abajo sin tapar los obstáculos. El personaje se dibuja un 15 % más grande que su caja de choque, con un contorno luminoso suave y estiramiento/aplastamiento al saltar y aterrizar (`player.visual`). Los contadores tienen un fondo semitransparente y la barra de Radio Calimar es más compacta y va pegada al borde inferior.
@@ -420,12 +461,16 @@ Todo el arte está **generado por código** (sin imágenes externas, así que no
 - 4 capas de parallax (silueta lejana + 3 capas de decorado) con bruma atmosférica entre ellas.
 - Brillos con sprites de halo precalculados, ventanas con patrones repetidos y caché del cielo y de los rascacielos para que vaya fluido en móvil.
 - **Calidad** (Ajustes → Calidad, o el botón del menú): **Automática** (por defecto), **Alta** o **Baja**.
-  - En **Automática** se miden los FPS al empezar cada partida: se ignora el primer segundo y se miden 3 s. Si la media baja de **50 FPS**, la calidad baja un nivel y **vuelve a medir**: de alta a baja, y si aún va lento, a «mínima».
+  - En **Automática** se miden los FPS al empezar cada partida: se ignora medio segundo y se miden 2 s. Si la media baja de **50 FPS**, la calidad baja un nivel y **vuelve a medir**: de alta a baja, y si aún va lento, a «mínima».
+  - **Tirones:** si en 2 s hay 5 frames de más de 45 ms (saltos que se notan aunque la media sea buena), baja en el momento, sin esperar a la medición.
   - Si va bien, se queda en ese nivel, que se recuerda para las siguientes partidas. Volver a elegir Automática empieza de nuevo desde alta.
-  - Si a mitad de partida va por debajo de 45 FPS durante 5 s, también baja.
+  - Si a mitad de partida va por debajo de 45 FPS durante 3 s, también baja.
 - **Qué quita cada nivel:**
-  - **Baja:** menos resolución, la mitad de partículas, como mucho 4 elementos de vida en el fondo y **sin desenfoques** (ni fondo desenfocado, ni primer plano, ni contorno del personaje), rayos ni texturas.
-  - **Mínima:** aún menos resolución, la cuarta parte de partículas y 1 elemento de fondo.
+  - **Baja:** menos resolución, la mitad de partículas (dibujadas como cuadraditos, mucho más baratos), como mucho 3 elementos de vida en el fondo, nubes de una pieza y **sin desenfoques** (ni fondo desenfocado, ni primer plano, ni contorno del personaje), rayos ni texturas.
+  - **Mínima:** aún menos resolución, la cuarta parte de partículas, sin nubes y sin vida en el fondo.
+- **Tope de píxeles:** en tablets y móviles con mucha densidad de pantalla el lienzo no pasa de 2,4 millones de píxeles reales en alta (0,7 en baja y 0,4 en mínima): más no se nota y cuesta mucho.
+- **Otras optimizaciones:** las partículas se reutilizan (no se crean objetos sin parar) y las que salen de pantalla no se dibujan; los obstáculos que quedan atrás se eliminan sin crear listas nuevas; el audio generado por código reutiliza un único búfer de ruido (antes creaba y rellenaba uno nuevo en cada sonido) y tiene un tope de 28 sonidos a la vez (`audio.maxVoices`).
+- **Medido** (Chromium sin GPU con la CPU ralentizada, escena con 4★ a 2.600 m): con la CPU 4 veces más lenta, la calidad automática baja a Baja en menos de 1 s y se queda en **54 FPS** (antes unos 45). Con la CPU 6 veces más lenta baja hasta Mínima: **40 FPS**. Sin ralentizar se queda en Alta (58 FPS). Un móvil de verdad pinta con la GPU y suele ir mejor que esta prueba, pero no lo he podido probar en un móvil real.
 - Ajustes en `quality` de `config.js` (`quality.auto`: skip, window, minFps…).
 
 ## Ajustar el juego

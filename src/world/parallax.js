@@ -234,6 +234,9 @@ export class Parallax {
   drawClouds(ctx, v, camX, t, theme) {
     const cl = theme.clouds;
     if (!cl) return;
+    // calidad baja: nubes de una sola pieza (sin sombra ni brillo) · mínima: sin nubes
+    const lod = Quality.settings.clouds ?? 2;
+    if (lod <= 0) return;
     const factor = 0.05;
     const spacing = 360;
     const offset = camX * factor + t * 6;
@@ -245,10 +248,12 @@ export class Parallax {
       const y = 50 + hash(i, 79) * 120;
       const w = 60 + hash(i, 80) * 80;
       // panza en sombra
-      ctx.fillStyle = cl.shade;
-      ctx.beginPath();
-      ctx.ellipse(x + 4, y + 6, w, 15, 0, 0, Math.PI * 2);
-      ctx.fill();
+      if (lod > 1) {
+        ctx.fillStyle = cl.shade;
+        ctx.beginPath();
+        ctx.ellipse(x + 4, y + 6, w, 15, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
       // cuerpo iluminado
       ctx.fillStyle = cl.color;
       ctx.beginPath();
@@ -256,7 +261,7 @@ export class Parallax {
       ctx.ellipse(x - w * 0.3, y - 10, w * 0.4, 18, 0, 0, Math.PI * 2);
       ctx.ellipse(x + w * 0.25, y - 14, w * 0.45, 22, 0, 0, Math.PI * 2);
       ctx.fill();
-      if (cl.rim) {
+      if (cl.rim && lod > 1) {
         ctx.fillStyle = cl.rim;
         ctx.beginPath();
         ctx.ellipse(x + w * 0.25, y - 22, w * 0.3, 8, 0, Math.PI, 0);

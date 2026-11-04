@@ -1,3 +1,4 @@
+import './core/compat.js'; // parches para navegadores antiguos (lo primero)
 import { View } from './core/view.js';
 import { Input } from './core/input.js';
 import { Loop } from './core/loop.js';
@@ -35,8 +36,14 @@ import { Achievements } from './meta/achievements.js';
 import { applyMaxed } from './meta/maxed.js';
 import { Online } from './online/ranking.js';
 import { RankingScreen, NickDialog, accountCard } from './ui/ranking.js';
+import { ErrorLog } from './core/errorlog.js';
+
+const Boot = window.__scBoot ?? { progress() {}, done() {}, fatal() {}, inApp: null, platform: 'web' };
+Boot.progress(0.92, 'starting');
 
 // ---------- arranque ----------
+// registro de errores (con el estado del juego en cada error: sin datos personales)
+ErrorLog.init(() => `${typeof state === 'string' ? state : 'boot'} q=${Quality.mode}/${Quality.level}${typeof game !== 'undefined' && game && state === 'playing' ? ` d=${Math.floor(game.distance)} z=${game.zone?.current?.id}` : ''}`);
 Save.load();
 applyMaxed(); // cuenta de prueba (maxeada.html o ?maxeada)
 Online.init(); // ranking: reintenta subir lo pendiente
@@ -358,8 +365,63 @@ installBtn.addEventListener('click', () => {
 document.getElementById('btn-ios-ok').addEventListener('click', () => iosHelp.classList.add('hidden'));
 Pwa.onChange((what) => {
   if (what === 'installed') toast(t('pwa.thanks'));
+  if (what === 'update') reloadIfUpdated();
   refreshInstall();
 });
+
+/**
+ * Versión nueva publicada: se recarga sola, pero solo en el menú (nunca en mitad
+ * de una partida). Si estás jugando, se hace al volver al menú.
+ */
+function reloadIfUpdated() {
+  if (!Pwa.updateReady || state !== 'menu' || reloadIfUpdated.busy) return;
+  reloadIfUpdated.busy = true;
+  toast(t('pwa.updated'));
+  setTimeout(() => location.reload(), 1200);
+}
+
+// navegador interno de una app (Instagram, Facebook…): aviso para abrirlo en Chrome/Safari
+function inAppNotice() {
+  if (!Boot.inApp) return;
+  try {
+    if (sessionStorage.getItem('sc-inapp-ok')) return;
+  } catch {
+    /* sin almacenamiento */
+  }
+  const box = document.createElement('div');
+  box.className = 'inapp';
+  box.setAttribute('role', 'alert');
+  const p = document.createElement('p');
+  p.textContent = t('inapp.text', { app: Boot.inApp });
+  const copy = document.createElement('button');
+  copy.className = 'btn small btn-primary';
+  copy.textContent = t('inapp.copy');
+  copy.addEventListener('click', async () => {
+    const url = location.href.split('#')[0];
+    try {
+      await navigator.clipboard.writeText(url);
+      copy.textContent = t('inapp.copied');
+    } catch {
+      window.prompt('', url);
+    }
+  });
+  const close = document.createElement('button');
+  close.className = 'btn small';
+  close.textContent = t('inapp.continue');
+  close.addEventListener('click', () => {
+    box.remove();
+    try {
+      sessionStorage.setItem('sc-inapp-ok', '1');
+    } catch {
+      /* sin almacenamiento */
+    }
+  });
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.append(copy, close);
+  box.append(p, row);
+  document.body.appendChild(box);
+}
 settings.addCard(accountCard({ nick: (mode, after) => openNick(mode, after), toast }));
 settings.addCard(playCard({ toast, setQuality: setQualityMode }));
 settings.addCard(appCard({ onInstall: doInstall, onIosHelp: doInstall, toast }));
@@ -504,6 +566,7 @@ function resume() {
 
 function toMenu() {
   state = 'menu';
+  setTimeout(reloadIfUpdated, 400);
   input.enabled = false;
   input.clear();
   menuMusic();
@@ -766,9 +829,19 @@ const loop = new Loop(
 
 if (hud.debug) window.__loopFps = () => loop.fps;
 
+// un error en el bucle ya no congela el juego: se apunta y se sigue; si falla
+// todos los frames (no hay forma de seguir), mensaje claro en lugar de pantalla congelada
+loop.onError = (err, n) => {
+  if (n === 1) ErrorLog.loop(err, state);
+  if (n === CONFIG.errorLog.loopFatal) Boot.fatal('fatal', err?.message);
+};
+
 // Esperamos a la fuente del HUD (sin bloquear si no carga)
 Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 1500))]).finally(() => {
+  if (Boot.isFatal) return; // navegador no compatible: se queda el mensaje
   loop.start();
   applyToDom();
+  Boot.done();
   maybeShowDaily();
+  inAppNotice();
 });

@@ -17,8 +17,37 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Rubik:wght@500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* pantalla de carga (aquí y no en css/style.css para que se vea al instante) */
+    html, body { background: #1b1030; }
+    .boot { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse at 50% 30%, #3a1f5c 0%, #1b1030 70%); color: #fff4dc; font-family: 'Rubik', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      transition: opacity 0.4s ease; text-align: center; padding: 16px; box-sizing: border-box; }
+    .boot.boot-hide { opacity: 0; pointer-events: none; }
+    .boot-box { width: 100%; max-width: 420px; }
+    .boot-title { font-family: 'Bungee', Impact, 'Arial Black', sans-serif; font-size: 34px; line-height: 1.05; margin: 0 0 22px; color: #ffd23f;
+      text-shadow: 0 3px 0 #1b1030, 0 0 18px rgba(255, 122, 61, 0.55); letter-spacing: 1px; font-weight: normal; }
+    .boot-title.small { font-size: 22px; margin-bottom: 14px; }
+    .boot-bar { height: 14px; border-radius: 7px; background: rgba(255, 244, 220, 0.12); border: 2px solid rgba(255, 244, 220, 0.25); overflow: hidden; }
+    #boot-fill { height: 100%; width: 0; border-radius: 5px; background: linear-gradient(90deg, #ff7a3d, #ffd23f); }
+    .boot-msg { margin-top: 12px; font-size: 15px; opacity: 0.85; }
+    .boot-text { margin: 14px 0 0; font-size: 15px; line-height: 1.4; }
+    .boot-row { margin-top: 16px; display: flex; flex-wrap: wrap; justify-content: center; }
+    .boot-btn { margin: 4px; font: inherit; font-weight: 700; font-size: 15px; color: #fff4dc; background: rgba(255, 244, 220, 0.12);
+      border: 2px solid rgba(255, 244, 220, 0.4); border-radius: 12px; padding: 10px 16px; cursor: pointer; }
+    .boot-btn.primary { background: #ff7a3d; border-color: #ffd23f; color: #1b1030; }
+  </style>
 </head>
 <body>
+  <!-- PANTALLA DE CARGA (src/boot.js): barra de progreso y, si algo falla, un mensaje claro -->
+  <div id="boot" class="boot" role="status" aria-live="polite">
+    <div class="boot-box" id="boot-box">
+      <h1 class="boot-title">Fuga en<br>San Calimar</h1>
+      <div class="boot-bar"><div id="boot-fill"></div></div>
+      <div class="boot-msg" id="boot-msg">…</div>
+    </div>
+  </div>
+  <script src="src/boot.js"></script>
   <div id="game">
     <div id="stage">
       <canvas id="canvas" aria-label="Fuga en San Calimar"></canvas>

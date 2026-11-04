@@ -388,7 +388,11 @@ export class Game {
       }
       o.cull(this.camera.x);
     }
-    this.obstacles = this.obstacles.filter((o) => o.alive);
+    // se quitan los que ya no sirven (fuera de pantalla o destruidos) sin crear otra lista
+    const obs = this.obstacles;
+    let n = 0;
+    for (let i = 0; i < obs.length; i++) if (obs[i].alive) obs[n++] = obs[i];
+    obs.length = n;
 
     this.particles.update(wdt);
     this.popups.update(dt);
@@ -855,6 +859,7 @@ export class Game {
     const v = this.view;
     const cam = this.camera;
     const zone = menu ? zoneAt(0) : this.zone;
+    this.particles.viewW = v.w;
     // vida del fondo: avanza con el reloj del juego (quieta en pausa)
     const adt = Math.min(0.05, Math.max(0, this.t - (this.ambT ?? this.t)));
     this.ambT = this.t;

@@ -25,17 +25,27 @@ export class Loop {
 
   frame(now) {
     if (!this.running) return;
+    // el siguiente frame se pide ANTES: si algo falla, el juego no se queda congelado
+    requestAnimationFrame(this.frame);
     const { step, maxFrameDt } = CONFIG.loop;
     const dt = Math.min((now - this.last) / 1000, maxFrameDt);
     this.last = now;
     if (dt > 0) this.fps += (1 / dt - this.fps) * 0.05;
+    this.rawDt = (now - (this.rawLast ?? now)) / 1000; // sin recortar (para detectar tirones)
+    this.rawLast = now;
 
-    this.acc += dt;
-    while (this.acc >= step) {
-      this.update(step);
-      this.acc -= step;
+    try {
+      this.acc += dt;
+      while (this.acc >= step) {
+        this.update(step);
+        this.acc -= step;
+      }
+      this.render(dt);
+      this.errors = 0;
+    } catch (err) {
+      this.acc = 0;
+      this.errors = (this.errors ?? 0) + 1;
+      this.onError?.(err, this.errors);
     }
-    this.render(dt);
-    requestAnimationFrame(this.frame);
   }
 }

@@ -1,3 +1,4 @@
+import { decodeAudio } from './compat.js';
 import { CONFIG } from '../config.js';
 import { Sound } from './audio.js';
 
@@ -45,7 +46,7 @@ class Voices {
     if (!ctx) return Promise.resolve(null);
     const p = fetch(`audio/voces/${key}.mp3`)
       .then((r) => (r.ok ? r.arrayBuffer() : null))
-      .then((buf) => (buf ? ctx.decodeAudioData(buf) : null))
+      .then((buf) => (buf ? decodeAudio(ctx, buf) : null))
       .catch(() => null)
       .then((res) => {
         this.cache.set(key, res);

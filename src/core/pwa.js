@@ -42,9 +42,27 @@ export const Pwa = {
     return choice?.outcome === 'accepted';
   },
 
+  /** Hay una versión nueva del juego instalada: hay que recargar (main.js lo hace en el menú). */
+  updateReady: false,
+
   init() {
     if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch(() => {});
+      const sw = navigator.serviceWorker;
+      // si ya había una versión controlando la página, un cambio = versión nueva lista
+      const hadController = !!sw.controller;
+      sw.addEventListener('controllerchange', () => {
+        if (!hadController || this.updateReady) return;
+        this.updateReady = true;
+        emit('update');
+      });
+      sw.register('sw.js', { updateViaCache: 'none' })
+        .then((reg) => {
+          // buscar versión nueva al volver a la app y cada cierto tiempo
+          const check = () => reg.update().catch(() => {});
+          document.addEventListener('visibilitychange', () => document.hidden || check());
+          setInterval(check, 30 * 60 * 1000);
+        })
+        .catch(() => {});
     }
     // que el navegador no borre el progreso guardado si le falta espacio
     navigator.storage?.persist?.().catch(() => {});

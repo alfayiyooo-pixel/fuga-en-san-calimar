@@ -10,33 +10,40 @@ import { glowSprite } from './sprites.js';
 export class Particles {
   constructor() {
     this.list = [];
+    this.pool = []; // partículas muertas para reutilizar (sin crear objetos sin parar)
   }
 
   clear() {
+    for (const p of this.list) this.pool.push(p);
     this.list.length = 0;
   }
 
   spawn(p) {
     // en calidad baja se omite parte de las partículas decorativas
     if (!p.important && Math.random() > Quality.settings.particles) return;
-    if (this.list.length >= CONFIG.particles.max) this.list.shift();
-    this.list.push({
-      x: p.x,
-      y: p.y,
-      vx: p.vx ?? 0,
-      vy: p.vy ?? 0,
-      life: p.life ?? 0.5,
-      maxLife: p.life ?? 0.5,
-      size: p.size ?? 4,
-      sizeEnd: p.sizeEnd ?? 0,
-      color: p.color ?? '#fff',
-      gravity: p.gravity ?? 0,
-      drag: p.drag ?? 0,
-      additive: p.additive ?? false,
-      shape: p.shape ?? 'circle',
-      rot: p.rot ?? 0,
-      spin: p.spin ?? 0,
-    });
+    let o;
+    if (this.list.length >= CONFIG.particles.max) {
+      if (!p.important) return; // lleno: las decorativas nuevas se omiten
+      o = this.list[(this.oldest = ((this.oldest ?? 0) + 1) % this.list.length)]; // se reutiliza una vieja
+    } else {
+      o = this.pool.pop() ?? {};
+      this.list.push(o);
+    }
+    o.x = p.x;
+    o.y = p.y;
+    o.vx = p.vx ?? 0;
+    o.vy = p.vy ?? 0;
+    o.life = p.life ?? 0.5;
+    o.maxLife = o.life;
+    o.size = p.size ?? 4;
+    o.sizeEnd = p.sizeEnd ?? 0;
+    o.color = p.color ?? '#fff';
+    o.gravity = p.gravity ?? 0;
+    o.drag = p.drag ?? 0;
+    o.additive = p.additive ?? false;
+    o.shape = p.shape ?? 'circle';
+    o.rot = p.rot ?? 0;
+    o.spin = p.spin ?? 0;
   }
 
   /** Atajo para explosiones radiales. */
@@ -64,6 +71,7 @@ export class Particles {
       if (p.life <= 0) {
         list[i] = list[list.length - 1];
         list.pop();
+        this.pool.push(p);
         continue;
       }
       if (p.drag) {
@@ -88,14 +96,18 @@ export class Particles {
   }
 
   drawPass(ctx, camX, additive) {
+    // calidad baja: los círculos se pintan como cuadrados (mucho más baratos y casi no se nota)
+    const cheap = !Quality.settings.detail;
+    const right = (this.viewW ?? 1400) + 60;
     for (const p of this.list) {
       if (p.additive !== additive) continue;
       const k = p.life / p.maxLife;
       const size = p.sizeEnd + (p.size - p.sizeEnd) * k;
       if (size <= 0.2) continue;
+      const x = p.x - camX;
+      if (x < -size - 40 || x > right + size) continue; // fuera de pantalla
       ctx.globalAlpha = Math.min(1, k * 1.4);
       ctx.fillStyle = p.color;
-      const x = p.x - camX;
       if (p.shape === 'glow') {
         ctx.drawImage(glowSprite(p.color).canvas, x - size, p.y - size, size * 2, size * 2);
       } else if (p.shape === 'ring') {
@@ -122,6 +134,8 @@ export class Particles {
         ctx.rotate(p.rot);
         ctx.fillRect(-size, -size * 0.5, size * 2, size);
         ctx.restore();
+      } else if (cheap) {
+        ctx.fillRect(x - size * 0.85, p.y - size * 0.85, size * 1.7, size * 1.7);
       } else {
         ctx.beginPath();
         ctx.arc(x, p.y, size, 0, Math.PI * 2);

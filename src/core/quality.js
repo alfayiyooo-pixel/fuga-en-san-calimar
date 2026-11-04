@@ -12,6 +12,9 @@ import { CONFIG } from '../config.js';
  *   high  resolución completa, todas las partículas, fondo con desenfoque
  *   low   menos resolución y partículas, menos vida en el fondo, sin desenfoques
  *   min   (solo en automático) aún menos resolución, partículas y fondo
+ *
+ * Los TIRONES (frames sueltos muy largos, que se notan aunque la media de FPS
+ * sea buena) también bajan la calidad en el momento.
  */
 const LEVELS = ['high', 'low', 'min'];
 
@@ -54,12 +57,15 @@ export const Quality = {
   startCheck() {
     if (this.mode !== 'auto') return;
     this.check = { t: 0, frames: 0, time: 0 };
+    this.stutters = [];
   },
 
   lower() {
     if (!this.canLower) return false;
     this.level = LEVELS[LEVELS.indexOf(this.level) + 1];
     this.lowFpsTime = 0;
+    this.stutters = [];
+    this.clock = 0;
     this.emit(true);
     return true;
   },
@@ -69,6 +75,19 @@ export const Quality = {
     if (this.mode !== 'auto') return false;
     const A = CONFIG.quality.auto;
     const c = this.check;
+    // tirones: frames largos seguidos (solo jugando; el primero tras bajar no cuenta)
+    if (playing && this.canLower) {
+      this.clock = (this.clock ?? 0) + dt;
+      const st = (this.stutters ??= []);
+      if (dt * 1000 > A.stutterMs && this.clock > 0.3) st.push(this.clock);
+      while (st.length && this.clock - st[0] > A.stutterWindow) st.shift();
+      if (st.length >= A.stutterFrames) {
+        this.lastFps = Math.round(1 / dt);
+        const lowered = this.lower();
+        if (lowered) this.check = { t: A.skip, frames: 0, time: 0 }; // y vuelve a medir
+        return lowered;
+      }
+    }
     if (c && playing) {
       c.t += dt;
       if (c.t > A.skip) {

@@ -98,8 +98,34 @@ class AudioFx {
     return this.ctx && !this.muted && this.ctx.state === 'running';
   }
 
+  /**
+   * ¿Cabe otro sonido? Cada efecto crea nodos de audio: con demasiados a la vez
+   * (imán, ráfagas…) el móvil se atasca. Por encima de CONFIG.audio.maxVoices se omite.
+   */
+  voice(dur) {
+    const now = this.ctx.currentTime;
+    this.active = (this.active ?? []).filter((end) => end > now);
+    if (this.active.length >= CONFIG.audio.maxVoices) return false;
+    this.active.push(now + dur);
+    return true;
+  }
+
+  /**
+   * Ruido blanco compartido: se genera una sola vez y cada efecto reproduce un
+   * trozo al azar (antes se creaba y rellenaba un búfer nuevo en cada sonido).
+   */
+  noiseBuffer() {
+    if (!this.noiseBuf) {
+      const len = Math.floor(this.ctx.sampleRate * 2);
+      this.noiseBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = this.noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return this.noiseBuf;
+  }
+
   tone({ freq, type = 'square', dur = 0.1, vol = 0.25, slide = 0, delay = 0, attack = 0.004 }) {
-    if (!this.ready) return;
+    if (!this.ready || !this.voice(dur + delay)) return;
     const t0 = this.ctx.currentTime + delay;
     const o = this.ctx.createOscillator();
     const g = this.ctx.createGain();
@@ -115,14 +141,11 @@ class AudioFx {
   }
 
   noise({ dur = 0.2, vol = 0.3, freq = 1200, q = 0.8, type = 'lowpass', delay = 0, slide = 0 }) {
-    if (!this.ready) return;
+    if (!this.ready || !this.voice(dur + delay)) return;
     const t0 = this.ctx.currentTime + delay;
-    const len = Math.floor(this.ctx.sampleRate * dur);
-    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
     const src = this.ctx.createBufferSource();
-    src.buffer = buf;
+    src.buffer = this.noiseBuffer();
+    src.loop = true; // por si dura más que el búfer
     const f = this.ctx.createBiquadFilter();
     f.type = type;
     f.frequency.setValueAtTime(freq, t0);
@@ -132,7 +155,8 @@ class AudioFx {
     g.gain.setValueAtTime(vol, t0);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
     src.connect(f).connect(g).connect(this.master);
-    src.start(t0);
+    src.start(t0, Math.random() * 1.5);
+    src.stop(t0 + dur + 0.03);
   }
 
   // ---------- efectos del juego ----------
@@ -200,15 +224,19 @@ class AudioFx {
     if (!this.ready) return;
     const t0 = this.ctx.currentTime;
     const dur = 1.8;
-    const len = Math.floor(this.ctx.sampleRate * dur);
-    const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) {
-      const env = 0.5 + 0.5 * Math.sin((i / this.ctx.sampleRate) * Math.PI * 2 * 13);
-      d[i] = (Math.random() * 2 - 1) * env * env;
+    if (!this.voice(dur)) return;
+    // el búfer de las aspas se genera una sola vez
+    if (!this.chopperBuf) {
+      const len = Math.floor(this.ctx.sampleRate * dur);
+      this.chopperBuf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
+      const d = this.chopperBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const env = 0.5 + 0.5 * Math.sin((i / this.ctx.sampleRate) * Math.PI * 2 * 13);
+        d[i] = (Math.random() * 2 - 1) * env * env;
+      }
     }
     const src = this.ctx.createBufferSource();
-    src.buffer = buf;
+    src.buffer = this.chopperBuf;
     const f = this.ctx.createBiquadFilter();
     f.type = 'lowpass';
     f.frequency.value = 500;
@@ -244,12 +272,8 @@ class AudioFx {
   jet(level) {
     if (!this.ctx) return;
     if (!this.jetGain) {
-      const len = this.ctx.sampleRate * 2;
-      const buf = this.ctx.createBuffer(1, len, this.ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       const src = this.ctx.createBufferSource();
-      src.buffer = buf;
+      src.buffer = this.noiseBuffer();
       src.loop = true;
       const f = this.ctx.createBiquadFilter();
       f.type = 'bandpass';

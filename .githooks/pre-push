@@ -1,0 +1,6 @@
+#!/bin/sh
+# Se ejecuta antes de cada `git push` (actívalo con: git config core.hooksPath .githooks)
+set -e
+cd "$(git rev-parse --show-toplevel)"
+node tools/build.js --check
+if [ -f tools/test-caminos.js ]; then node tools/test-caminos.js --quick; fi
