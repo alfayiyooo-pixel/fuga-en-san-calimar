@@ -19,7 +19,7 @@
 // NO EDITES a mano el bloque <build>: ejecuta `node tools/build.js`.
 
 // <build>
-const BUILD = 'a488f3656896';
+const BUILD = 'c40de54abe6c';
 const ASSETS = [
   './',
   './index.html',
@@ -87,6 +87,7 @@ const ASSETS = [
   './src/systems/foot.js',
   './src/systems/intro.js',
   './src/systems/marks.js',
+  './src/systems/platforms.js',
   './src/systems/powers.js',
   './src/systems/radio.js',
   './src/systems/respite.js',

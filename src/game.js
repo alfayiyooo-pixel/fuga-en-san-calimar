@@ -33,6 +33,7 @@ import { DeathLog } from './ui/deathlog.js';
 import { Tutorial } from './systems/tutorial.js';
 import { Marks } from './systems/marks.js';
 import { Haptics } from './core/haptics.js';
+import { supportUnder } from './systems/platforms.js';
 
 /** Pista de música de una zona. */
 export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
@@ -329,7 +330,10 @@ export class Game {
         this.pendingTransform -= dt;
         if (this.pendingTransform <= 0) this.powers.transform(pick(CHARACTER_IDS), this);
       }
-      const ev = p.update(dt, this.inputHeld, this.speed * this.timeScale, this.view.groundY);
+      // los techos de los coches hacen de suelo si vienes desde arriba
+      const sup = supportUnder(this.obstacles, p, this.view.groundY);
+      const ev = p.update(dt, this.inputHeld, this.speed * this.timeScale, sup.y);
+      if (sup.car && ev.landed) this.stompCar(sup.car);
       input.consumePresses(); // un solo botón: las pulsaciones solo sirven para saltar/volar
       this.powers.update(dt, this);
 
@@ -400,6 +404,29 @@ export class Game {
     this.fadeIn = Math.max(0, this.fadeIn - dt * 2.5);
   }
 
+  /** Has caído sobre el techo de un coche: pequeño rebote y abolladura. */
+  stompCar(o) {
+    const p = this.player;
+    const C = CONFIG.cars;
+    o.dent = C.dent;
+    o.dentX = clamp(p.x - o.x, 22, o.w - 22);
+    o.dentY = (o.roofs.find(([a, b]) => o.dentX >= a && o.dentX <= b) ?? o.roofs[1])[2];
+    const top = o.y + o.dentY;
+    this.particles.burst(p.x, top, 6, { color: 'rgba(240, 230, 210, 0.8)', speed: 140, life: 0.35, size: 3, sizeEnd: 0, vy: -60 });
+    if (Quality.settings.detail) this.particles.burst(p.x, top + 2, 5, { color: '#ffe9a8', speed: 220, life: 0.25, size: 2, sizeEnd: 0, additive: true, gravity: 700 });
+    this.camera.addShake(0.12);
+    Sound.thud(0.7);
+    Sound.clank();
+    if (o.stomped) return; // el rebote y la misión, solo la primera vez en cada coche
+    o.stomped = true;
+    this.stats.carHops = (this.stats.carHops ?? 0) + 1;
+    p.vy = -C.bounce;
+    p.onGround = false;
+    p.jumpHold = 0;
+    p.airJumps = CONFIG.foot.doubleJump.enabled ? 1 : 0;
+    this.popAt(t('popup.carHop'), p.x, top - 50, '#9dffb5', 18);
+  }
+
   /** Pista que debe sonar: la del personaje si vas transformado; si no, la de la zona. */
   musicTrack() {
     return CONFIG.music.charTracks[this.powers.char] ?? zoneTrack(this.zone.current.id);
@@ -461,6 +488,7 @@ export class Game {
       footMax: Math.floor(this.foot.max),
       noJet: Math.floor(this.foot.noJet(this)),
       rides: this.foot.rides,
+      carHops: this.stats.carHops ?? 0,
     };
   }
 

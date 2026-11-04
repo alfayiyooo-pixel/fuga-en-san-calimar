@@ -5,6 +5,7 @@ import { roundRect } from './player.js';
 import { Sound } from '../core/audio.js';
 import { drawGlow } from '../fx/sprites.js';
 import { Quality } from '../core/quality.js';
+import { onRoof } from '../systems/platforms.js';
 
 /*
  * OBSTÁCULOS
@@ -344,6 +345,9 @@ export class PatrolCar extends Obstacle {
     this.y = g.view.groundY - this.h;
     this.passed = false;
     this.wheel = 0;
+    // techo que se puede pisar: capó, cabina y maletero
+    this.roofs = [[2, 26, 13], [26, 96, 2], [96, 114, 13]];
+    this.dent = 0;
     if (!delay) Sound.sirenBlip();
   }
 
@@ -353,6 +357,7 @@ export class PatrolCar extends Obstacle {
 
   update(dt, g) {
     this.x -= this.speed * dt;
+    this.dent = Math.max(0, this.dent - dt);
     this.wheel += dt * (this.speed + g.speed) * 0.08;
     if (!this.passed && this.right < g.player.left) {
       this.passed = true;
@@ -361,6 +366,7 @@ export class PatrolCar extends Obstacle {
   }
 
   hits(box) {
+    if (onRoof(this, box)) return false; // desde arriba: aterrizas en el techo
     return boxOverlap(box, this.x + 8, this.x + this.w - 6, this.y + 10, this.y + this.h);
   }
 
@@ -372,7 +378,8 @@ export class PatrolCar extends Obstacle {
 
   draw(ctx, camX, g) {
     const x = this.x - camX;
-    const y = this.y;
+    const k = this.dent / CONFIG.cars.dent;
+    const y = this.y + (k > 0 ? Math.sin(k * Math.PI) * 4 : 0);
     const w = this.w;
     // sombra y haz de los faros
     ctx.fillStyle = 'rgba(10, 5, 30, 0.35)';
@@ -456,6 +463,12 @@ export class PatrolCar extends Obstacle {
       ctx.moveTo(wx + Math.cos(this.wheel) * 5, y + 37 + Math.sin(this.wheel) * 5);
       ctx.lineTo(wx - Math.cos(this.wheel) * 5, y + 37 - Math.sin(this.wheel) * 5);
       ctx.stroke();
+    }
+    if (this.dentX !== undefined) {
+      ctx.fillStyle = 'rgba(20, 10, 30, 0.4)';
+      ctx.beginPath();
+      ctx.ellipse(x + this.dentX, y + 4, 10, 2.6, 0, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 }

@@ -29,6 +29,7 @@ export function progressOf(def, stats) {
     case 'footRun': return stats.footMax;
     case 'noJet': return stats.noJet;
     case 'rides': return stats.rides;
+    case 'carHops': return stats.carHops ?? 0;
     default: return 0;
   }
 }

@@ -430,6 +430,15 @@ export const CONFIG = {
     },
   },
 
+  // ---------------- COCHES COMO PLATAFORMA ----------------
+  // Los coches (aparcados y patrullas en marcha) se pueden pisar: al caer encima
+  // aterrizas en el techo con un pequeño rebote y una abolladura, y puedes seguir
+  // corriendo o saltar desde ahí. De frente o de lado siguen haciendo daño.
+  //   tolerance: px por debajo del techo que aún cuentan como "encima" (zona segura generosa)
+  //   edge: px de techo de más a cada lado del dibujo · bounce: px/s del rebote al caer
+  //   dent: s que dura el hundimiento al pisarlo
+  cars: { enabled: true, tolerance: 20, edge: 6, bounce: 170, dent: 0.35 },
+
   // ---------------- ENEMIGOS MENORES ----------------
   // Aparecen sobre todo al principio y con 0-1 estrellas; se van retirando
   // cuando la policía toma el relevo. Chocar con uno cuenta como golpe.
@@ -735,6 +744,7 @@ export const CONFIG = {
       { id: 'm_gadgets', tier: 'medium', type: 'gadgets', n: 3 },
       { id: 'm_mult', tier: 'medium', type: 'multiplier', n: 3 },
       { id: 'm_foot', tier: 'medium', type: 'footRun', n: 800 },
+      { id: 'm_cars', tier: 'medium', type: 'carHops', n: 10 },
       // total: true → se acumula entre partidas
       { id: 'm_drones', tier: 'medium', type: 'drones', n: 10, total: true },
       { id: 'm_copcrash', tier: 'medium', type: 'copCrash', n: 5, total: true },

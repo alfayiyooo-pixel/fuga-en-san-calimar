@@ -7,6 +7,7 @@
 import { CONFIG } from '../config.js';
 import { rand, pick, chance } from '../core/rng.js';
 import { Obstacle, rectPath } from './obstacles.js';
+import { onRoof } from '../systems/platforms.js';
 import { INK, rr, inked, vgrad } from '../characters/kit.js';
 import { Sound } from '../core/audio.js';
 
@@ -129,10 +130,18 @@ export class ParkedCar extends Street {
   constructor(g, x) {
     super('parked', x, 124, 54, g);
     this.color = pick([['#ffb627', '#c47a12'], ['#4fc3f7', '#2275a8'], ['#ff6b7d', '#b0303f'], ['#9be37a', '#4f9a3a']]);
+    // techo que se puede pisar: [desde, hasta, altura] en px desde la esquina (capó, techo, maletero)
+    this.roofs = [[4, 32, 21], [32, 92, 5], [92, 120, 21]];
+    this.dent = 0;
   }
 
-  /** Solo el chasis hace daño; el techo es más estrecho. */
+  update(dt) {
+    this.dent = Math.max(0, this.dent - dt);
+  }
+
+  /** Solo el chasis hace daño y nunca si vienes desde arriba (aterrizas en el techo). */
   hits(box) {
+    if (onRoof(this, box)) return false;
     const x = this.x;
     const y = this.y;
     const body = box.l < x + this.w - 6 && box.r > x + 6 && box.t < y + this.h && box.b > y + 24;
@@ -142,8 +151,9 @@ export class ParkedCar extends Street {
 
   draw(ctx, camX) {
     const x = this.x - camX;
-    const y = this.y;
     const [c0, c1] = this.color;
+    const sq = dentSquash(this);
+    const y = this.y + sq;
     ctx.fillStyle = 'rgba(10, 5, 30, 0.3)';
     ctx.beginPath();
     ctx.ellipse(x + this.w / 2, y + this.h + 2, this.w / 2, 5, 0, 0, Math.PI * 2);
@@ -186,14 +196,38 @@ export class ParkedCar extends Street {
     ctx.fillRect(x + 114, y + 30, 6, 5);
     for (const wx of [x + 28, x + 96]) {
       ctx.beginPath();
-      ctx.arc(wx, y + 45, 9, 0, Math.PI * 2);
+      ctx.arc(wx, this.y + 45, 9, 0, Math.PI * 2);
       inked(ctx, '#1b1420');
       ctx.fillStyle = '#c9ccd6';
       ctx.beginPath();
-      ctx.arc(wx, y + 45, 4, 0, Math.PI * 2);
+      ctx.arc(wx, this.y + 45, 4, 0, Math.PI * 2);
       ctx.fill();
     }
+    drawDent(ctx, this, x, y);
   }
+}
+
+/** Hundimiento al pisarlo (la carrocería baja un poco y vuelve). */
+export function dentSquash(o) {
+  const k = o.dent / CONFIG.cars.dent;
+  return k > 0 ? Math.sin(k * Math.PI) * 4 : 0;
+}
+
+/** Abolladura que se queda en el techo donde lo pisaste. */
+export function drawDent(ctx, o, x, y) {
+  if (o.dentX === undefined) return;
+  const dx = x + o.dentX;
+  const top = y + (o.dentY ?? 5);
+  ctx.fillStyle = 'rgba(20, 10, 30, 0.35)';
+  ctx.beginPath();
+  ctx.ellipse(dx, top + 3, 11, 3.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(dx - 12, top + 1);
+  ctx.quadraticCurveTo(dx, top + 6, dx + 12, top + 1);
+  ctx.stroke();
 }
 
 export class Awning extends Street {

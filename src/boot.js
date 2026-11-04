@@ -20,7 +20,7 @@
   'use strict';
 
   // Nº de archivos del juego que se descargan (lo actualiza tools/build.js)
-  var MODULES = 87; // <build:modules>
+  var MODULES = 88; // <build:modules>
   var BOOT_SLOW = 20000; // ms: si no ha terminado de cargar, aviso con "Reintentar" / "Reparar"
   var BOOT_MAX_ERRORS = 15; // errores guardados como mucho antes de que arranque el juego
 
