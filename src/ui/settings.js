@@ -4,6 +4,7 @@ import { Save } from '../core/storage.js';
 import { Voice } from '../core/voice.js';
 import { getLang } from '../core/i18n.js';
 import { Pwa } from '../core/pwa.js';
+import { Haptics } from '../core/haptics.js';
 
 /** Tarjeta "App": instalar y pasar el progreso a otro navegador/la app de iPhone. */
 export function appCard({ onInstall, onIosHelp, toast }) {
@@ -52,6 +53,37 @@ export function appCard({ onInstall, onIosHelp, toast }) {
         } else {
           toast(t('transfer.bad'));
         }
+      } else return false;
+      return true;
+    },
+  };
+}
+
+/** Tarjeta "Juego": vibración y volver a ver el tutorial. */
+export function playCard({ toast }) {
+  return {
+    render() {
+      const vib = Save.data.settings.vibration !== false;
+      return `
+        <div class="card">
+          <h3>🎮 ${t('settings.play')}</h3>
+          <div class="row-btns">
+            <button class="btn small" data-act="vibration" ${Haptics.supported ? '' : 'disabled'}>📳 ${t(vib ? 'settings.vibOn' : 'settings.vibOff')}</button>
+            <button class="btn small" data-act="tutorial">🎓 ${t('settings.tutorial')}</button>
+          </div>
+          ${Haptics.supported ? '' : `<p class="settings-text">${t('settings.vibNone')}</p>`}
+        </div>`;
+    },
+    onClick(act, el, screen) {
+      if (act === 'vibration') {
+        Save.data.settings.vibration = Save.data.settings.vibration === false;
+        Save.save();
+        Haptics.play('pick');
+        screen.render();
+      } else if (act === 'tutorial') {
+        Save.data.settings.tutorial = 'on';
+        Save.save();
+        toast(t('settings.tutorialOn'));
       } else return false;
       return true;
     },

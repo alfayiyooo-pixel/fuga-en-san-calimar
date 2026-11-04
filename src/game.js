@@ -29,6 +29,8 @@ import { Boss } from './systems/boss.js';
 import { Radio } from './systems/radio.js';
 import { Achievements } from './meta/achievements.js';
 import { DeathLog } from './ui/deathlog.js';
+import { Tutorial } from './systems/tutorial.js';
+import { Haptics } from './core/haptics.js';
 
 /** Pista de música de una zona. */
 export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
@@ -62,6 +64,7 @@ export class Game {
     this.arrest = new Arrest();
     this.boss = new Boss();
     this.radio = new Radio();
+    this.tutorial = new Tutorial();
     this.onBossStart = () => this.radio.trigger('helicoptero', this.runTime, this);
     this.onBossWin = () => this.radio.trigger('jefe', this.runTime, this);
     this.onHideout = () => this.radio.trigger('escondite', this.runTime, this);
@@ -114,6 +117,7 @@ export class Game {
     this.arrest.reset();
     this.boss.reset();
     this.radio.reset();
+    this.tutorial.reset(Tutorial.wanted() && !this.startAt);
     this.photo = null;
     this.photoRequest = false;
     this.saved = false;
@@ -331,6 +335,7 @@ export class Game {
       if (ev.landed) p.squash = -clamp(ev.impact / 800, 0.15, 0.8);
       p.squash = approach(p.squash ?? 0, 0, 12, dt);
       if (ev.doubleJumped) this.doubleJumpFx(p);
+      this.tutorial.update(dt, this, ev, this.inputHeld);
       this.foot.update(dt, this);
       if (ev.landed && ev.impact > CONFIG.player.hardLanding) {
         Sound.thud(Math.min(1, ev.impact / 700));
@@ -455,6 +460,7 @@ export class Game {
     if (this.recordBeaten || this.record < 30 || this.distance <= this.record) return;
     if (this.startAt >= this.record) return;
     this.recordBeaten = true;
+    Haptics.play('record');
     const v = this.view;
     this.flash = Math.max(this.flash, 0.8);
     this.camera.addShake(0.4);
@@ -699,7 +705,11 @@ export class Game {
   /** Te han dado: los personajes, escudos e invulnerabilidad absorben el golpe. */
   hit(obstacle) {
     if (this.god) return;
-    if (this.powers.absorbHit(obstacle, this)) return;
+    const wasSafe = this.powers.invulnerable;
+    if (this.powers.absorbHit(obstacle, this)) {
+      if (!wasSafe) Haptics.play('hit');
+      return;
+    }
     if (this.revives > 0) {
       this.revive();
       return;
@@ -710,6 +720,7 @@ export class Game {
     this.dead = true;
     this.cause = obstacle.type;
     DeathLog.record(this, obstacle);
+    Haptics.play('death');
     this.player.kill(this.speed);
     if (obstacle.type === 'bullet' || obstacle.type === 'missile') obstacle.alive = false;
     this.camera.addShake(0.85);
@@ -867,6 +878,7 @@ export class Game {
     ctx.restore();
 
     this.popups.draw(ctx);
+    if (!menu) this.tutorial.draw(ctx, this);
     // fundido de entrada al empezar la partida
     if (this.fadeIn > 0) {
       ctx.fillStyle = `rgba(18, 11, 38, ${this.fadeIn})`;

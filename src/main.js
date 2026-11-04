@@ -13,6 +13,7 @@ import { setSpriteScale } from './fx/sprites.js';
 import { Quality } from './core/quality.js';
 import { createTuner } from './ui/tuner.js';
 import { createDeathPanel } from './ui/deathlog.js';
+import { Haptics } from './core/haptics.js';
 import { Profile } from './meta/profile.js';
 import { Shop } from './ui/shop.js';
 import { Wardrobe } from './ui/wardrobe.js';
@@ -24,7 +25,7 @@ import { Daily } from './meta/daily.js';
 import { CONFIG } from './config.js';
 import { Roulette, prizeLabel } from './ui/roulette.js';
 import { grant } from './meta/progression.js';
-import { SettingsScreen, appCard } from './ui/settings.js';
+import { SettingsScreen, appCard, playCard } from './ui/settings.js';
 import { makeHeadline, paperHtml, sharePaper } from './ui/newspaper.js';
 import { Pwa } from './core/pwa.js';
 import { CreditsScreen } from './ui/credits.js';
@@ -341,6 +342,7 @@ Pwa.onChange((what) => {
   refreshInstall();
 });
 settings.addCard(accountCard({ nick: (mode, after) => openNick(mode, after), toast }));
+settings.addCard(playCard({ toast }));
 settings.addCard(appCard({ onInstall: doInstall, onIosHelp: doInstall, toast }));
 refreshInstall();
 
@@ -489,6 +491,7 @@ function endRun() {
   const newBest = d > s.best.distance;
   if (newBest) s.best.distance = d;
   s.stats.runs += 1;
+  game.tutorial.finish();
   s.stats.totalDistance += d;
   s.wallet += Math.floor(game.bucks);
   s.gems += game.gemsRun;
@@ -685,9 +688,15 @@ input.onKey = (code) => {
   }
 };
 
+// PAUSA AUTOMÁTICA: al salir de la app, cambiar de pestaña, perder el foco
+// de la ventana o recibir una llamada (el audio del sistema se interrumpe)
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) pause();
 });
+window.addEventListener('blur', () => pause());
+window.addEventListener('pagehide', () => pause());
+document.addEventListener('freeze', () => pause());
+Sound.onInterrupt = () => pause();
 
 // ---------- bucle ----------
 const loop = new Loop(

@@ -96,6 +96,33 @@ export const CONFIG = {
     },
   },
 
+  // ---------------- VIBRACIÓN (móvil) ----------------
+  // ms de vibración, o lista [vibrar, pausa, vibrar, …]. Se puede desactivar en Ajustes.
+  haptics: {
+    enabled: true,
+    patterns: {
+      pick: 18,                                  // corta: diamante o personaje
+      hit: 70,                                   // media: recibir un golpe
+      death: 320,                                // larga: te detienen
+      record: [70, 50, 70, 50, 140, 80, 260],    // celebración al batir el récord
+    },
+  },
+
+  // ---------------- TUTORIAL (solo la primera partida) ----------------
+  // Pistas breves en el momento justo. Se puede volver a activar en Ajustes.
+  //   ahead: s de antelación con la que se avisa · max: s máximos en pantalla
+  tutorial: {
+    enabled: true,
+    jump: { ahead: 1.3, max: 4 },     // "Toca para saltar" (primer obstáculo a pie)
+    double: { afterJumps: 2, max: 3 }, // "Toca otra vez en el aire" (desde el 2.º salto)
+    hold: { need: 0.6, max: 5 },      // "Mantén pulsado para volar" (al coger el jetpack)
+    release: { height: 250, max: 3 }, // "Suelta para bajar" (cuando subes mucho)
+    danger: { max: 3.2 },             // "Borde rojo y amarillo = hace daño"
+    capsule: { max: 3.5 },            // "Coge la cápsula"
+    hideout: { max: 3.5 },            // "Atraviesa el escondite"
+    gap: 0.8,                         // s entre una pista y la siguiente
+  },
+
   // ---------------- MODO ?debug ----------------
   debug: {
     // registro de muertes: muertes guardadas, partidas del resumen y tramo (m) del histograma

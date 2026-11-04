@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { Haptics } from '../core/haptics.js';
 import { rand, chance, pick, clamp } from '../core/rng.js';
 import { t, getLang } from '../core/i18n.js';
 import { Voice } from '../core/voice.js';
@@ -202,6 +203,7 @@ export class Powers {
   // ---------------- TRANSFORMACIÓN ----------------
 
   transform(id, g) {
+    Haptics.play('pick');
     const C = CONFIG.characters;
     const def = CHARACTERS[id];
     // un personaje siempre va con su jetpack debajo (capa intermedia)

@@ -49,6 +49,19 @@ El juego es una **app web instalable**: se abre a **pantalla completa** desde su
 
 ## Cómo se juega
 
+### Tutorial, vibración y pausa
+- **Tutorial integrado** solo en la primera partida: pistas breves en el momento justo, de una en una y sin pausar el juego:
+  - «Toca para saltar» cuando se acerca el primer obstáculo de suelo.
+  - «Toca otra vez en el aire» desde el segundo salto.
+  - «Mantén pulsado para volar» al coger el jetpack.
+  - «Suelta para bajar» si subes mucho.
+  - «Borde rojo y amarillo: hace daño» al ver la primera policía.
+  - Pistas para la cápsula de personaje y el primer escondite.
+
+  Cada pista se quita sola al hacerlo o a los pocos segundos. Se vuelve a activar en **Ajustes → Juego → Ver el tutorial otra vez** (`tutorial` en `config.js`).
+- **Vibración en el móvil:** corta al coger un diamante o un personaje, media al recibir un golpe, larga al ser detenido y un patrón de celebración al batir el récord. Se desactiva en **Ajustes → Juego** (`haptics`). En iPhone, Safari no permite vibrar.
+- **Pausa automática** si sales de la app, cambias de pestaña, la ventana pierde el foco o entra una llamada (el sistema interrumpe el audio).
+
 ### Inicio: huida del furgón
 
 Cada partida empieza con una escena de ~3 s que no se puede saltar: un furgón blindado del Banco Lingote con las puertas abiertas y la alarma sonando; el atracador salta con la bolsa de dinero y echa a correr. Escena y partida son continuas (mismo escenario, cámara y velocidad); durante la escena se ignoran toques y teclas. Un anillo dorado y un pequeño «¡CORRE!» marcan el instante en que tomas el control. Se empieza con **1★**. Policía floja al principio: hasta 500 m solo agentes a pie y algún coche lento; de 500 a 1.000 m algo más (misiles ocasionales); después, la curva normal (`intro` y `wanted.ease` en `config.js`).

@@ -32,8 +32,14 @@ class AudioFx {
       this.voiceBus = this.ctx.createGain();
       this.voiceBus.connect(this.out);
       this.applyLevels();
+      // una llamada o el sistema interrumpe el audio → el juego se pausa solo
+      this.ctx.onstatechange = () => {
+        const st = this.ctx.state;
+        if (st === 'interrupted' || (st === 'suspended' && this.wasRunning)) this.onInterrupt?.();
+        this.wasRunning = st === 'running';
+      };
     }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx.state === 'suspended' || this.ctx.state === 'interrupted') this.ctx.resume();
   }
 
   setMuted(m) {

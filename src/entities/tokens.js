@@ -1,4 +1,5 @@
 import { CONFIG } from '../config.js';
+import { Haptics } from '../core/haptics.js';
 import { rand, chance, lerp, pick, randInt, clamp } from '../core/rng.js';
 import { getLang, t } from '../core/i18n.js';
 import { Sound } from '../core/audio.js';
@@ -351,6 +352,7 @@ export class Tokens {
   collectGem(tk, g, sx) {
     const n = tk.gems ?? 3;
     g.gemsRun += n;
+    Haptics.play('pick');
     g.powers.slowmo = Math.max(g.powers.slowmo, CONFIG.gems.slowmo);
     g.flash = 1;
     g.camera.addShake(0.35);
