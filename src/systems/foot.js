@@ -72,6 +72,7 @@ export class Foot {
     p.thrust = 0;
     this.runStart = g.distance;
     this.nextJetAt = g.distance + rand(...CONFIG.foot.jetpack.afterLoss);
+    this.spare(g);
     g.powers.invuln = CONFIG.foot.loseJetInvuln;
     g.camera.addShake(0.5);
     g.flash = Math.max(g.flash, 0.4);
@@ -81,6 +82,27 @@ export class Foot {
     g.popups.add(t('foot.lost'), p.x - g.camera.x, p.y - 60, { color: '#ff6b7d', size: 22, life: 1.3 });
     Sound.detransform();
     this.clearUnfair(g);
+  }
+
+  /**
+   * Jetpack de repuesto: a partir de cierta distancia, al perderlo aparece
+   * otro poco más adelante (como mucho una vez cada CONFIG.foot.spare.every m).
+   */
+  spare(g) {
+    const S = CONFIG.foot.spare;
+    const d = g.distance;
+    if (d < S.from || d - (this.lastSpareAt ?? -1e9) < S.every) return false;
+    if (g.tokens.list.some((tk) => tk.kind === 'jetpack' && tk.alive)) return false;
+    this.lastSpareAt = d;
+    const ppm = CONFIG.world.pxPerMeter;
+    const y = g.view.groundY - S.height;
+    let x = g.player.x + rand(S.ahead[0], S.ahead[1]) * ppm;
+    // que no quede dentro de un obstáculo: se adelanta hasta encontrar sitio
+    const free = (px) => !g.obstacles.some((o) => o.alive && (o.blocks ?? o.hits).call(o, { l: px - 30, r: px + 30, t: y - 30, b: y + 30 }));
+    for (let k = 0; k < 20 && !free(x); k++) x += 40;
+    g.tokens.add(x, y, 'jetpack');
+    g.popups.add(t('foot.spare'), g.view.w * 0.6, 150, { color: '#9dffb5', size: 22, life: 1.8, rise: 14 });
+    return true;
   }
 
   /**

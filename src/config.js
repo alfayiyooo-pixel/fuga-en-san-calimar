@@ -335,6 +335,9 @@ export const CONFIG = {
     fair: { walkHeight: 60, jumpHeight: 250 },
     // cuándo aparece el jetpack para cogerlo (m): primera vez, si lo ignoras, y tras perderlo
     jetpack: { firstAt: [250, 380], again: [450, 750], afterLoss: [250, 450] },
+    // jetpack de repuesto: desde "from" m, al perderlo aparece otro a "ahead" m (a "height" px
+    // del suelo, alcanzable a pie), como mucho una vez cada "every" m
+    spare: { from: 2000, ahead: [25, 50], every: 350, height: 40 },
     // vehículos a pie: aguantan un golpe y van más rápido unos segundos
     rides: {
       from: 80, chance: 0.08, cooldown: 16,  // m, prob. por grupo de pavos, s entre vehículos
