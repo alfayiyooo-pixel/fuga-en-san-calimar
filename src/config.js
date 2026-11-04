@@ -78,6 +78,12 @@ export const CONFIG = {
     low: { maxDpr: 0.8, particles: 0.5, detail: false }, // maxDpr < 1 = resolución reducida
   },
 
+  // ---------------- MODO ?debug ----------------
+  debug: {
+    // registro de muertes: muertes guardadas, partidas del resumen y tramo (m) del histograma
+    deathLog: { keep: 300, summaryRuns: 50, bin: 250 },
+  },
+
   // ---------------- FASE B ----------------
 
   // ---------------- RANKING GLOBAL (Supabase) ----------------
@@ -135,18 +141,25 @@ export const CONFIG = {
       finance: {},
       industrial: { cable: 1.6 },
       hills: { car: 1.7 },
-      port: { missile: 1.6, heli: 1.3 },
+      port: { missile: 1.3, heli: 1.15 },
     },
     hitboxShrink: 0.72,  // caja del jugador más pequeña que el dibujo (perdona roces)
 
-    cable: { minLen: 110, maxLen: 230, thickness: 10, spinFrom: 0.35, spinChance: 0.3 },
+    // gate: "puerta" (cable arriba y abajo con hueco) · double: alto + bajo escalonados
+    //   from: dificultad (0-1) a partir de la que salen · chance: prob. máxima ·
+    //   ramp: dificultad que tarda en llegar a esa prob. (entrada gradual, sin picos)
+    cable: {
+      minLen: 110, maxLen: 230, thickness: 10, spinFrom: 0.4, spinChance: 0.3,
+      gate: { from: 0.55, chance: 0.25, ramp: 0.3 },
+      double: { from: 0.25, chance: 0.3, ramp: 0.2 },
+    },
     billboard: { gravity: 2100, triggerTime: 0.75, wobble: 0.28 },
     car: { minSpeed: 200, maxSpeed: 380, warnTime: 1.0 },
     missile: { warnTime: 1.25, lockTime: 0.45, speed: 980 },
     heli: {
       life: 8.5,         // segundos que patrulla
       detectTime: 0.45,  // segundos dentro del foco hasta detectarte
-      windup: 0.4,       // aviso antes de disparar
+      windup: 1.0,       // s entre fijarte (el foco se congela en rojo) y disparar: basta con moverse
       burst: 3,          // disparos por ráfaga (+ heliShots del nivel de estrellas)
       shotInterval: 0.2,
       bulletSpeed: 560,
@@ -169,7 +182,7 @@ export const CONFIG = {
     neon: { on: [0.9, 1.5], off: [0.7, 1.2], warn: 0.35 },   // s encendido, apagado y parpadeo de aviso
     scaffold: { triggerTime: 0.8, warnTime: 0.45, heat: 3 }, // s de antelación al derrumbarse
     hydrant: { triggerTime: 0.9, warnTime: 0.35, duration: 1.6, height: [240, 360], push: 760, heat: 2 },
-    shutter: { length: 120, trigger: [0.35, 0.9], warnTime: 0.25, snapSpeed: 14 }, // s antes de llegar a él
+    shutter: { length: 120, trigger: [0.45, 0.9], warnTime: 0.4, snapSpeed: 14 }, // s antes de llegar a él (aviso más largo: era un pico de muertes)
   },
 
   // ---------------- LOGROS ----------------
@@ -201,11 +214,15 @@ export const CONFIG = {
     firstAttack: 2.5,       // s hasta el primer ataque
     gap: [1.0, 1.8],        // s entre ataques
     carMult: 0.4,           // patrullas mientras dura (el resto de policía se aparta)
-    patterns: ['aimed', 'fan', 'rain', 'spot'],
-    aimed: { warn: 0.9, shots: 5, interval: 0.1 },   // láser de aviso y ráfaga
-    fan: { warn: 0.8, bullets: 7 },                  // abanico
-    rain: { warn: 0.9, columns: 4, waves: 3, speed: 520 }, // columnas que caen desde arriba
-    spot: { duration: 4, catchTime: 0.5, windup: 0.35, shots: 4 }, // foco que barre
+    minDistance: 3000,      // m: nunca aparece antes, aunque tengas 5★
+    // Todos los ataques se pueden esquivar con un solo botón:
+    patterns: ['spot', 'missiles', 'gap'],
+    // foco que te sigue (giro limitado, rad/s); al fijarte se congela y dispara fireDelay s después
+    spot: { duration: 5, follow: 1.6, half: 0.2, catchTime: 0.3, fireDelay: 1.0, shots: 4, interval: 0.09, rest: 0.8, locks: 2 },
+    // misiles con su aviso de siempre (obstacles.missile), uno tras otro
+    missiles: { count: [2, 2, 3], stagger: 0.8 },
+    // pared de balas desde la derecha con un hueco (px) marcado; a pie, hueco abajo
+    gap: { warn: 1.1, waves: 2, footWaves: 1, height: 150, footHeight: 150, spacing: 30, speed: 520, waveGap: 1.1, maxShift: 160 },
     reward: { bucks: 600, gems: 10, xp: 150 },
     starsAfter: 2,          // estrellas tras vencerlo
   },
@@ -287,7 +304,7 @@ export const CONFIG = {
   minors: {
     weight: 4,              // peso frente a cable (5) y cartel (2) al principio
     fullUntil: 350,         // m con el peso completo
-    fadeUntil: 1500,        // m a los que dejan de salir por distancia…
+    fadeUntil: 2200,        // m a los que dejan de salir por distancia (relevo gradual)…
     floor: 0.12,            // …salvo este resto (si hay pocas estrellas)
     starMult: [1, 0.75, 0.25, 0, 0, 0], // multiplicador por estrellas (0★…5★)
     gapMult: 0.7,           // separación tras un enemigo menor (son fáciles)
@@ -338,6 +355,9 @@ export const CONFIG = {
     ease: [
       { until: 500, car: 0.35, missile: 0, heli: 0, carSpeed: 0.55, cop: 1.4 },
       { until: 1000, car: 0.7, missile: 0.4, heli: 0, carSpeed: 0.8, cop: 0.7 },
+      // tramo de transición: suaviza el pico que había hacia los 2.000 m
+      // (volley/heliShots: tope de misiles por salva y disparos extra)
+      { until: 2300, car: 0.9, missile: 0.7, heli: 0.6, carSpeed: 0.92, cop: 0.25, volley: 2, heliShots: 0 },
     ],
     // AJUSTES POR MODO: se aplican sobre "levels" según vayas a pie o con jetpack.
     // A pie un golpe es la detención, así que la policía aprieta menos y avisa antes.
@@ -351,12 +371,12 @@ export const CONFIG = {
       jet: {
         car: 1, missile: 1, heli: 1, carPair: 1, gapMult: 1, carSpeed: 1,
         volleyMax: 3, heliShotsMax: 2, missileFrom: 2, heliFrom: 3, warnMult: 1,
-        bossPatterns: ['aimed', 'fan', 'rain', 'spot'],
+        bossPatterns: ['spot', 'missiles', 'gap'],
       },
       foot: {
         car: 0.6, missile: 0.5, heli: 0.6, carPair: 0.3, gapMult: 1.15, carSpeed: 0.85,
         volleyMax: 1, heliShotsMax: 0, missileFrom: 4, heliFrom: 4, warnMult: 1.5,
-        bossPatterns: ['aimed', 'fan', 'spot'],
+        bossPatterns: ['spot', 'missiles', 'gap'],
       },
     },
     // policía que aparece en cada nivel (índice = nº de estrellas)

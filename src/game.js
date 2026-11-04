@@ -28,6 +28,7 @@ import { Arrest } from './systems/arrest.js';
 import { Boss } from './systems/boss.js';
 import { Radio } from './systems/radio.js';
 import { Achievements } from './meta/achievements.js';
+import { DeathLog } from './ui/deathlog.js';
 
 /** Pista de música de una zona. */
 export const zoneTrack = (zoneId) => CONFIG.music.zoneTracks[zoneId] ?? 'playa';
@@ -193,8 +194,8 @@ export class Game {
       missile: lvl.missile * ease.missile,
       heli: lvl.heli * ease.heli,
       carPair: lvl.carPair * ease.car,
-      volley: 1,
-      heliShots: 0,
+      volley: Math.min(lvl.volley, ease.volley ?? 1),
+      heliShots: Math.min(lvl.heliShots, ease.heliShots ?? 0),
       carSpeed: ease.carSpeed,
       cop: this.wanted.stars > 0 ? ease.cop : 0,
     };
@@ -702,6 +703,7 @@ export class Game {
     this.powers.applyMods(this.player);
     this.dead = true;
     this.cause = obstacle.type;
+    DeathLog.record(this, obstacle);
     this.player.kill(this.speed);
     if (obstacle.type === 'bullet' || obstacle.type === 'missile') obstacle.alive = false;
     this.camera.addShake(0.85);

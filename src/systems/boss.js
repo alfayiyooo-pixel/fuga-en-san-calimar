@@ -1,17 +1,19 @@
 // HELICÓPTERO JEFE (al llegar a 5 estrellas)
 // Persecución especial de CONFIG.boss.duration s. El "Halcón" de la PSC te
 // sigue con su foco y alterna patrones de ataque, siempre con aviso previo:
-//   aimed  línea láser hacia ti y luego una ráfaga recta
-//   fan    abanico de balas (aviso en arco)
-//   rain   columnas marcadas desde arriba: caen balas en vertical
-//   spot   el foco te busca; si te pilla, ráfaga rápida
+//   spot      el foco te sigue; cuando te fija se congela y dispara 1 s
+//             después donde estabas (basta con moverse)
+//   missiles  2-3 misiles, cada uno con su aviso en el borde derecho
+//   gap       pared de balas desde la derecha con un hueco marcado en verde
+//             (a pie, el hueco está siempre abajo)
+// Nunca aparece antes de CONFIG.boss.minDistance m.
 // Si sobrevives: gran recompensa, música de victoria y bajas a 2★.
 
 import { CONFIG } from '../config.js';
 import { rand, pick, clamp } from '../core/rng.js';
 import { t } from '../core/i18n.js';
 import { Sound } from '../core/audio.js';
-import { Bullet } from '../entities/obstacles.js';
+import { Bullet, Missile } from '../entities/obstacles.js';
 import { drawGlow } from '../fx/sprites.js';
 
 const INK = '#1b1030';
@@ -30,7 +32,7 @@ export class Boss {
 
   /** ¿Puede empezar? (5★, sin respiro, y no muy seguido). */
   canStart(g) {
-    return !this.active && !this.leaving && !g.dead && g.wanted.stars >= 5 && !g.respite.active && g.distance >= this.cooldownUntil;
+    return !this.active && !this.leaving && !g.dead && g.wanted.stars >= 5 && !g.respite.active && g.distance >= Math.max(this.cooldownUntil, CONFIG.boss.minDistance);
   }
 
   start(g) {
@@ -92,90 +94,142 @@ export class Boss {
     if (!this.attack) {
       this.nextAttack -= dt;
       if (this.nextAttack <= 0) {
-        const pats = g.policeMode.bossPatterns ?? B.patterns;
+        const pats = (g.policeMode.bossPatterns ?? B.patterns).filter((k) => B[k]);
         const opts = pats.filter((k) => k !== this.last);
-        const kind = pick(opts);
+        const kind = pick(opts.length ? opts : pats);
         this.last = kind;
         this.attack = { kind, t: 0, fired: 0, slow: g.warnMult };
-        const A = this.attack;
-        if (kind === 'aimed') A.aim = { x: p.x + g.speed * 0.6, y: p.y };
-        if (kind === 'rain') A.cols = Array.from({ length: B.rain.columns }, (_, i) => g.camera.x + g.view.w * (0.28 + i * (0.6 / B.rain.columns)) + rand(-30, 30));
+        if (kind === 'spot') this.startSpot(g);
+        else if (kind === 'missiles') this.startMissiles(g);
+        else if (kind === 'gap') this.startGap(g);
         Sound.lockBeep(false);
       }
       return;
     }
     const A = this.attack;
-    // durante el aviso el reloj va más lento si vas a pie (más tiempo para reaccionar)
-    const warn = B[A.kind]?.warn ?? 0;
-    A.t += A.t < warn ? dt / (A.slow ?? 1) : dt;
-    const gunX = this.x - 40;
-    const gunY = this.y + 30;
-    if (A.kind === 'aimed') {
-      // el punto de mira sigue un poco al jugador durante el aviso
-      if (A.t < B.aimed.warn) {
-        A.aim.x += (p.x + g.speed * 0.5 - A.aim.x) * Math.min(1, dt * 3);
-        A.aim.y += (p.y - A.aim.y) * Math.min(1, dt * 3);
-        if (Math.floor(A.t * 8) !== Math.floor((A.t - dt) * 8)) Sound.lockBeep(A.t > B.aimed.warn * 0.6);
-      } else if (A.fired < B.aimed.shots && A.t > B.aimed.warn + A.fired * B.aimed.interval) {
-        const dx = A.aim.x - gunX;
-        const dy = A.aim.y - gunY;
-        const len = Math.hypot(dx, dy) || 1;
-        g.addObstacle(new Bullet(gunX, gunY, dx / len, dy / len, g));
+    A.t += dt;
+    if (A.kind === 'spot') this.updateSpot(dt, g, A);
+    else if (A.kind === 'missiles') {
+      if (A.t >= A.until) this.endAttack();
+    } else if (A.kind === 'gap') this.updateGap(dt, g, A);
+  }
+
+  /** Origen del foco (bajo el morro). */
+  get lightX() {
+    return this.x - 10;
+  }
+  get lightY() {
+    return this.y + 26;
+  }
+
+  // ---- FOCO: te sigue; al fijarte, dispara 1 s después donde estabas ----
+  startSpot(g) {
+    const A = this.attack;
+    A.ang = Math.PI * 0.62;
+    A.lock = -1;    // s desde que te fijó (-1 = buscando)
+    A.rest = 0.6;   // s antes de poder fijarte
+    A.locks = 0;
+    this.spotCatch = 0;
+  }
+
+  updateSpot(dt, g, A) {
+    const S = CONFIG.boss.spot;
+    const p = g.player;
+    const to = Math.atan2(p.y - this.lightY, p.x - this.lightX);
+    if (A.lock < 0) {
+      // sigue al jugador con un giro limitado (se le puede dejar atrás)
+      const d = clamp(to - A.ang, -S.follow * dt, S.follow * dt);
+      A.ang += d;
+      A.rest -= dt;
+      const inside = Math.abs(to - A.ang) < S.half * 0.8;
+      this.spotCatch = inside && A.rest <= 0 ? this.spotCatch + dt : Math.max(0, this.spotCatch - dt * 2);
+      if (this.spotCatch >= S.catchTime && A.locks < S.locks) {
+        // fijado: la línea se congela en tu posición actual
+        A.lock = 0;
+        A.ang = to;
+        A.fired = 0;
+        A.locks++;
+        Sound.spottedAlarm();
+      } else if (A.t > S.duration) this.endAttack();
+      return;
+    }
+    A.lock += dt;
+    const delay = S.fireDelay * (A.slow ?? 1);
+    if (A.lock < delay) {
+      if (Math.floor(A.lock * 6 / delay * 2) !== Math.floor((A.lock - dt) * 6 / delay * 2)) Sound.lockBeep(A.lock > delay * 0.6);
+    } else if (A.fired < S.shots) {
+      if (A.lock >= delay + A.fired * S.interval) {
+        const b = new Bullet(this.lightX, this.lightY, Math.cos(A.ang), Math.sin(A.ang), g);
+        b.src = 'boss-spot';
+        g.addObstacle(b);
         A.fired++;
         Sound.shot();
-      } else if (A.fired >= B.aimed.shots) this.endAttack();
-    } else if (A.kind === 'fan') {
-      if (A.t >= B.fan.warn && !A.fired) {
-        A.fired = 1;
-        const n = B.fan.bullets;
-        for (let i = 0; i < n; i++) {
-          const a = Math.PI * (0.55 + (0.4 * i) / (n - 1)); // hacia abajo-izquierda
-          g.addObstacle(new Bullet(gunX, gunY, Math.cos(a), Math.sin(a), g));
+      }
+    } else if (A.lock > delay + S.shots * S.interval + 0.3) {
+      // vuelve a buscar (o termina)
+      A.lock = -1;
+      A.rest = S.rest;
+      this.spotCatch = 0;
+      if (A.t > S.duration || A.locks >= S.locks) this.endAttack();
+    }
+  }
+
+  // ---- MISILES: cada uno avisa en el borde (te sigue, se fija y sale) ----
+  startMissiles(g) {
+    const M = CONFIG.boss.missiles;
+    const O = CONFIG.obstacles.missile;
+    const n = M.count[Math.floor(Math.random() * M.count.length)];
+    for (let i = 0; i < n; i++) {
+      const m = new Missile(g, i * M.stagger, 0);
+      m.src = 'boss-missile';
+      g.addObstacle(m);
+    }
+    this.attack.until = (n - 1) * M.stagger + (O.warnTime + O.lockTime) * g.warnMult + 0.6;
+  }
+
+  // ---- RÁFAGA CON HUECO: pared de balas desde la derecha con un hueco bien marcado ----
+  startGap(g) {
+    const G = CONFIG.boss.gap;
+    const A = this.attack;
+    const v = g.view;
+    const foot = g.player.onFoot;
+    const top = CONFIG.world.ceiling;
+    const gy = v.groundY;
+    A.walls = [];
+    const waves = foot ? G.footWaves : G.waves;
+    let center = clamp(g.player.y + rand(-G.maxShift, G.maxShift), top + G.height / 2 + 10, gy - G.height / 2 - 6);
+    for (let i = 0; i < waves; i++) {
+      if (i > 0) center = clamp(center + rand(-G.maxShift, G.maxShift), top + G.height / 2 + 10, gy - G.height / 2 - 6);
+      // a pie el hueco está siempre abajo (se pasa sin saltar o con un salto corto)
+      const g0 = foot ? gy - G.footHeight : center - G.height / 2;
+      const g1 = foot ? gy + 20 : center + G.height / 2;
+      A.walls.push({ g0, g1, at: G.warn * (A.slow ?? 1) + i * G.waveGap, fired: false, firedT: 0 });
+    }
+  }
+
+  updateGap(dt, g, A) {
+    const G = CONFIG.boss.gap;
+    const top = CONFIG.world.ceiling;
+    const gy = g.view.groundY;
+    let pending = false;
+    for (const w of A.walls) {
+      if (!w.fired && A.t >= w.at) {
+        w.fired = true;
+        const x = g.camera.x + g.view.w + 30;
+        for (let y = top + 6; y < gy - 4; y += G.spacing) {
+          if (y > w.g0 - 6 && y < w.g1 + 6) continue;
+          const b = new Bullet(x, y, -1, 0, g);
+          b.vx = g.speed - G.speed;
+          b.src = 'boss-gap';
+          g.addObstacle(b);
         }
         Sound.shot();
         Sound.boom();
-      } else if (A.fired && A.t > B.fan.warn + 0.4) this.endAttack();
-    } else if (A.kind === 'rain') {
-      if (A.t >= B.rain.warn && A.fired < B.rain.waves) {
-        if (A.t >= B.rain.warn + A.fired * 0.35) {
-          for (const cx of A.cols) {
-            const b = new Bullet(cx, -20, 0, 1, g);
-            b.vx = g.speed; // cae en vertical respecto a la pantalla
-            b.vy = B.rain.speed;
-            g.addObstacle(b);
-          }
-          A.fired++;
-          Sound.shot();
-        }
-      } else if (A.fired >= B.rain.waves) this.endAttack();
-      // las columnas avanzan con la cámara
-      for (let i = 0; i < A.cols.length; i++) A.cols[i] += g.speed * dt;
-    } else if (A.kind === 'spot') {
-      // el foco barre de lado a lado
-      const ang = Math.PI * 0.5 + Math.sin(A.t * 1.8) * 0.75;
-      A.ang = ang;
-      const vx = Math.cos(ang);
-      const vy = Math.sin(ang);
-      const px = p.x - this.x;
-      const py = p.y - (this.y + 20);
-      const along = px * vx + py * vy;
-      const across = Math.abs(px * -vy + py * vx);
-      const inside = along > 0 && across < 30 + along * 0.22;
-      this.spotCatch = inside ? this.spotCatch + dt : Math.max(0, this.spotCatch - dt * 2);
-      if (this.spotCatch > B.spot.catchTime && !A.burst) {
-        A.burst = A.t;
-        Sound.spottedAlarm();
       }
-      if (A.burst && A.fired < B.spot.shots && A.t > A.burst + B.spot.windup * (A.slow ?? 1) + A.fired * 0.12) {
-        const dx = p.x + g.speed * 0.3 - gunX;
-        const dy = p.y - gunY;
-        const len = Math.hypot(dx, dy) || 1;
-        g.addObstacle(new Bullet(gunX, gunY, dx / len, dy / len, g));
-        A.fired++;
-        Sound.shot();
-      }
-      if (A.t > B.spot.duration) this.endAttack();
+      if (w.fired) w.firedT += dt;
+      if (!w.fired || w.firedT < (g.view.w + 60) / G.speed) pending = true;
     }
+    if (!pending) this.endAttack();
   }
 
   endAttack() {
@@ -223,67 +277,124 @@ export class Boss {
     const y = this.y;
     const B = CONFIG.boss;
     if (A && this.active) {
-      const gunX = x - 40;
-      const gunY = y + 30;
-      if (A.kind === 'aimed' && A.t < B.aimed.warn + 0.1) {
-        const k = A.t / B.aimed.warn;
-        const ax = A.aim.x - camX;
-        const dx = ax - gunX;
-        const dy = A.aim.y - gunY;
-        const len = Math.hypot(dx, dy) || 1;
-        ctx.strokeStyle = `rgba(255, 61, 79, ${0.3 + 0.6 * k})`;
-        ctx.lineWidth = 1.5 + k * 2;
-        ctx.setLineDash([12, 6]);
-        ctx.beginPath();
-        ctx.moveTo(gunX, gunY);
-        ctx.lineTo(gunX + (dx / len) * 1400, gunY + (dy / len) * 1400);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.strokeStyle = '#ff3d4f';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(ax, A.aim.y, 16 - k * 6, 0, Math.PI * 2);
-        ctx.stroke();
-      } else if (A.kind === 'fan' && A.t < B.fan.warn) {
-        const blink = Math.floor(A.t * 10) % 2 === 0;
-        ctx.fillStyle = blink ? 'rgba(255, 61, 79, 0.18)' : 'rgba(255, 182, 39, 0.1)';
-        ctx.beginPath();
-        ctx.moveTo(gunX, gunY);
-        ctx.arc(gunX, gunY, 900, Math.PI * 0.55, Math.PI * 0.95);
-        ctx.closePath();
-        ctx.fill();
-      } else if (A.kind === 'rain' && A.fired < B.rain.waves) {
-        for (const cx of A.cols) {
-          const sx = cx - camX;
-          ctx.fillStyle = `rgba(255, 61, 79, ${0.12 + 0.1 * Math.sin(A.t * 20)})`;
-          ctx.fillRect(sx - 14, 0, 28, g.view.groundY);
-          ctx.fillStyle = '#ff3d4f';
-          ctx.beginPath();
-          ctx.moveTo(sx - 12, 4);
-          ctx.lineTo(sx + 12, 4);
-          ctx.lineTo(sx, 22);
-          ctx.fill();
-        }
-      } else if (A.kind === 'spot' && A.ang !== undefined) {
-        const len = 900;
-        const sp = 0.22;
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        const gr = ctx.createLinearGradient(x, y + 20, x + Math.cos(A.ang) * len, y + 20 + Math.sin(A.ang) * len);
-        const hot = this.spotCatch > 0.05;
-        gr.addColorStop(0, hot ? 'rgba(255, 120, 120, 0.5)' : 'rgba(255, 250, 210, 0.45)');
-        gr.addColorStop(1, 'rgba(255, 250, 210, 0)');
-        ctx.fillStyle = gr;
-        ctx.beginPath();
-        ctx.moveTo(x, y + 20);
-        ctx.lineTo(x + Math.cos(A.ang - sp) * len, y + 20 + Math.sin(A.ang - sp) * len);
-        ctx.lineTo(x + Math.cos(A.ang + sp) * len, y + 20 + Math.sin(A.ang + sp) * len);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
+      if (A.kind === 'spot') this.drawSpot(ctx, camX, g, A);
+      else if (A.kind === 'gap') this.drawGap(ctx, g, A);
     }
     this.drawHeli(ctx, x, y, g);
+  }
+
+  /** Foco: blanco mientras busca; rojo y fijo (con cuenta atrás) cuando te ha fijado. */
+  drawSpot(ctx, camX, g, A) {
+    const S = CONFIG.boss.spot;
+    const lx = this.lightX - camX;
+    const ly = this.lightY;
+    const len = 1100;
+    const locked = A.lock >= 0;
+    const delay = S.fireDelay * (A.slow ?? 1);
+    const k = locked ? clamp(A.lock / delay, 0, 1) : 0;
+    const sp = locked ? S.half * (1 - 0.6 * k) : S.half;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const gr = ctx.createLinearGradient(lx, ly, lx + Math.cos(A.ang) * len, ly + Math.sin(A.ang) * len);
+    const hot = this.spotCatch > 0.05;
+    const c = locked ? '255, 60, 80' : hot ? '255, 170, 150' : '255, 250, 210';
+    gr.addColorStop(0, `rgba(${c}, ${locked ? 0.55 + 0.3 * k : 0.42})`);
+    gr.addColorStop(1, `rgba(${c}, 0)`);
+    ctx.fillStyle = gr;
+    ctx.beginPath();
+    ctx.moveTo(lx, ly);
+    ctx.lineTo(lx + Math.cos(A.ang - sp) * len, ly + Math.sin(A.ang - sp) * len);
+    ctx.lineTo(lx + Math.cos(A.ang + sp) * len, ly + Math.sin(A.ang + sp) * len);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    if (locked && A.lock < delay + 0.05) {
+      // línea de tiro y anillo que se cierra: 1 s para apartarse
+      ctx.strokeStyle = `rgba(255, 61, 79, ${0.5 + 0.5 * k})`;
+      ctx.lineWidth = 2 + k * 2;
+      ctx.setLineDash([12, 7]);
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.lineTo(lx + Math.cos(A.ang) * len, ly + Math.sin(A.ang) * len);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const p = g.player;
+      const dist = Math.hypot(p.x - this.lightX, p.y - this.lightY);
+      const tx = lx + Math.cos(A.ang) * dist;
+      const ty = ly + Math.sin(A.ang) * dist;
+      ctx.fillStyle = `rgba(255, 61, 79, ${0.15 + 0.2 * k})`;
+      ctx.beginPath();
+      ctx.arc(tx, ty, 40 - 26 * k, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      // cuenta atrás: el arco se va vaciando hasta el disparo
+      ctx.strokeStyle = '#ffd23f';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(tx, ty, 48, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - k));
+      ctx.stroke();
+    }
+  }
+
+  /** Pared de balas: franja roja en el borde y el hueco en verde con flechas. */
+  drawGap(ctx, g, A) {
+    const G = CONFIG.boss.gap;
+    const v = g.view;
+    const top = CONFIG.world.ceiling;
+    const gy = v.groundY;
+    for (const w of A.walls) {
+      const warnLeft = w.at - A.t;
+      let x;
+      if (!w.fired) {
+        if (warnLeft > G.warn * (A.slow ?? 1) + 0.05) continue;
+        x = v.w - 26;
+        const blink = Math.floor(A.t * 10) % 2 === 0;
+        ctx.fillStyle = blink ? 'rgba(255, 40, 60, 0.55)' : 'rgba(255, 40, 60, 0.32)';
+        ctx.fillRect(x - 18, top, 36, w.g0 - top);
+        if (w.g1 < gy) ctx.fillRect(x - 18, w.g1, 36, gy - w.g1);
+        // dónde saldrá cada bala
+        ctx.fillStyle = blink ? '#ffd23f' : '#ff7a3d';
+        for (let by = top + 6; by < gy - 4; by += G.spacing) {
+          if (by > w.g0 - 6 && by < w.g1 + 6) continue;
+          ctx.beginPath();
+          ctx.arc(x, by, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        x = v.w + 30 - G.speed * w.firedT;
+        if (x < -40) continue;
+      }
+      // hueco: marco verde con flechas que indican por dónde pasar
+      const g1 = Math.min(w.g1, gy);
+      ctx.save();
+      ctx.strokeStyle = '#3dff8a';
+      ctx.fillStyle = 'rgba(61, 255, 138, 0.3)';
+      ctx.lineWidth = 4;
+      ctx.fillRect(x - 18, w.g0, 36, g1 - w.g0);
+      ctx.beginPath();
+      ctx.moveTo(x - 22, w.g0);
+      ctx.lineTo(x + 22, w.g0);
+      ctx.moveTo(x - 22, g1);
+      ctx.lineTo(x + 22, g1);
+      ctx.stroke();
+      if (!w.fired) {
+        const my = (w.g0 + g1) / 2;
+        const off = (A.t * 60) % 20;
+        ctx.fillStyle = '#3dff8a';
+        for (let k = 0; k < 3; k++) {
+          const ax = x - 30 - k * 24 - off;
+          ctx.globalAlpha = 1 - k * 0.3;
+          ctx.beginPath();
+          ctx.moveTo(ax, my - 14);
+          ctx.lineTo(ax - 14, my);
+          ctx.lineTo(ax, my + 14);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
   }
 
   drawHeli(ctx, x, y, g) {

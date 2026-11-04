@@ -64,7 +64,7 @@ Al caer, el atracador sale despedido con la velocidad que llevaba: rebota, rueda
 - Para que el suelo siga siendo un reto: los obstáculos de calle salen a veces **en serie** (2-3 seguidos, con el hueco justo para aterrizar y volver a saltar) y a veces con un **cable por encima** que un salto normal pasa por debajo pero un doble salto toca (`foot.street.series` y `foot.street.ceilingCable`).
 - A los **250-380 m** aparece el **jetpack** dentro de un grupo de pavos. Puedes ignorarlo: vuelve a salir cada 450-750 m mientras sigas a pie.
 - **Capas de golpe:** a pie → detenido · con jetpack → lo pierdes y sigues a pie · con un personaje → vuelves al jetpack.
-- **Policía más justa a pie:** como un golpe a pie es la detención, la policía aprieta menos que con jetpack: menos patrullas (×0,6) y más lentas, más separación entre obstáculos, ataques con un 50 % más de aviso (patrullas, misiles, helicóptero y jefe), misiles y helicópteros solo desde 4★ y de uno en uno, y el jefe no usa la lluvia de balas. Ajustes separados en `wanted.byMode.foot` y `wanted.byMode.jet` de `config.js`.
+- **Policía más justa a pie:** como un golpe a pie es la detención, la policía aprieta menos que con jetpack: menos patrullas (×0,6) y más lentas, más separación entre obstáculos, ataques con un 50 % más de aviso (patrullas, misiles, helicóptero y jefe), misiles y helicópteros solo desde 4★ y de uno en uno, y en la ráfaga del jefe el hueco está siempre abajo. Ajustes separados en `wanted.byMode.foot` y `wanted.byMode.jet` de `config.js`.
 - **A PIE ×2:** mientras no hayas cogido nunca el jetpack, los pavos valen el doble (insignia verde en el HUD).
 - **Obstáculos de calle:** vallas de obra, cubos de basura, coches aparcados y **toldos** (caer encima te lanza muy alto hacia un arco de pavos).
 - **Vehículos a pie:** patinete eléctrico y carrito de la compra (unos segundos, más velocidad y aguantan un golpe).
@@ -83,7 +83,12 @@ Las zonas se suceden cada 500 m y vuelven a empezar: **Playa Coral → Distrito 
 
 **Agentes a pie que te persiguen** (al principio, con 1★): llevan un cono de visión sutil. Si entras en él te ven, se paran a gritarte algo gracioso (bocadillo + voz) y, cuando les pasas, se dan la vuelta y te persiguen unos segundos hasta que se rinden agotados (sudando, «¡Me ha dado flato!»). Durante la persecución no hacen daño. Si llegan a un obstáculo que tú has saltado, se estampan de forma cómica: se aplastan contra él y resbalan, ruedan hacia atrás o caen de espaldas, con ojos en X, la gorra saliendo volando y estrellitas o pajaritos girando. Cada estampada da unos pavos (× multiplicador), algo de XP y «+Humillación», y cuenta para la misión «Haz que 5 policías se estampen» (acumulativa). Ajustes en `minors.cop` de `config.js`; gritos en `cop.shout.1..8` de `translations.js`.
 
-**Helicóptero jefe** (al llegar a 5★): persecución de 30 s contra «El Halcón», con barra de tiempo visible. Alterna ataques siempre avisados: láser de puntería y ráfaga, abanico de balas, columnas que caen desde arriba y foco que barre. Si sobrevives: +600 pavos, +10 💎, +150 XP, fanfarria de victoria y bajas a 2★ (bloque `boss`).
+**Helicóptero jefe** (al llegar a 5★, **nunca antes de 3.000 m**: `boss.minDistance`): persecución de 30 s contra «El Halcón», con barra de tiempo visible. Con un solo botón todos sus ataques se pueden esquivar (no hay «cortinas» de balas desde arriba):
+- **Foco que te sigue:** gira hacia ti con un giro limitado; cuando te fija se congela en rojo, aparece un anillo con cuenta atrás y dispara **1 s después** donde estabas. Basta con moverse.
+- **Misiles:** 2-3 seguidos, cada uno con su aviso de siempre en el borde derecho (te sigue, se fija y sale).
+- **Ráfaga con hueco:** una pared de balas entra por la derecha; antes, el borde se marca en rojo con la posición de cada bala y el hueco en verde con flechas. A pie, el hueco está siempre abajo.
+
+El helicóptero normal también avisa así: cuando su foco te detecta se queda fijo en rojo con una línea de tiro discontinua y dispara 1 s después (`obstacles.heli.windup`). Si sobrevives: +600 pavos, +10 💎, +150 XP, fanfarria de victoria y bajas a 2★ (bloque `boss`).
 
 **Escondites** (con 2★ o más, cada 380-700 m): **túnel de lavado** y **callejón oscuro** a ras de suelo, y **planta de parking** a media altura (solo con jetpack). Si lo atraviesas de punta a punta, pierdes una estrella con destello y sonido de alivio. Los pavos van por la otra ruta, así que esconderse es una decisión (bloque `hideouts`).
 
@@ -380,11 +385,15 @@ Los textos (ES/EN) están en [`src/i18n/translations.js`](src/i18n/translations.
 
 | Parámetro | Efecto |
 |---|---|
-| `?debug` | FPS, velocidad, física, calor de búsqueda y zona; **panel de deslizadores** para ajustar la física del jetpack en vivo (botón «Copiar valores»); acceso a `game` desde la consola |
+| `?debug` | FPS, velocidad, física, calor de búsqueda y zona; **panel de deslizadores** para ajustar la física del jetpack en vivo (botón «Copiar valores»); **registro de muertes** (abajo a la izquierda); acceso a `game` desde la consola |
 | `?god` | Invulnerable (para recorrer todas las zonas) |
 | `?start=1500` | Empieza la partida en esos metros |
 
-Se combinan: `?debug&god&start=2000`. Para borrar el progreso: `localStorage.clear()` en la consola.
+Se combinan: `?debug&god&start=2000`.
+
+**Registro de muertes (`?debug`).** Cada muerte guarda qué obstáculo te mató (los del jefe aparecen como `boss-spot`, `boss-missile` y `boss-gap`), en qué metro, la zona, las estrellas y si ibas a pie, con jetpack o transformado. El panel plegable «Muertes» resume las últimas 50 partidas: distancia media y mediana, causas más frecuentes, muertes por tramos de 250 m (con las dos causas principales de cada tramo) y las 8 últimas. Se guarda en el navegador (`fuga_deathlog`); «Borrar» lo vacía. En la consola: `__deaths()` y `__deathsClear()`. Ajustes en `debug.deathLog`.
+
+**Pico de dificultad hacia los 2.000 m (revisado con el registro).** Un bot que juega partidas completas mostró que los golpes se disparaban entre 1.500 y 1.750 m. Coincidían varias cosas a la vez: los cables en «puerta» (arriba y abajo con hueco) aparecían de golpe a 1.575 m con toda su probabilidad, los enemigos menores (fáciles y con más hueco detrás) desaparecían del todo a 1.500 m, la policía pasaba sin transición de la curva suave a la normal (a 1.000 m) y la zona del puerto multiplicaba misiles y helicópteros. Cambios: los cables en puerta y dobles entran poco a poco (`obstacles.cable.gate/double`: from, chance, ramp), los enemigos menores se retiran hasta 2.200 m, hay un tercer tramo de policía suave hasta 2.300 m (`wanted.ease`), el puerto aprieta menos (misiles ×1,3 y helicóptero ×1,15) y las persianas avisan antes (0,4 s). Con 20 partidas del bot por versión, el máximo de golpes por tramo entre 1.000 y 2.500 m bajó de 0,85 a 0,65 por partida y la curva queda más plana. Para borrar el progreso: `localStorage.clear()` en la consola.
 
 ## Estructura del proyecto
 

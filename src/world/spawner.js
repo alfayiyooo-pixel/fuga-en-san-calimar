@@ -218,7 +218,8 @@ export class Spawner {
     }
 
     // "puerta": un cable desde arriba y otro desde abajo con hueco
-    if (d > 0.45 && chance(0.25)) {
+    const ramped = (R) => R.chance * clamp((d - R.from) / R.ramp, 0, 1);
+    if (chance(ramped(C.gate))) {
       const gapH = lerp(190, 140, d);
       const gapY = rand(top + 80, bottom - 80 - gapH);
       const l1 = gapY - top;
@@ -229,7 +230,7 @@ export class Spawner {
     }
 
     // doble: uno alto y uno bajo, escalonados
-    if (d > 0.25 && chance(0.3)) {
+    if (chance(ramped(C.double))) {
       const len = rand(C.minLen, C.maxLen * 0.8);
       const high = chance(0.5);
       g.addObstacle(this.cable(x, len, high ? 'high' : 'low', g));

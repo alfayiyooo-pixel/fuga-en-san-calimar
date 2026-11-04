@@ -487,16 +487,19 @@ export class Helicopter extends Obstacle {
       const inside = dy > 0 && Math.abs(toPlayer - this.beam) < 0.14;
       this.detect = inside ? this.detect + dt : Math.max(0, this.detect - dt * 0.6);
       if (this.detect >= H.detectTime) {
+        // te fija: el foco se congela donde estabas y dispara tras H.windup s
         this.state = 'lock';
         this.timer = 0;
         this.shots = 0;
+        this.lockAng = toPlayer;
         Sound.spottedAlarm();
         g.spotted(CONFIG.wanted.heat.heliSpotted, p.x, p.y - 60);
       }
       if (this.life <= 0) this.state = 'leave';
     } else if (this.state === 'lock' || this.state === 'fire') {
-      this.beam = approach(this.beam, toPlayer, 10, dt);
+      this.beam = approach(this.beam, this.lockAng, 14, dt);
       this.timer += dt;
+      if (this.state === 'lock' && Math.floor(this.timer * 6) !== Math.floor((this.timer - dt) * 6)) Sound.lockBeep(this.timer > H.windup * g.warnMult * 0.6);
       if (this.state === 'lock' && this.timer >= H.windup * g.warnMult) {
         this.state = 'fire';
         this.timer = H.shotInterval;
@@ -506,8 +509,7 @@ export class Helicopter extends Obstacle {
         const burst = H.burst + g.policeLevel.heliShots;
         if (this.shots < burst) {
           this.shots++;
-          const len = Math.hypot(dx, dy) || 1;
-          g.addObstacle(new Bullet(this.lightX, this.lightY, dx / len, dy / len, g));
+          g.addObstacle(new Bullet(this.lightX, this.lightY, Math.cos(this.lockAng), Math.sin(this.lockAng), g));
           g.particles.burst(this.lightX, this.lightY, 4, { color: '#ffd23f', speed: 120, life: 0.15, size: 3, additive: true });
         } else {
           this.state = 'cooldown';
@@ -562,6 +564,18 @@ export class Helicopter extends Obstacle {
         drawGlow(ctx, (ax + bx) / 2, gy, Math.abs(bx - ax) / 2 + 24, red ? 'rgba(255, 70, 90, 0.8)' : 'rgba(255, 244, 190, 0.8)', 0.55, 12);
       }
       drawGlow(ctx, lx, ly, 22, red ? 'rgba(255, 70, 90, 0.95)' : 'rgba(255, 250, 220, 0.95)', 0.9);
+      // fijado: línea de tiro discontinua que se intensifica hasta el disparo
+      if (this.state === 'lock') {
+        const k = Math.min(1, this.timer / (CONFIG.obstacles.heli.windup * g.warnMult));
+        ctx.strokeStyle = `rgba(255, 61, 79, ${0.45 + 0.5 * k})`;
+        ctx.lineWidth = 2 + 2 * k;
+        ctx.setLineDash([12, 7]);
+        ctx.beginPath();
+        ctx.moveTo(lx, ly);
+        ctx.lineTo(lx + Math.cos(this.lockAng) * 1100, ly + Math.sin(this.lockAng) * 1100);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
     }
 
     // cola (a la derecha, mira a la izquierda)

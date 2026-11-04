@@ -12,6 +12,7 @@ import { Voice } from './core/voice.js';
 import { setSpriteScale } from './fx/sprites.js';
 import { Quality } from './core/quality.js';
 import { createTuner } from './ui/tuner.js';
+import { createDeathPanel } from './ui/deathlog.js';
 import { Profile } from './meta/profile.js';
 import { Shop } from './ui/shop.js';
 import { Wardrobe } from './ui/wardrobe.js';
@@ -49,6 +50,7 @@ const screens = new Screens();
 if (hud.debug) {
   window.game = game; // acceso desde la consola con ?debug
   createTuner();
+  createDeathPanel();
 }
 
 setLang(Save.data.settings.lang || detectLanguage());

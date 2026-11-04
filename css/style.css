@@ -1072,3 +1072,27 @@ canvas {
   user-select: all;
 }
 .code-inline { font-family: ui-monospace, monospace; letter-spacing: 1px; }
+
+/* ---------- REGISTRO DE MUERTES (?debug) ---------- */
+#deathlog {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  z-index: 30;
+  width: 270px;
+  max-height: 70vh;
+  overflow: auto;
+  background: rgba(15, 8, 35, 0.9);
+  color: #ffe8e8;
+  font: 11px/1.35 ui-monospace, monospace;
+  border: 1px solid #ff7a8a;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+#deathlog.collapsed .dl-body { display: none; }
+#deathlog button { font: inherit; background: #2a2150; color: #fff; border: 1px solid #ff7a8a; border-radius: 4px; padding: 1px 6px; cursor: pointer; }
+#deathlog .dl-sec { margin-top: 6px; color: #ff9aa8; font-weight: bold; }
+#deathlog .dl-row { display: flex; justify-content: space-between; gap: 6px; }
+#deathlog .dl-bin { display: grid; grid-template-columns: 40px 1fr 22px; gap: 4px; align-items: center; }
+#deathlog .dl-bin i { display: block; height: 7px; background: #ff5d6f; border-radius: 3px; }
+#deathlog .dl-bin small { grid-column: 1 / -1; color: #bba; margin: -2px 0 2px 44px; }
