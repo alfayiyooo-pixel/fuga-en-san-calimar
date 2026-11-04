@@ -1,4 +1,4 @@
-// ESCENA INICIAL: huida del furgón blindado (3-5 s, en cada partida, sin saltar)
+// ESCENA INICIAL: huida del furgón blindado (~3 s, en cada partida, sin saltar)
 //
 //   0.0  furgón aparcado con las puertas traseras abiertas, alarma sonando
 //   jumpAt  el atracador salta del furgón con la bolsa de dinero
@@ -77,7 +77,7 @@ export class Intro {
       g.camera.addShake(0.25);
     }
     // billetes que se escapan del furgón
-    if (T < 2.5 && Math.random() < dt * 14) {
+    if (T < I.billsUntil && Math.random() < dt * 14) {
       g.particles.spawn({ x: this.doorX + rand(-6, 10), y: g.view.groundY - rand(30, 60), vx: rand(40, 240), vy: rand(-320, -120), life: 1.4, size: 5, shape: 'rect', spin: 10, gravity: 600, drag: 1.2, color: '#5fcf7a' });
     }
 
@@ -98,7 +98,7 @@ export class Intro {
     }
     // cámara: del furgón al jugador (al final ya le sigue exactamente)
     const follow = p.x - g.view.w * CONFIG.player.screenX;
-    const k = smooth(clamp((T - I.jumpAt - 0.2) / I.camTime, 0, 1));
+    const k = smooth(clamp((T - I.jumpAt - 0.1) / I.camTime, 0, 1));
     g.camera.x = lerp(this.camFrom, follow, k);
     g.speed = this.speed;
 

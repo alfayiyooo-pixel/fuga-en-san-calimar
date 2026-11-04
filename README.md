@@ -51,7 +51,7 @@ El juego es una **app web instalable**: se abre a **pantalla completa** desde su
 
 ### Inicio: huida del furgón
 
-Cada partida empieza con una escena de ~4 s que no se puede saltar: un furgón blindado del Banco Lingote con las puertas abiertas y la alarma sonando; el atracador salta con la bolsa de dinero y echa a correr. Escena y partida son continuas (mismo escenario, cámara y velocidad); durante la escena se ignoran toques y teclas. Un anillo dorado y un pequeño «¡CORRE!» marcan el instante en que tomas el control. Se empieza con **1★**. Policía floja al principio: hasta 500 m solo agentes a pie y algún coche lento; de 500 a 1.000 m algo más (misiles ocasionales); después, la curva normal (`intro` y `wanted.ease` en `config.js`).
+Cada partida empieza con una escena de ~3 s que no se puede saltar: un furgón blindado del Banco Lingote con las puertas abiertas y la alarma sonando; el atracador salta con la bolsa de dinero y echa a correr. Escena y partida son continuas (mismo escenario, cámara y velocidad); durante la escena se ignoran toques y teclas. Un anillo dorado y un pequeño «¡CORRE!» marcan el instante en que tomas el control. Se empieza con **1★**. Policía floja al principio: hasta 500 m solo agentes a pie y algún coche lento; de 500 a 1.000 m algo más (misiles ocasionales); después, la curva normal (`intro` y `wanted.ease` en `config.js`).
 
 ### Detención
 

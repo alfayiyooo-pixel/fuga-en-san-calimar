@@ -223,11 +223,13 @@ export const CONFIG = {
 
   // ---------------- ESCENA INICIAL ----------------
   intro: {
-    duration: 4.2,          // s de escena (3-5): no se puede saltar
-    jumpAt: 0.8,            // s: el atracador salta del furgón
-    startSpeed: 140,        // px/s al salir del furgón
-    accelTime: 1.2,         // s hasta la velocidad de la partida
-    camTime: 1.6,           // s de paso de cámara del furgón al jugador
+    duration: 3,            // s de escena: no se puede saltar
+    jumpAt: 0.45,           // s: el atracador salta del furgón
+    startSpeed: 160,        // px/s al salir del furgón
+    accelTime: 1.0,         // s hasta la velocidad de la partida
+    camTime: 1.25,          // s de paso de cámara del furgón al jugador
+    billsUntil: 1.8,        // s durante los que se escapan billetes del furgón
+    radioAt: 0.8,           // s: la radio da la noticia
     cueTime: 0.55,          // s del anillo que marca que ya controlas
     startStars: 1,          // estrellas con las que empieza la partida
   },

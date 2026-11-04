@@ -258,7 +258,7 @@ export class Game {
 
     // escena inicial: el jugador aún no controla nada
     if (this.intro.active) {
-      if (this.radioIntro && this.intro.t > 1.2) {
+      if (this.radioIntro && this.intro.t > CONFIG.intro.radioAt) {
         this.radioIntro = false;
         this.radio.trigger('inicio', 0, this);
       }
