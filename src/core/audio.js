@@ -542,6 +542,13 @@ class AudioFx {
     this.noise({ dur: 0.45, vol: 0.16, freq: 500, type: 'bandpass', q: 1.5, slide: 3 });
   }
 
+  /** Zumbido que sube durante el aviso de un neón, antes de encenderse. */
+  neonWarn(dur = 0.6) {
+    this.tone({ freq: 60, type: 'sawtooth', dur, vol: 0.045, slide: 2, attack: dur * 0.6 });
+    this.tone({ freq: 120, type: 'square', dur, vol: 0.02, slide: 2, attack: dur * 0.7 });
+    for (let k = 0; k < 3; k++) this.noise({ dur: 0.04, vol: 0.05, freq: 6000, type: 'highpass', delay: dur * (0.3 + k * 0.22) });
+  }
+
   neonBuzz() {
     this.tone({ freq: 120, type: 'sawtooth', dur: 0.25, vol: 0.05 });
     this.noise({ dur: 0.08, vol: 0.08, freq: 5000, type: 'highpass' });

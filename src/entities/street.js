@@ -6,7 +6,7 @@
 
 import { CONFIG } from '../config.js';
 import { rand, pick, chance } from '../core/rng.js';
-import { Obstacle } from './obstacles.js';
+import { Obstacle, rectPath } from './obstacles.js';
 import { INK, rr, inked, vgrad } from '../characters/kit.js';
 import { Sound } from '../core/audio.js';
 
@@ -24,6 +24,12 @@ class Street extends Obstacle {
 
   get right() {
     return this.x + this.w;
+  }
+
+  dangerPath(ctx, camX) {
+    if (this.type === 'awning') return false; // no hace daño
+    rectPath(ctx, this.x - camX + 2, this.y + 2, this.w - 4, this.h - 2, 6);
+    return true;
   }
 
   hits(box) {
@@ -192,7 +198,7 @@ export class ParkedCar extends Street {
 export class Awning extends Street {
   constructor(g, x) {
     super('awning', x, 120, 92, g);
-    this.colors = pick([['#ff3d4f', '#fff4dc'], ['#19c3b1', '#fff4dc'], ['#ffb627', '#ff7a3d']]);
+    this.colors = pick([['#19c3b1', '#fff4dc'], ['#4f8fff', '#fff4dc'], ['#5fcf7a', '#f4fff0']]); // nunca colores de peligro: no hace daño
     this.squash = 0;
     // pavos en arco por encima: el premio de rebotar
     const gy = g.view.groundY;

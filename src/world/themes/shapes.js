@@ -107,14 +107,15 @@ export function neonSign(ctx, x, y, text, color, rgba, t, size = 22, flickerSeed
   // caja oscura
   ctx.fillStyle = 'rgba(15, 8, 35, 0.85)';
   ctx.fillRect(x - w / 2, y - size * 0.8, w, size * 1.6);
-  drawGlow(ctx, x, y, w * 0.75, rgba, 0.55 * flick, size * 1.5);
+  drawGlow(ctx, x, y, w * 0.75, rgba, 0.35 * flick, size * 1.5);
   const base = ctx.globalAlpha;
   ctx.globalAlpha = base * flick;
   ctx.lineWidth = 4;
   ctx.strokeStyle = color;
   ctx.globalCompositeOperation = 'lighter';
   ctx.strokeText(text, x, y);
-  ctx.fillStyle = '#ffffff';
+  // decorado: letras del color del tubo (no blancas) para no competir con los neones peligrosos
+  ctx.fillStyle = color;
   ctx.fillText(text, x, y);
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = base;
@@ -124,14 +125,14 @@ export function neonSign(ctx, x, y, text, color, rgba, t, size = 22, flickerSeed
   ctx.strokeRect(x - w / 2 + 3, y - size * 0.8 + 3, w - 6, size * 1.6 - 6);
 }
 
-/** Luz roja de aviso en lo alto de torres y grúas. */
+/** Luz de balizamiento en lo alto de torres y grúas (decorado: blanca azulada, nunca roja). */
 export function beacon(ctx, x, y, t, phase = 0) {
   const on = Math.sin(t * 3 + phase) > 0.2;
-  ctx.fillStyle = on ? '#ff4d5e' : '#6a1a25';
+  ctx.fillStyle = on ? '#d8dcff' : '#4a4866';
   ctx.beginPath();
   ctx.arc(x, y, 3, 0, Math.PI * 2);
   ctx.fill();
-  if (on) drawGlow(ctx, x, y, 16, 'rgba(255, 60, 80, 0.9)', 0.9);
+  if (on) drawGlow(ctx, x, y, 14, 'rgba(190, 200, 255, 0.8)', 0.7);
 }
 
 /** Destellos del sol/luna en el agua: estrellitas que parpadean. */

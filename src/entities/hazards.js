@@ -11,7 +11,7 @@
 
 import { CONFIG } from '../config.js';
 import { rand, pick, chance, clamp } from '../core/rng.js';
-import { Obstacle } from './obstacles.js';
+import { Obstacle, segPath, rectPath } from './obstacles.js';
 import { INK, rr, inked, vgrad } from '../characters/kit.js';
 import { drawGlow } from '../fx/sprites.js';
 import { Sound } from '../core/audio.js';
@@ -101,6 +101,13 @@ export class WreckingBall extends Hazard {
     return (cx - b.x) ** 2 + (cy - b.y) ** 2 < (this.r * 0.9) ** 2;
   }
 
+  dangerPath(ctx, camX) {
+    const b = this.ball;
+    ctx.moveTo(b.x - camX + this.r + 2, b.y);
+    ctx.arc(b.x - camX, b.y, this.r + 2, 0, Math.PI * 2);
+    return true;
+  }
+
   /** Para los pavos: toda la zona que barre la bola. */
   blocks(box) {
     const s = Math.sin(this.amp) * this.L;
@@ -182,8 +189,8 @@ export class Neon extends Hazard {
     this.h = 44;
     this.y = g.player.onFoot ? g.view.groundY - 58 : rand(CONFIG.world.ceiling + 60, g.view.groundY - 130);
     this.word = pick(NEON_WORDS);
-    this.color = pick(['#ff3d9a', '#19e3ff', '#b6ff3d', '#ffb627']);
-    this.rgba = this.color === '#ff3d9a' ? 'rgba(255, 61, 154, 0.9)' : this.color === '#19e3ff' ? 'rgba(25, 227, 255, 0.9)' : this.color === '#b6ff3d' ? 'rgba(182, 255, 61, 0.9)' : 'rgba(255, 182, 39, 0.9)';
+    // colores cálidos y saturados (los neones del decorado son fríos y apagados)
+    [this.color, this.rgba] = pick(CONFIG.hazards.neon.colors);
     // empieza en un punto aleatorio del ciclo (no predecible)
     this.state = chance(0.5) ? 'on' : 'off';
     this.timer = rand(0.2, this.state === 'on' ? C.on[1] : C.off[1]);
@@ -209,8 +216,10 @@ export class Neon extends Hazard {
       this.state = 'off';
       this.timer = rand(C.off[0], C.off[1]);
     } else if (this.state === 'off') {
-      this.state = 'warn'; // parpadeo de aviso (aún no hace daño)
+      this.state = 'warn'; // parpadeo + zumbido de aviso (aún no hace daño)
       this.timer = C.warn;
+      const sx = this.x - g.camera.x;
+      if (sx > -50 && sx < g.view.w + 100) Sound.neonWarn(C.warn);
     } else {
       this.state = 'on';
       this.timer = rand(C.on[0], C.on[1]);
@@ -221,6 +230,12 @@ export class Neon extends Hazard {
 
   hits(box) {
     return this.lit && overlap(box, this.x + 4, this.x + this.w - 4, this.y + 4, this.y + this.h - 4);
+  }
+
+  /** Siempre marcado: aunque esté apagado, va a encenderse. */
+  dangerPath(ctx, camX) {
+    rectPath(ctx, this.x - camX - 2, this.y - 2, this.w + 4, this.h + 4, 9);
+    return true;
   }
 
   blocks(box) {
@@ -242,6 +257,28 @@ export class Neon extends Hazard {
     ctx.stroke();
     rr(ctx, x, y, this.w, this.h, 8);
     inked(ctx, '#1d1433');
+    // franjas de aviso amarillas y negras arriba y abajo (los del decorado no las llevan)
+    ctx.save();
+    rr(ctx, x + 3, y + 3, this.w - 6, this.h - 6, 6);
+    ctx.clip();
+    for (const sy of [y + 3, y + this.h - 9]) {
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillRect(x, sy, this.w, 6);
+      ctx.fillStyle = INK;
+      for (let k = -1; k < this.w / 12 + 1; k++) {
+        ctx.beginPath();
+        ctx.moveTo(x + k * 12, sy + 6);
+        ctx.lineTo(x + k * 12 + 6, sy);
+        ctx.lineTo(x + k * 12 + 11, sy);
+        ctx.lineTo(x + k * 12 + 5, sy + 6);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+    // aviso: el tubo zumba y chisporrotea antes de encenderse
+    if (this.state === 'warn' && Math.random() < 0.5) {
+      g.particles.spawn({ x: this.x + rand(0, this.w), y: y + rand(0, this.h), vx: rand(-40, 40), vy: rand(-60, 10), life: 0.18, size: 2.5, sizeEnd: 0, color: '#fff4dc', additive: true });
+    }
     if (flick > 0.2) drawGlow(ctx, x + this.w / 2, y + this.h / 2, this.w * 0.75, this.rgba, 0.55 * flick, this.h * 1.4);
     ctx.font = "26px 'Bungee', Impact, sans-serif";
     ctx.textAlign = 'center';
@@ -323,6 +360,16 @@ export class Scaffold extends Hazard {
     g.wanted.add(CONFIG.hazards.scaffold.heat);
     Sound.crash();
     Sound.clank();
+  }
+
+  dangerPath(ctx, camX) {
+    let any = false;
+    for (const s of this.segs) {
+      if (!s.alive) continue;
+      rectPath(ctx, this.x - camX + 1, s.y + 1, this.w - 2, s.h - 2, 4);
+      any = true;
+    }
+    return any;
   }
 
   hits(box) {
@@ -447,6 +494,11 @@ export class Hydrant extends Hazard {
     return overlap(box, this.x + 3, this.x + this.w - 3, this.y + 6, this.y + this.h);
   }
 
+  dangerPath(ctx, camX) {
+    rectPath(ctx, this.x - camX, this.y + 2, this.w, this.h - 2, 6);
+    return true;
+  }
+
   blocks(box) {
     return overlap(box, this.x - 20, this.x + this.w + 20, this.y - this.jetH, this.y + this.h);
   }
@@ -538,6 +590,15 @@ export class Shutter extends Hazard {
         g.camera.addShake(0.15);
       }
     }
+  }
+
+  dangerPath(ctx, camX) {
+    const x = this.x - camX;
+    const top = CONFIG.world.ceiling - 40;
+    rectPath(ctx, x, top, 14, this.ay - top, 2);
+    const tp = this.tip;
+    segPath(ctx, x + 14, this.ay, tp.x - camX, tp.y, 7);
+    return true;
   }
 
   hits(box) {

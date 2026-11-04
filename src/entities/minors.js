@@ -53,6 +53,22 @@ class Minor extends Obstacle {
     if (this.right < camX - 250) this.alive = false;
   }
 
+  /** Borde de peligro: un óvalo alrededor (solo mientras puede hacerte daño). */
+  dangerPath(ctx, camX, g) {
+    if (this.ko || !this.harmful) return false;
+    const x = this.x - camX;
+    if (x < -150 || x > g.view.w + 150) return false;
+    const rx = this.w * 0.62;
+    const ry = this.h * 0.62;
+    ctx.moveTo(x + rx, this.y);
+    ctx.ellipse(x, this.y, rx, ry, 0, 0, Math.PI * 2);
+    return true;
+  }
+
+  get harmful() {
+    return true;
+  }
+
   /** Derrotado: sale despedido dando vueltas. */
   knockOut(g) {
     this.ko = true;
@@ -627,8 +643,12 @@ export class Cop extends Minor {
 
   /** Durante la persecución no hace daño (viene por detrás). */
   hits(box) {
-    if (this.state === 'chase' || this.state === 'tired' || this.state === 'crash') return false;
+    if (!this.harmful) return false;
     return super.hits(box);
+  }
+
+  get harmful() {
+    return !(this.state === 'chase' || this.state === 'tired' || this.state === 'crash');
   }
 
   get box() {

@@ -22,6 +22,25 @@ function boxOverlap(a, l, r, t, b) {
   return a.l < r && a.r > l && a.t < b && a.b > t;
 }
 
+/** Añade al trazado actual un rectángulo girado alrededor de un segmento grueso. */
+export function segPath(ctx, x1, y1, x2, y2, half) {
+  const len = Math.hypot(x2 - x1, y2 - y1) || 1;
+  const nx = (-(y2 - y1) / len) * half;
+  const ny = ((x2 - x1) / len) * half;
+  const ex = ((x2 - x1) / len) * half;
+  const ey = ((y2 - y1) / len) * half;
+  ctx.moveTo(x1 + nx - ex, y1 + ny - ey);
+  ctx.lineTo(x2 + nx + ex, y2 + ny + ey);
+  ctx.lineTo(x2 - nx + ex, y2 - ny + ey);
+  ctx.lineTo(x1 - nx - ex, y1 - ny - ey);
+  ctx.closePath();
+}
+
+/** Añade un rectángulo redondeado al trazado actual. */
+export function rectPath(ctx, x, y, w, h, r = 6) {
+  ctx.roundRect(x, y, w, h, r);
+}
+
 export class Obstacle {
   constructor(type) {
     this.type = type;
@@ -31,6 +50,13 @@ export class Obstacle {
   update() {}
   draw() {}
   overlay() {}
+  /**
+   * Silueta de la parte que hace daño, para el borde de peligro (game.drawDangerOutline).
+   * Añade subtrazados a ctx y devuelve true; false si ahora no hace daño o no tiene.
+   */
+  dangerPath() {
+    return false;
+  }
   hits() {
     return false;
   }
@@ -63,6 +89,12 @@ export class Cable extends Obstacle {
 
   get right() {
     return this.x + this.len / 2 + 20;
+  }
+
+  dangerPath(ctx, camX) {
+    const [x1, y1, x2, y2] = this.ends;
+    segPath(ctx, x1 - camX, y1, x2 - camX, y2, this.th / 2 + 2);
+    return true;
   }
 
   update(dt, g) {
@@ -323,6 +355,13 @@ export class PatrolCar extends Obstacle {
     return boxOverlap(box, this.x + 8, this.x + this.w - 6, this.y + 10, this.y + this.h);
   }
 
+  dangerPath(ctx, camX) {
+    const x = this.x - camX;
+    if (x > 2000) return false;
+    rectPath(ctx, x + 2, this.y + 2, this.w - 4, this.h - 2, 12);
+    return true;
+  }
+
   overlay(ctx, g) {
     const sx = this.x - g.camera.x;
     if (sx < g.view.w) return;
@@ -527,6 +566,13 @@ export class Helicopter extends Obstacle {
 
   hits(box) {
     return boxOverlap(box, this.x - this.w / 2 + 6, this.x + this.w / 2 - 20, this.y - this.h / 2 + 6, this.y + this.h / 2);
+  }
+
+  dangerPath(ctx, camX) {
+    const x = this.x - camX;
+    ctx.moveTo(x - 6 + 42, this.y);
+    ctx.ellipse(x - 6, this.y, 42, 24, 0, 0, Math.PI * 2);
+    return true;
   }
 
   draw(ctx, camX, g) {
@@ -753,6 +799,12 @@ export class Missile extends Obstacle {
         g.particles.spawn({ x: this.x + this.w + 4, y: this.y, vx: 120, life: 0.12, size: 6, sizeEnd: 2, color: '#ffb627', additive: true });
       }
     }
+  }
+
+  dangerPath(ctx, camX) {
+    if (this.state !== 'fly') return false;
+    rectPath(ctx, this.x - camX - 5, this.y - 9, 56, 18, 8);
+    return true;
   }
 
   hits(box) {

@@ -78,6 +78,24 @@ export const CONFIG = {
     low: { maxDpr: 0.8, particles: 0.5, detail: false }, // maxDpr < 1 = resolución reducida
   },
 
+  // ---------------- CÓDIGO VISUAL DE PELIGRO ----------------
+  // Lo que hace daño: borde amarillo con franjas rojas y brillo que late, siempre
+  // en la capa de juego. Lo decorativo: fondo a menor resolución (algo
+  // desenfocado), menos saturado, algo más oscuro y sin colores de peligro.
+  danger: {
+    outline: {
+      enabled: true,
+      width: 5, glowWidth: 16,          // px del borde y del brillo
+      yellow: '#ffd23f', red: '#ff2d3d', ink: 'rgba(27, 16, 48, 0.85)', glowColor: '#ff4d3d',
+      dash: [9, 9], dashSpeed: 28,      // franjas rojas que avanzan (px/s)
+      pulseSpeed: 6.5, glow: [0.12, 0.42], // latido del brillo (rad/s, opacidad mín–máx)
+    },
+    decor: {
+      resolution: 0.62,                 // fracción de resolución del fondo (menos = más desenfocado y más rápido)
+      veil: 'rgba(38, 34, 58, 0.24)',   // velo gris oscuro: le quita color y lo oscurece (opacidad = cuánto)
+    },
+  },
+
   // ---------------- MODO ?debug ----------------
   debug: {
     // registro de muertes: muertes guardadas, partidas del resumen y tramo (m) del histograma
@@ -210,7 +228,11 @@ export const CONFIG = {
     },
     repeatMult: 0.25,       // peso del mismo peligro que el anterior
     wrecking: { radius: 28, amp: [0.55, 0.95], period: [1.7, 2.6], lowest: [120, 260], footClearance: 70 }, // s de ciclo, px sobre el suelo
-    neon: { on: [0.9, 1.5], off: [0.7, 1.2], warn: 0.35 },   // s encendido, apagado y parpadeo de aviso
+    neon: {
+      on: [0.9, 1.5], off: [0.7, 1.2], warn: 0.6,   // s encendido, apagado y aviso (parpadeo + zumbido) antes de encenderse
+      // solo colores cálidos y saturados (los del decorado son fríos y apagados)
+      colors: [['#ff2d55', 'rgba(255, 45, 85, 0.9)'], ['#ffd23f', 'rgba(255, 210, 63, 0.9)'], ['#ff7a1a', 'rgba(255, 122, 26, 0.9)'], ['#ff3df0', 'rgba(255, 61, 240, 0.9)']],
+    },
     scaffold: { triggerTime: 0.8, warnTime: 0.45, heat: 3 }, // s de antelación al derrumbarse
     hydrant: { triggerTime: 0.9, warnTime: 0.35, duration: 1.6, height: [240, 360], push: 760, heat: 2 },
     shutter: { length: 120, trigger: [0.45, 0.9], warnTime: 0.4, snapSpeed: 14 }, // s antes de llegar a él (aviso más largo: era un pico de muertes)

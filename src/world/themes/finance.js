@@ -12,11 +12,12 @@ const GLASS = [
   ['#2d3a55', '#111827'],
 ];
 const NEON = [
-  { text: 'LINGOTE', color: '#ff3d7f', rgba: 'rgba(255, 61, 127, 0.9)' },
-  { text: '24H', color: '#19e3d0', rgba: 'rgba(25, 227, 208, 0.9)' },
-  { text: 'HOTEL', color: '#ffd23f', rgba: 'rgba(255, 210, 63, 0.9)' },
-  { text: 'VIP', color: '#a77bff', rgba: 'rgba(167, 123, 255, 0.9)' },
-  { text: 'BAR', color: '#ff7a3d', rgba: 'rgba(255, 122, 61, 0.9)' },
+  // decorado: solo colores fríos y apagados, y palabras que los neones peligrosos no usan
+  { text: 'LINGOTE', color: '#6f8fd8', rgba: 'rgba(111, 143, 216, 0.55)' },
+  { text: 'CINE', color: '#4fb8c4', rgba: 'rgba(79, 184, 196, 0.5)' },
+  { text: 'JAZZ', color: '#8b7bd8', rgba: 'rgba(139, 123, 216, 0.5)' },
+  { text: 'VIP', color: '#7a6cc4', rgba: 'rgba(122, 108, 196, 0.5)' },
+  { text: 'CAFÉ', color: '#4fa8a0', rgba: 'rgba(79, 168, 160, 0.5)' },
 ];
 const WIN_COLORS = [['#ffe9a8', '#ffd27a'], ['#bff4ff', '#8fe3ff'], ['#ffd6a0', '#fff1c8']];
 

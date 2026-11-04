@@ -34,7 +34,7 @@ export class Parallax {
    * mezclan elementos de las dos zonas (edificios sobre la arena…).
    * hook(banda, idZona): vida del fondo entre capas (ver world/ambient.js).
    */
-  drawScene(ctx, v, camX, t, zone, hook = null) {
+  drawScene(ctx, v, camX, t, zone, hook = null, part = 'all') {
     const q = Quality.settings;
     const A = zone.current;
     const B = zone.next;
@@ -55,6 +55,13 @@ export class Parallax {
       ctx.globalAlpha = base;
     };
     const hk = (band, th) => hook?.(band, th.id);
+    if (part === 'ground') {
+      stage('ground', (th) => {
+        this.drawGround(ctx, v, camX, th);
+        tintGround(ctx, v, th);
+      });
+      return;
+    }
     stage('sky', (th) => {
       this.drawCachedSky(ctx, v, t, th, q);
       if (th.rays && q.detail && th.celestial && !th.celestial.hidden) sunRays(ctx, v.w * th.celestial.x, th.celestial.y, t, th.rays.color);
@@ -87,6 +94,7 @@ export class Parallax {
       });
     }
     stage('weather', (th) => drawWeather(ctx, v, camX, t, th, q));
+    if (part === 'back') return;
     stage('ground', (th) => {
       this.drawGround(ctx, v, camX, th);
       tintGround(ctx, v, th);
@@ -419,9 +427,10 @@ export class Parallax {
       ctx.beginPath();
       ctx.rect(0, gy + 15, v.w, 10);
       ctx.clip();
-      ctx.fillStyle = '#f0b429';
+      // franjas del suelo apagadas: el amarillo y negro vivos se reservan para los peligros
+      ctx.fillStyle = '#7d7258';
       ctx.fillRect(0, gy + 15, v.w, 10);
-      ctx.fillStyle = '#1b1030';
+      ctx.fillStyle = '#2a2433';
       for (let x = -off - 40; x < v.w + 40; x += 40) {
         ctx.beginPath();
         ctx.moveTo(x, gy + 25);

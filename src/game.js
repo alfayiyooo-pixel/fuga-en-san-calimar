@@ -755,6 +755,73 @@ export class Game {
     }
   }
 
+  /**
+   * DECORADO: el fondo se pinta en un lienzo a menor resolución (queda algo
+   * desenfocado y además es más barato) y se apaga y desatura un poco, para
+   * que nunca compita con los peligros (CONFIG.danger.decor).
+   */
+  drawDecor(ctx, zone) {
+    const D = CONFIG.danger.decor;
+    const v = this.view;
+    const cv = ctx.canvas;
+    const s = D.resolution;
+    const b = (this.decorBuf ??= document.createElement('canvas'));
+    const w = Math.max(1, Math.ceil(cv.width * s));
+    const h = Math.max(1, Math.ceil(cv.height * s));
+    if (b.width !== w || b.height !== h) {
+      b.width = w;
+      b.height = h;
+    }
+    const bctx = b.getContext('2d');
+    const m = ctx.getTransform();
+    bctx.setTransform(m.a * s, m.b * s, m.c * s, m.d * s, m.e * s, m.f * s);
+    this.parallax.drawScene(bctx, v, this.camera.x, this.t, zone, (band, id) => this.ambient.draw(bctx, band, id, this.t), 'back');
+    // velo gris oscuro: menos saturado y algo más oscuro (una sola capa normal, barata en móvil)
+    bctx.fillStyle = D.veil;
+    bctx.fillRect(-20, -20, v.w + 40, v.groundY + 30);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'low';
+    ctx.drawImage(b, 0, 0, w, h, 0, 0, w / s, h / s);
+    ctx.restore();
+  }
+
+  /** Contorno de peligro de todos los obstáculos que hacen daño (un solo trazo para todos). */
+  drawDangerOutline(ctx, camX) {
+    const D = CONFIG.danger.outline;
+    if (!D.enabled) return;
+    ctx.save();
+    ctx.beginPath();
+    let any = false;
+    for (const o of this.obstacles) {
+      if (o.alive && !o.ko && o.dangerPath?.(ctx, camX, this)) any = true;
+    }
+    if (any) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.t * D.pulseSpeed);
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      // brillo que late
+      ctx.strokeStyle = D.glowColor;
+      ctx.globalAlpha = D.glow[0] + (D.glow[1] - D.glow[0]) * pulse;
+      ctx.lineWidth = D.glowWidth;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = D.ink;
+      ctx.lineWidth = D.width + 3;
+      ctx.stroke();
+      // borde amarillo con franjas rojas que avanzan
+      ctx.strokeStyle = D.yellow;
+      ctx.lineWidth = D.width;
+      ctx.stroke();
+      ctx.setLineDash(D.dash);
+      ctx.lineDashOffset = -this.t * D.dashSpeed;
+      ctx.strokeStyle = D.red;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   render(ctx, { showPlayer, menu = false }) {
     const v = this.view;
     const cam = this.camera;
@@ -767,8 +834,9 @@ export class Game {
     ctx.save();
     ctx.translate(cam.offsetX, cam.offsetY);
 
-    // fondo, clima y suelo (en la transición entre zonas, cada capa cambia en su momento)
-    this.parallax.drawScene(ctx, v, cam.x, this.t, zone, (band, id) => this.ambient.draw(ctx, band, id, this.t));
+    // fondo y clima (en la transición entre zonas, cada capa cambia en su momento)
+    this.drawDecor(ctx, zone);
+    this.parallax.drawScene(ctx, v, cam.x, this.t, zone, null, 'ground');
 
     if (showPlayer) this.player.drawShadow(ctx, cam.x, v.groundY);
     if (!menu) this.drawRecordFlag(ctx, cam.x);
@@ -776,6 +844,8 @@ export class Game {
     if (!menu) this.events.draw(ctx, cam.x, this);
     if (!menu) this.intro.draw(ctx, cam.x, this);
     if (!menu) this.intro.drawCue(ctx, cam.x, this);
+    // todo lo que hace daño: borde rojo/amarillo con brillo que late (debajo del obstáculo)
+    this.drawDangerOutline(ctx, cam.x);
     for (const o of this.obstacles) o.draw(ctx, cam.x, this);
     if (!menu) this.powers.drawAim(ctx, cam.x, this);
     if (!menu) this.tokens.draw(ctx, cam.x, this);
