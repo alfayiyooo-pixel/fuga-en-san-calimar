@@ -141,6 +141,11 @@ export const CONFIG = {
     key: 'sb_publishable_FGZV6-OY1fBdo6jiUf2hJA_xqYxjZva',
     timeout: 8000,          // ms antes de dar la petición por perdida
     minDistance: 50,        // m mínimos para subir una partida
+    // marcas de otros jugadores en el recorrido (se descargan al empezar la partida)
+    //   near: jugadores justo por encima de tu récord · top: cuántos del top se piden ·
+    //   topShow: cuántos de esos se muestran · max: tope total · ahead: px antes de entrar
+    //   en pantalla en que aparece la bandera · linger: s que sigue tras superarlo · y: alto (px)
+    marks: { enabled: true, near: 3, top: 10, topShow: 3, max: 6, ahead: 60, linger: 1.4, y: 62, alpha: 0.85 },
   },
 
   // ---------------- VIDA EN EL FONDO ----------------

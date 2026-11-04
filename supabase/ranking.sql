@@ -235,7 +235,11 @@ end $$;
 -- ---------------------------------------------------------------------
 -- PERMISOS: solo las 5 funciones públicas se pueden llamar con la clave anon
 -- ---------------------------------------------------------------------
-revoke execute on all functions in schema public from public, anon, authenticated;
+-- (solo las de este archivo: así volver a ejecutarlo no quita permisos a marcas.sql ni opiniones.sql)
+revoke execute on function public.sc_limits(), public.sc_week_start(), public.sc_nick_ok(text),
+  public.sc_bests(timestamptz), public.sc_since(text), public.create_player(text), public.recover_player(text),
+  public.submit_score(uuid, text, integer, real, text, integer), public.leaderboard(text),
+  public.my_rank(uuid, text, text) from public, anon, authenticated;
 grant execute on function public.create_player(text) to anon, authenticated;
 grant execute on function public.recover_player(text) to anon, authenticated;
 grant execute on function public.submit_score(uuid, text, integer, real, text, integer) to anon, authenticated;

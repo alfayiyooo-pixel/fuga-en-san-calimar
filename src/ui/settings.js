@@ -70,6 +70,7 @@ export function playCard({ toast }) {
           <div class="row-btns">
             <button class="btn small" data-act="vibration" ${Haptics.supported ? '' : 'disabled'}>📳 ${t(vib ? 'settings.vibOn' : 'settings.vibOff')}</button>
             <button class="btn small" data-act="tutorial">🎓 ${t('settings.tutorial')}</button>
+            <button class="btn small" data-act="marks">🚩 ${t(Save.data.settings.marks !== false ? 'settings.marksOn' : 'settings.marksOff')}</button>
           </div>
           ${Haptics.supported ? '' : `<p class="settings-text">${t('settings.vibNone')}</p>`}
         </div>`;
@@ -79,6 +80,10 @@ export function playCard({ toast }) {
         Save.data.settings.vibration = Save.data.settings.vibration === false;
         Save.save();
         Haptics.play('pick');
+        screen.render();
+      } else if (act === 'marks') {
+        Save.data.settings.marks = Save.data.settings.marks === false;
+        Save.save();
         screen.render();
       } else if (act === 'tutorial') {
         Save.data.settings.tutorial = 'on';

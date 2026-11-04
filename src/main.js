@@ -414,6 +414,18 @@ document.getElementById('loadout').addEventListener('click', (e) => {
 Profile.onChange(renderLoadout);
 renderLoadout();
 
+/** Marcas de otros jugadores: una sola descarga al empezar (sin conexión, nada). */
+function loadMarks() {
+  if (!CONFIG.online.marks.enabled || Save.data.settings.marks === false) return;
+  const run = game.marks.run;
+  const best = Save.data.best.distance;
+  Online.ghostMarks(best)
+    .then((rows) => {
+      if (game.marks.run === run && Array.isArray(rows)) game.marks.set(rows, best, Online.account?.nick, game.startAt);
+    })
+    .catch(() => {});
+}
+
 function startRun() {
   Missions.fill();
   // aspecto equipado, mejoras de la tienda y consumibles elegidos
@@ -427,6 +439,7 @@ function startRun() {
   hud.reset();
   hud.banner(t('zone.enter'), t(game.zone.current.nameKey));
   game.applyLoadout(Profile.takeLoadout());
+  loadMarks();
   roulettePrize = null;
   // premio de la ruleta de la partida anterior: imán al empezar
   if (Save.data.nextBoost) {

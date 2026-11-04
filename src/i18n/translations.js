@@ -34,6 +34,9 @@ export const TRANSLATIONS = {
     'zone.hills': 'Colinas Brisa',
     'zone.port': 'Puerto Ancla',
 
+    'settings.marksOn': 'Marcas de otros: sí',
+    'settings.marksOff': 'Marcas de otros: no',
+    'marks.passed': '¡Has superado a {nick}!',
     'settings.play': 'Juego',
     'settings.vibOn': 'Vibración: sí',
     'settings.vibOff': 'Vibración: no',
@@ -741,6 +744,9 @@ export const TRANSLATIONS = {
     'zone.hills': 'Breeze Hills',
     'zone.port': 'Anchor Harbor',
 
+    'settings.marksOn': "Others' marks: on",
+    'settings.marksOff': "Others' marks: off",
+    'marks.passed': 'You passed {nick}!',
     'settings.play': 'Gameplay',
     'settings.vibOn': 'Vibration: on',
     'settings.vibOff': 'Vibration: off',

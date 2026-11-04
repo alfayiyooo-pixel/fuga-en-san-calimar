@@ -30,6 +30,7 @@ import { Radio } from './systems/radio.js';
 import { Achievements } from './meta/achievements.js';
 import { DeathLog } from './ui/deathlog.js';
 import { Tutorial } from './systems/tutorial.js';
+import { Marks } from './systems/marks.js';
 import { Haptics } from './core/haptics.js';
 
 /** Pista de música de una zona. */
@@ -65,6 +66,7 @@ export class Game {
     this.boss = new Boss();
     this.radio = new Radio();
     this.tutorial = new Tutorial();
+    this.marks = new Marks();
     this.onBossStart = () => this.radio.trigger('helicoptero', this.runTime, this);
     this.onBossWin = () => this.radio.trigger('jefe', this.runTime, this);
     this.onHideout = () => this.radio.trigger('escondite', this.runTime, this);
@@ -118,6 +120,7 @@ export class Game {
     this.boss.reset();
     this.radio.reset();
     this.tutorial.reset(Tutorial.wanted() && !this.startAt);
+    this.marks.reset();
     this.photo = null;
     this.photoRequest = false;
     this.saved = false;
@@ -351,6 +354,7 @@ export class Game {
       this.events.update(dt, this);
       this.combo.update(dt);
       this.checkRecord();
+      this.marks.update(dt, this);
       this.trackStats(dt);
       Sound.music.setStars(this.wanted.stars);
       // pequeño cambio musical con la habilidad especial activa
@@ -874,6 +878,7 @@ export class Game {
     this.parallax.drawForegroundZone(ctx, v, cam.x, this.t, zone);
     for (const o of this.obstacles) o.overlay(ctx, this);
     this.arrest.overlay(ctx, this);
+    if (!menu) this.marks.draw(ctx, this);
     this.boss.overlay(ctx, this);
     ctx.restore();
 

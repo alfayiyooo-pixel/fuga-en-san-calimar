@@ -179,6 +179,12 @@ export const Online = {
     return rpc('leaderboard', { p_period: period });
   },
 
+  /** Marcas para pintar en el recorrido (una petición al empezar la partida). */
+  ghostMarks(best) {
+    const M = CONFIG.online.marks;
+    return rpc('ghost_marks', { p_best: Math.floor(best), p_near: M.near, p_top: M.top, p_id: this.account?.id ?? null });
+  },
+
   myRank(period) {
     const acc = this.account;
     if (!acc) return Promise.resolve(null);

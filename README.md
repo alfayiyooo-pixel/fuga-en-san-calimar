@@ -347,6 +347,14 @@ Opcional: variantes `radio_<momento>_2_<idioma>.mp3`, `_3_`, `_4_`; el juego eli
 - Los límites están en la función `sc_limits()` del SQL. Si cambias la velocidad máxima del juego (`speed.max` en `config.js`), cámbiala también ahí.
 - Es un antitrampas **básico**: alguien que modifique el juego podría enviar partidas inventadas pero creíbles. Para eso está el borrado manual.
 
+### Marcas de otros jugadores en el recorrido
+- Durante la partida ves dónde llegaron otros jugadores: al acercarte a la marca de alguien aparece arriba una bandera pequeña con su apodo y su distancia, y una línea muy tenue en el metro exacto.
+- Nunca hay más de una bandera a la vez en pantalla. Al superarlo sale un aviso breve («¡Has superado a Ana!») con un pequeño sonido.
+- **Qué marcas salen:** los 3 jugadores justo por encima de tu récord y 3 del top 10 (el primero, uno del medio y el último), como mucho 6. No sales tú ni los tramposos bloqueados.
+- **Red:** se descargan con **una sola petición al empezar la partida**; durante la partida no hay red. Sin conexión no se muestran, sin errores.
+- Se ocultan en **Ajustes → Juego → Marcas de otros**. Ajustes en `online.marks` de `config.js`.
+- **Montarlo:** ejecuta [`supabase/marcas.sql`](supabase/marcas.sql) en el SQL Editor después de `ranking.sql`. Crea la función `ghost_marks`, que solo devuelve apodo y distancia (lo mismo que ya es público en el ranking).
+
 ### Borrar a un tramposo
 En Supabase → **SQL Editor** (cambia `Apodo` por el suyo):
 ```sql

@@ -11,6 +11,7 @@ const DEFAULTS = {
     quality: 'auto', // 'auto' | 'high' | 'low'
     volumes: { music: 1, sfx: 1, voice: 1 }, // 0-1, menú de ajustes de sonido
     vibration: true, // vibración en el móvil
+    marks: true,     // banderas con las marcas de otros jugadores
     tutorial: 'auto', // pistas: 'auto' = solo si es tu primera partida · 'on' = en la próxima · 'off'
   },
   wallet: 0,          // pavos disponibles para gastar
