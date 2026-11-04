@@ -419,7 +419,14 @@ Todo el arte está **generado por código** (sin imágenes externas, así que no
 - Cada zona tiene su ambiente: atardecer en la playa, noche con neones en el centro financiero, anochecer con humo en la zona industrial, mañana despejada en las colinas y hora azul en el puerto.
 - 4 capas de parallax (silueta lejana + 3 capas de decorado) con bruma atmosférica entre ellas.
 - Brillos con sprites de halo precalculados, ventanas con patrones repetidos y caché del cielo y de los rascacielos para que vaya fluido en móvil.
-- **Calidad** en el menú: *Auto* (empieza en alta y baja sola si los FPS caen), *Alta* o *Baja* (resolución reducida, menos partículas y detalle).
+- **Calidad** (Ajustes → Calidad, o el botón del menú): **Automática** (por defecto), **Alta** o **Baja**.
+  - En **Automática** se miden los FPS al empezar cada partida: se ignora el primer segundo y se miden 3 s. Si la media baja de **50 FPS**, la calidad baja un nivel y **vuelve a medir**: de alta a baja, y si aún va lento, a «mínima».
+  - Si va bien, se queda en ese nivel, que se recuerda para las siguientes partidas. Volver a elegir Automática empieza de nuevo desde alta.
+  - Si a mitad de partida va por debajo de 45 FPS durante 5 s, también baja.
+- **Qué quita cada nivel:**
+  - **Baja:** menos resolución, la mitad de partículas, como mucho 4 elementos de vida en el fondo y **sin desenfoques** (ni fondo desenfocado, ni primer plano, ni contorno del personaje), rayos ni texturas.
+  - **Mínima:** aún menos resolución, la cuarta parte de partículas y 1 elemento de fondo.
+- Ajustes en `quality` de `config.js` (`quality.auto`: skip, window, minFps…).
 
 ## Ajustar el juego
 

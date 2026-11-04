@@ -9,6 +9,7 @@ const DEFAULTS = {
     lang: null,     // null = detectar del navegador
     muted: false,
     quality: 'auto', // 'auto' | 'high' | 'low'
+    autoLevel: null, // nivel aprendido en automático ('high' | 'low' | 'min')
     volumes: { music: 1, sfx: 1, voice: 1 }, // 0-1, menú de ajustes de sonido
     vibration: true, // vibración en el móvil
     marks: true,     // banderas con las marcas de otros jugadores

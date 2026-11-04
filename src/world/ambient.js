@@ -164,7 +164,7 @@ export class Ambient {
     const Z = ZONES[zoneId];
     if (!Z) return;
     const low = !Quality.settings.detail;
-    const max = low ? A.maxLow : A.maxHigh;
+    const max = Quality.settings.ambient ?? (low ? A.maxLow : A.maxHigh);
     // bandas normales
     for (const band of Object.keys(A.every)) {
       if (!Z[band] || !Z.bands[band]) continue;

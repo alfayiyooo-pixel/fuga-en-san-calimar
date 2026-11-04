@@ -41,7 +41,7 @@ Save.load();
 applyMaxed(); // cuenta de prueba (maxeada.html o ?maxeada)
 Online.init(); // ranking: reintenta subir lo pendiente
 Pwa.init();
-Quality.set(Save.data.settings.quality);
+Quality.set(Save.data.settings.quality, Save.data.settings.autoLevel);
 const canvas = document.getElementById('canvas');
 const stage = document.getElementById('stage');
 const view = new View(canvas, stage);
@@ -106,15 +106,27 @@ function refreshQualityBtn() {
   const label = Quality.mode === 'auto' ? `${t('quality.auto')} (${t(`quality.${Quality.level}`)})` : t(`quality.${Quality.mode}`);
   qualityBtn.textContent = `⚙ ${t('menu.quality')}: ${label}`;
 }
-qualityBtn.addEventListener('click', () => {
-  Save.data.settings.quality = Quality.cycle();
+/** Cambia el modo de calidad (menú y ajustes). Al volver a Automática se aprende de nuevo. */
+function setQualityMode(mode) {
+  Save.data.settings.quality = mode;
+  Save.data.settings.autoLevel = null;
+  Quality.set(mode);
   Save.save();
+}
+qualityBtn.addEventListener('click', () => {
+  const order = ['auto', 'high', 'low'];
+  setQualityMode(order[(order.indexOf(Quality.mode) + 1) % order.length]);
   Sound.click();
 });
 Quality.onChange((level, auto) => {
   view.resize();
   refreshQualityBtn();
-  if (auto) toast(t('toast.lowQuality'));
+  if (auto) {
+    // el nivel aprendido se recuerda para la próxima vez
+    Save.data.settings.autoLevel = level;
+    Save.save();
+    toast(t('toast.lowQuality'));
+  }
 });
 refreshQualityBtn();
 
@@ -349,7 +361,7 @@ Pwa.onChange((what) => {
   refreshInstall();
 });
 settings.addCard(accountCard({ nick: (mode, after) => openNick(mode, after), toast }));
-settings.addCard(playCard({ toast }));
+settings.addCard(playCard({ toast, setQuality: setQualityMode }));
 settings.addCard(appCard({ onInstall: doInstall, onIosHelp: doInstall, toast }));
 refreshInstall();
 
@@ -447,6 +459,7 @@ function startRun() {
   hud.banner(t('zone.enter'), t(game.zone.current.nameKey));
   game.applyLoadout(Profile.takeLoadout());
   loadMarks();
+  Quality.startCheck(); // mide los FPS de los primeros segundos (en automático)
   roulettePrize = null;
   // premio de la ruleta de la partida anterior: imán al empezar
   if (Save.data.nextBoost) {
@@ -730,7 +743,7 @@ const loop = new Loop(
     }
   },
   (dt) => {
-    if (state === 'playing' || state === 'menu') Quality.monitor(dt, loop.fps);
+    if (state === 'playing' || state === 'menu') Quality.monitor(dt, loop.fps, state === 'playing');
     const ctx = view.ctx;
     setSpriteScale(view.scale * view.dpr);
     view.begin();

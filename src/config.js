@@ -75,13 +75,19 @@ export const CONFIG = {
     exhaustRate: 70,    // partículas de fuego por segundo a empuje máximo
   },
 
-  // Calidad gráfica (menú → Calidad). 'auto' baja a 'low' si va lento.
+  // Calidad gráfica (Ajustes → Calidad: Automática / Alta / Baja). 'min' solo la usa el modo automático.
+  //   maxDpr: resolución (< 1 = reducida) · particles: fracción de partículas ·
+  //   detail: detalles (estrellas, texturas, primer plano…) · blur: fondo desenfocado ·
+  //   ambient: máx. de elementos de vida en el fondo
   quality: {
     default: 'auto',
-    autoMinFps: 48,     // por debajo de estos FPS…
-    autoWindow: 4,      // …durante estos segundos, pasa a calidad baja
-    high: { maxDpr: 2, particles: 1, detail: true },
-    low: { maxDpr: 0.8, particles: 0.5, detail: false }, // maxDpr < 1 = resolución reducida
+    // automático: al empezar cada partida se ignoran "skip" s y se miden "window" s;
+    // si la media baja de minFps, baja un nivel y vuelve a medir. Además, si a mitad de
+    // partida va por debajo de sustainedFps durante sustainedTime s, también baja.
+    auto: { skip: 1, window: 3, minFps: 50, sustainedFps: 45, sustainedTime: 5 },
+    high: { maxDpr: 2, particles: 1, detail: true, blur: true, ambient: 10 },
+    low: { maxDpr: 0.8, particles: 0.5, detail: false, blur: false, ambient: 4 },
+    min: { maxDpr: 0.6, particles: 0.25, detail: false, blur: false, ambient: 1 },
   },
 
   // ---------------- CÓDIGO VISUAL DE PELIGRO ----------------

@@ -1,4 +1,5 @@
 import { CONFIG } from './config.js';
+import { Quality } from './core/quality.js';
 import { Camera } from './core/camera.js';
 import { rand, clamp, approach, pick } from './core/rng.js';
 import { CHARACTER_IDS } from './characters/defs.js';
@@ -784,6 +785,13 @@ export class Game {
   drawDecor(ctx, zone) {
     const D = CONFIG.danger.decor;
     const v = this.view;
+    if (!Quality.settings.blur) {
+      // calidad baja: sin desenfoque (directo, solo con el velo apagado)
+      this.parallax.drawScene(ctx, v, this.camera.x, this.t, zone, (band, id) => this.ambient.draw(ctx, band, id, this.t), 'back');
+      ctx.fillStyle = D.veil;
+      ctx.fillRect(-20, -20, v.w + 40, v.groundY + 30);
+      return;
+    }
     const cv = ctx.canvas;
     const s = D.resolution;
     const b = (this.decorBuf ??= document.createElement('canvas'));

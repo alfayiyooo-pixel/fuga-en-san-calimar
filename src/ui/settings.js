@@ -5,6 +5,7 @@ import { Voice } from '../core/voice.js';
 import { getLang } from '../core/i18n.js';
 import { Pwa } from '../core/pwa.js';
 import { Haptics } from '../core/haptics.js';
+import { Quality } from '../core/quality.js';
 
 /** Tarjeta "App": instalar y pasar el progreso a otro navegador/la app de iPhone. */
 export function appCard({ onInstall, onIosHelp, toast }) {
@@ -60,12 +61,17 @@ export function appCard({ onInstall, onIosHelp, toast }) {
 }
 
 /** Tarjeta "Juego": vibración y volver a ver el tutorial. */
-export function playCard({ toast }) {
+export function playCard({ toast, setQuality }) {
   return {
     render() {
       const vib = Save.data.settings.vibration !== false;
       return `
         <div class="card">
+          <h3>⚙ ${t('menu.quality')}</h3>
+          <div class="row-btns seg" role="group">
+            ${['auto', 'high', 'low'].map((m) => `<button class="btn small ${Quality.mode === m ? 'btn-primary' : ''}" data-act="quality" data-mode="${m}">${m === 'auto' ? `${t('quality.autoLong')}${Quality.mode === 'auto' ? ` (${t(`quality.${Quality.level}`)})` : ''}` : t(`quality.${m}`)}</button>`).join('')}
+          </div>
+          <p class="settings-text">${t('quality.help')}</p>
           <h3>🎮 ${t('settings.play')}</h3>
           <div class="row-btns">
             <button class="btn small" data-act="vibration" ${Haptics.supported ? '' : 'disabled'}>📳 ${t(vib ? 'settings.vibOn' : 'settings.vibOff')}</button>
@@ -80,6 +86,9 @@ export function playCard({ toast }) {
         Save.data.settings.vibration = Save.data.settings.vibration === false;
         Save.save();
         Haptics.play('pick');
+        screen.render();
+      } else if (act === 'quality') {
+        setQuality(el.dataset.mode);
         screen.render();
       } else if (act === 'marks') {
         Save.data.settings.marks = Save.data.settings.marks === false;

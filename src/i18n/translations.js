@@ -87,6 +87,9 @@ export const TRANSLATIONS = {
     'quality.auto': 'Auto',
     'quality.high': 'Alta',
     'quality.low': 'Baja',
+    'quality.min': 'Mínima',
+    'quality.autoLong': 'Automática',
+    'quality.help': 'En automática se miden los FPS al empezar cada partida y, si va lento, baja sola.',
     'toast.lowQuality': 'Calidad baja activada para ir más fluido',
 
     'char.veteran.name': 'Don Aurelio Vega',
@@ -814,6 +817,9 @@ export const TRANSLATIONS = {
     'quality.auto': 'Auto',
     'quality.high': 'High',
     'quality.low': 'Low',
+    'quality.min': 'Minimum',
+    'quality.autoLong': 'Automatic',
+    'quality.help': 'In automatic mode, FPS are measured at the start of each run and quality drops if it runs slowly.',
     'toast.lowQuality': 'Switched to low quality for smoother play',
 
     'char.veteran.name': 'Don Aurelio Vega',
