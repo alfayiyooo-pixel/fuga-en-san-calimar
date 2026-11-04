@@ -745,16 +745,19 @@ export const CONFIG = {
 
   death: {
     slowmo: 0.3,        // velocidad del mundo justo al morir (cámara lenta que se recupera)
-    // física del cuerpo: sale despedido con la velocidad que llevaba
-    keepSpeed: 0.85,    // fracción de la velocidad que conserva
-    popUp: 260,         // impulso vertical base (px/s)…
-    popPerSpeed: 0.45,  // …más esto × velocidad
-    restitution: 0.42,  // rebote (0-1)
-    bounceMin: 140,     // por debajo de esta velocidad vertical ya no rebota
-    bounceKeep: 0.82,   // velocidad horizontal que conserva en cada rebote
-    friction: 380,      // rozamiento al deslizar (px/s²): 350 px/s → ~160 px; 820 → ~900 px
-    rollUntil: 110,     // por encima rueda; por debajo se queda tumbado
-    rollRadius: 16,     // radio para el giro al rodar
+    // física del cuerpo: un rebote pequeño, pocas vueltas y deslizamiento de espaldas
+    keepSpeed: 0.8,     // fracción de la velocidad que conserva
+    popUp: 150,         // impulso vertical base (px/s)…
+    popPerSpeed: 0.2,   // …más esto × velocidad (rebote corto)
+    turnSpeeds: [600, 760], // px/s a partir de los que da 1 y 2 vueltas completas (antes, solo cae de espaldas)
+    maxTurns: 2,        // tope de vueltas
+    restitution: 0.25,  // rebote al tocar el suelo (0-1)
+    maxBounces: 1,      // rebotes como mucho (luego se desliza)
+    bounceMin: 160,     // por debajo de esta velocidad vertical ya no rebota
+    bounceKeep: 0.85,   // velocidad horizontal que conserva al rebotar
+    friction: 520,      // rozamiento al deslizar (px/s²): distancia = v²/(2·rozamiento) → 350 px/s ≈ 70 px; 650 ≈ 250 px
+    // efecto al deslizar según el suelo: polvo (arena, madera, tierra) o chispas (asfalto, metal)
+    slideFx: { beach: 'dust', finance: 'sparks', industrial: 'sparks', hills: 'dust', port: 'sparks' },
     maxSlide: 4,        // s máximos antes de la detención
     arrest: {
       arriveTime: 1.0,  // s que tarda la policía en rodearte

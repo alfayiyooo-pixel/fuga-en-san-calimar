@@ -55,7 +55,7 @@ Cada partida empieza con una escena de ~3 s que no se puede saltar: un furgón b
 
 ### Detención
 
-Al caer, el atracador sale despedido con la velocidad que llevaba: rebota, rueda y se desliza por el suelo con rozamiento (a más velocidad, más lejos: ~400 px yendo despacio, más de 1.200 px a toda velocidad). Cuando se para, dos agentes llegan corriendo, frena una patrulla, los billetes salen volando de la bolsa y aparece un gran sello **«¡DETENIDO!»** con un subtítulo de guasa. Sin sangre. Valores en `death` de `config.js`.
+Al caer, el atracador da un pequeño rebote hacia atrás y cae de espaldas. Solo si iba muy rápido da 1 vuelta (desde 600 px/s) o 2 como mucho (desde 760 px/s). Después se desliza de espaldas frenando por rozamiento, con polvo en la arena, la madera y la tierra, o chispas en el asfalto y el metal. La distancia depende de la velocidad: unos 200 px yendo despacio y unos 700 px a toda velocidad. Cuando se para, dos agentes llegan corriendo, frena una patrulla, los billetes salen volando de la bolsa y aparece un gran sello **«¡DETENIDO!»** con un subtítulo de guasa. Sin sangre. Valores en `death` de `config.js`.
 
 ### A pie y jetpack opcional
 

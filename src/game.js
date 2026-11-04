@@ -288,8 +288,14 @@ export class Game {
           this.camera.addShake(0.2);
           this.dust(p.x, p.bottom, 10);
           Sound.thud(0.8);
-        } else if (ev === 'slide' && Math.random() < sdt * 30) {
-          this.dust(p.x - 10, p.bottom - 4, 1);
+        } else if (ev === 'slide') {
+          // polvo o chispas según el suelo, más cuanto más rápido se desliza
+          const fx = CONFIG.death.slideFx[this.zone.current.id] ?? 'dust';
+          const rate = 10 + p.dvx * 0.08;
+          if (Math.random() < sdt * rate) {
+            if (fx === 'sparks') this.particles.spawn({ x: p.x - 18 + rand(-4, 4), y: p.bottom - 6, vx: -rand(60, 200) + p.dvx * 0.4, vy: -rand(60, 220), life: rand(0.15, 0.35), size: 2.5, sizeEnd: 0, color: Math.random() < 0.5 ? '#ffe9a8' : '#ffb35c', additive: true, gravity: 900 });
+            else this.dust(p.x - 14, p.bottom - 4, 1);
+          }
         }
         if (p.stopped || this.deathTimer > CONFIG.death.maxSlide) {
           this.arrest.start(this);

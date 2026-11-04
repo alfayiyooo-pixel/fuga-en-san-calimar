@@ -55,8 +55,9 @@ export class Player {
   }
 
   /**
-   * Golpe mortal: sale despedido con la velocidad que llevaba.
-   * Cuanto más rápido iba, más alto sale, más rebota y más lejos rueda.
+   * Golpe mortal: un pequeño rebote hacia atrás y, si iba muy rápido, 1-2
+   * vueltas como mucho; al caer se queda de espaldas y se desliza frenando
+   * por rozamiento (la distancia depende de la velocidad: v² / 2·rozamiento).
    */
   kill(speed = 350) {
     const D = CONFIG.death;
@@ -65,14 +66,20 @@ export class Player {
     this.flip = 0;
     this.dvx = speed * D.keepSpeed;
     this.vy = -(D.popUp + speed * D.popPerSpeed);
-    this.spinRate = 5 + speed / 60;
+    // vueltas completas según la velocidad (con tope) + caer de espaldas (¼ de vuelta hacia atrás)
+    const turns = Math.min(D.maxTurns, D.turnSpeeds.filter((v) => speed >= v).length);
+    this.spinTarget = -(Math.PI / 2 + turns * Math.PI * 2);
+    const air = (2 * -this.vy) / CONFIG.player.gravity; // s hasta volver al suelo
+    this.spinRate = this.spinTarget / Math.max(0.2, air);
+    this.spin = 0;
+    this.bounces = 0;
     this.stopped = false;
     this.bagLost = false;
   }
 
   /**
-   * Física del cuerpo tras el golpe: vuelo, rebotes con pérdida de energía,
-   * rodar por el suelo (giro = avance / radio) y deslizar con rozamiento.
+   * Física del cuerpo tras el golpe: vuelo corto, un rebote pequeño y
+   * deslizamiento de espaldas con rozamiento constante.
    * Devuelve 'bounce' | 'slide' | null.
    */
   updateDead(dt, groundY) {
@@ -84,7 +91,8 @@ export class Player {
     let ev = null;
     if (this.y >= bottom) {
       this.y = bottom;
-      if (this.vy > D.bounceMin) {
+      if (this.vy > D.bounceMin && this.bounces < D.maxBounces) {
+        this.bounces++;
         this.vy *= -D.restitution;
         this.dvx *= D.bounceKeep;
         ev = 'bounce';
@@ -92,18 +100,17 @@ export class Player {
         this.vy = 0;
         this.onGround = true;
         this.dvx = Math.max(0, this.dvx - D.friction * dt);
-        ev = this.dvx > 30 ? 'slide' : null;
+        ev = this.dvx > 20 ? 'slide' : null;
       }
-      // en el suelo rueda mientras va rápido; despacio, se queda tumbado
-      if (this.dvx > D.rollUntil) {
-        this.spinRate = this.dvx / D.rollRadius;
-      } else {
-        const lie = Math.round((this.spin - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2;
-        this.spin += (lie - this.spin) * Math.min(1, dt * 8);
-        this.spinRate = 0;
-      }
+      // en el suelo: de espaldas (termina el giro sin pasarse) con un leve temblor al rozar
+      this.spinRate = 0;
+      const wob = this.dvx > 20 ? Math.sin(this.x * 0.15) * 0.04 * Math.min(1, this.dvx / 400) : 0;
+      this.spin += (this.spinTarget + wob - this.spin) * Math.min(1, dt * 12);
+    } else if (Math.abs(this.spin) >= Math.abs(this.spinTarget)) {
+      this.spinRate = 0;
     }
     this.spin += this.spinRate * dt;
+    if (Math.abs(this.spin) > Math.abs(this.spinTarget)) this.spin = this.spinTarget;
     if (this.onGround && this.dvx <= 4 && this.vy === 0) this.stopped = true;
     return ev;
   }
