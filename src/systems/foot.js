@@ -80,6 +80,24 @@ export class Foot {
     g.particles.burst(p.x - 14, p.y, 14, { color: '#c9ccd6', speed: 340, life: 0.9, size: 4, shape: 'rect', spin: 12, gravity: 900, vx: -150, important: true });
     g.popups.add(t('foot.lost'), p.x - g.camera.x, p.y - 60, { color: '#ff6b7d', size: 22, life: 1.3 });
     Sound.detransform();
+    this.clearUnfair(g);
+  }
+
+  /**
+   * A pie nada puede obligar a volar: lo que ya estaba generado para el
+   * jetpack y solo se pasa volando desaparece (en pantalla, con una pequeña
+   * explosión). Lo nuevo ya se genera pensando en ir a pie.
+   */
+  clearUnfair(g) {
+    const p = g.player;
+    const edge = g.camera.x + g.view.w + 40;
+    for (const o of g.obstacles) {
+      if (!o.alive || !o.footBlocked?.(g)) continue;
+      const c = g.centerOf(o);
+      if (c.x < p.x - 10) continue;
+      if (c.x < edge) g.destroyObstacle(o, true);
+      else o.alive = false;
+    }
   }
 
   /** Coges un patinete o un carrito: más rápido y aguanta un golpe. */

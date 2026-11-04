@@ -362,6 +362,11 @@ export class Scaffold extends Hazard {
     Sound.clank();
   }
 
+  /** Con el hueco arriba solo se pasa volando. */
+  footBlocked() {
+    return this.pattern === 'high';
+  }
+
   dangerPath(ctx, camX) {
     let any = false;
     for (const s of this.segs) {
@@ -590,6 +595,11 @@ export class Shutter extends Hazard {
         g.camera.addShake(0.15);
       }
     }
+  }
+
+  /** Cerrado llega casi al suelo y la fachada tapa lo de arriba: solo se pasa volando. */
+  footBlocked(g) {
+    return this.ay + this.len > g.view.groundY - CONFIG.foot.fair.walkHeight;
   }
 
   dangerPath(ctx, camX) {

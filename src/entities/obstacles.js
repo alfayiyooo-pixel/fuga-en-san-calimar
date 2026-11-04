@@ -91,6 +91,15 @@ export class Cable extends Obstacle {
     return this.x + this.len / 2 + 20;
   }
 
+  /** ¿Obliga a volar? (corta el paso a ras de suelo y es demasiado alto para el doble salto) */
+  footBlocked(g) {
+    const F = CONFIG.foot.fair;
+    const gy = g.view.groundY;
+    if (this.spin) return this.y + this.len / 2 > gy - F.walkHeight;
+    const [, y1, , y2] = this.ends;
+    return Math.max(y1, y2) + this.th / 2 > gy - F.walkHeight && Math.min(y1, y2) < gy - F.jumpHeight;
+  }
+
   dangerPath(ctx, camX) {
     const [x1, y1, x2, y2] = this.ends;
     segPath(ctx, x1 - camX, y1, x2 - camX, y2, this.th / 2 + 2);

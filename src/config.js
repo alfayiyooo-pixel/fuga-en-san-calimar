@@ -329,6 +329,10 @@ export const CONFIG = {
     tokenReach: 175,        // altura máxima (sobre el suelo) de los pavos mientras vas a pie
     awningBounce: 1050,     // px/s de rebote al caer sobre un toldo
     loseJetInvuln: 1.6,     // s invulnerable al perder el jetpack
+    // a pie solo hay obstáculos de suelo o que se pasan con el doble salto:
+    // lo que corte el paso por debajo de walkHeight y suba más de jumpHeight (px sobre el suelo)
+    // se considera "solo volando" y se quita al perder el jetpack
+    fair: { walkHeight: 60, jumpHeight: 250 },
     // cuándo aparece el jetpack para cogerlo (m): primera vez, si lo ignoras, y tras perderlo
     jetpack: { firstAt: [250, 380], again: [450, 750], afterLoss: [250, 450] },
     // vehículos a pie: aguantan un golpe y van más rápido unos segundos

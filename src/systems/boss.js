@@ -203,7 +203,7 @@ export class Boss {
       // a pie el hueco está siempre abajo (se pasa sin saltar o con un salto corto)
       const g0 = foot ? gy - G.footHeight : center - G.height / 2;
       const g1 = foot ? gy + 20 : center + G.height / 2;
-      A.walls.push({ g0, g1, at: G.warn * (A.slow ?? 1) + i * G.waveGap, fired: false, firedT: 0 });
+      A.walls.push({ foot, g0, g1, at: G.warn * (A.slow ?? 1) + i * G.waveGap, fired: false, firedT: 0 });
     }
   }
 
@@ -213,6 +213,12 @@ export class Boss {
     const gy = g.view.groundY;
     let pending = false;
     for (const w of A.walls) {
+      // si pierdes el jetpack durante el aviso, el hueco baja al suelo
+      if (!w.fired && g.player.onFoot && !w.foot) {
+        w.foot = true;
+        w.g0 = gy - G.footHeight;
+        w.g1 = gy + 20;
+      }
       if (!w.fired && A.t >= w.at) {
         w.fired = true;
         const x = g.camera.x + g.view.w + 30;
