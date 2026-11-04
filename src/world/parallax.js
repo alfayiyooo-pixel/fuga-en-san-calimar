@@ -2,6 +2,11 @@ import { hash } from '../core/rng.js';
 import { Quality } from '../core/quality.js';
 import { drawGlow, getRenderScale } from '../fx/sprites.js';
 import { sunRays } from './themes/shapes.js';
+import { CONFIG } from '../config.js';
+import { drawWeather, tintGround } from './variants.js';
+
+const smooth = (k) => k * k * (3 - 2 * k);
+const clamp01 = (k) => (k < 0 ? 0 : k > 1 ? 1 : k);
 
 const CHUNK = 512;     // ancho de cada tira cacheada (px lógicos)
 const BLEED = 2;      // solape para evitar costuras
@@ -19,6 +24,90 @@ export class Parallax {
   constructor() {
     this.skyCache = new Map();
     this.chunks = new Map();
+  }
+
+  /**
+   * Fondo, clima y suelo de una zona o de la TRANSICIÓN entre dos.
+   * En la transición (zone.k de 0 a 1, ~100 m) cada capa cambia en su
+   * momento (CONFIG.zones.stages): primero el cielo y la luz, luego lo
+   * lejano, lo cercano y por último el suelo. Así a mitad de camino se
+   * mezclan elementos de las dos zonas (edificios sobre la arena…).
+   * hook(banda, idZona): vida del fondo entre capas (ver world/ambient.js).
+   */
+  drawScene(ctx, v, camX, t, zone, hook = null) {
+    const q = Quality.settings;
+    const A = zone.current;
+    const B = zone.next;
+    const k = zone.k ?? 0;
+    const W = CONFIG.zones.stages;
+    const stage = (name, fn, opaque = false) => {
+      const [a, b] = W[name] ?? W.layer2;
+      const w = k <= 0 ? 0 : smooth(clamp01((k - a) / (b - a)));
+      const base = ctx.globalAlpha;
+      if (w < 0.999) {
+        ctx.globalAlpha = base * (opaque ? 1 : 1 - w);
+        fn(A);
+      }
+      if (w > 0.001) {
+        ctx.globalAlpha = base * w;
+        fn(B);
+      }
+      ctx.globalAlpha = base;
+    };
+    const hk = (band, th) => hook?.(band, th.id);
+    stage('sky', (th) => {
+      this.drawCachedSky(ctx, v, t, th, q);
+      if (th.rays && q.detail && th.celestial && !th.celestial.hidden) sunRays(ctx, v.w * th.celestial.x, th.celestial.y, t, th.rays.color);
+      this.drawClouds(ctx, v, camX, t, th);
+    }, true);
+    stage('far', (th) => {
+      if (th.skyline) this.drawSkyline(ctx, v, camX, t, th.skyline, q);
+      this.haze(ctx, v, th.haze, 0.55, 1);
+      hk('sky', th);
+    });
+    stage('backdrop', (th) => {
+      th.backdrop?.(ctx, v, camX, t, q);
+      hk('waterFar', th);
+    });
+    const n = Math.max(A.layers.length, B?.layers.length ?? 0);
+    for (let li = 0; li < n; li++) {
+      stage(`layer${li}`, (th) => {
+        const layer = th.layers[li];
+        if (layer) this.drawLayer(ctx, v, camX, t, layer, li, q, th);
+        if (li === 0) {
+          this.haze(ctx, v, th.haze, 0.62, 0.55);
+          hk('far', th);
+          hk('waterNear', th);
+          hk('groundFar', th);
+        }
+        if (li === 1) {
+          this.haze(ctx, v, th.haze, 0.72, 0.22);
+          hk('ground', th);
+        }
+      });
+    }
+    stage('weather', (th) => drawWeather(ctx, v, camX, t, th, q));
+    stage('ground', (th) => {
+      this.drawGround(ctx, v, camX, th);
+      tintGround(ctx, v, th);
+    });
+  }
+
+  /** Primer plano de la zona o de la transición (cambia junto con el suelo). */
+  drawForegroundZone(ctx, v, camX, t, zone) {
+    const k = zone.k ?? 0;
+    const [a, b] = CONFIG.zones.stages.ground;
+    const w = k <= 0 ? 0 : smooth(clamp01((k - a) / (b - a)));
+    const base = ctx.globalAlpha;
+    if (w < 0.999) {
+      ctx.globalAlpha = base * (1 - w);
+      this.drawForeground(ctx, v, camX, t, zone.current);
+    }
+    if (w > 0.001) {
+      ctx.globalAlpha = base * w;
+      this.drawForeground(ctx, v, camX, t, zone.next);
+    }
+    ctx.globalAlpha = base;
   }
 
   /** hook(banda): dibuja la vida del fondo entre capas (ver world/ambient.js). */
@@ -55,7 +144,7 @@ export class Parallax {
    */
   drawCachedSky(ctx, v, t, theme, q) {
     const rs = getRenderScale();
-    const key = `${theme.id}:${v.w}:${rs.toFixed(2)}`;
+    const key = `${theme.key ?? theme.id}:${v.w}:${rs.toFixed(2)}`;
     let c = this.skyCache.get(key);
     if (!c) {
       c = document.createElement('canvas');
@@ -72,6 +161,7 @@ export class Parallax {
   }
 
   drawStars(ctx, v, t, theme) {
+    const base = ctx.globalAlpha;
     const moon = theme.celestial?.type === 'moon' ? theme.celestial : null;
     ctx.fillStyle = '#fff8e0';
     for (let i = 0; i < 70; i++) {
@@ -79,11 +169,11 @@ export class Parallax {
       const y = hash(i, 12) * v.h * 0.5;
       if (moon && Math.hypot(x - v.w * moon.x, y - moon.y) < moon.r + 4) continue;
       const tw = 0.45 + 0.55 * Math.sin(t * (1 + hash(i, 13) * 3) + i);
-      ctx.globalAlpha = tw * (1 - y / (v.h * 0.55));
+      ctx.globalAlpha = base * tw * (1 - y / (v.h * 0.55));
       const sz = hash(i, 14) < 0.15 ? 2.2 : 1.3;
       ctx.fillRect(x, y, sz, sz);
     }
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = base;
   }
 
   drawSky(ctx, v, t, theme, q) {
@@ -108,7 +198,7 @@ export class Parallax {
     }
 
     const c = theme.celestial;
-    if (!c) return;
+    if (!c || c.hidden) return;
     const cx = v.w * c.x;
     drawGlow(ctx, cx, c.y, c.r * 4.2, c.glow, 1);
     if (c.type === 'moon') {
@@ -258,7 +348,7 @@ export class Parallax {
     const c0 = Math.floor(offset / CHUNK);
     const c1 = Math.floor((offset + v.w) / CHUNK);
     for (let c = c0; c <= c1; c++) {
-      const key = `${theme.id}:${li}:${c}:${v.groundY}:${rs.toFixed(2)}:${q.detail ? 1 : 0}`;
+      const key = `${theme.key ?? theme.id}:${li}:${c}:${v.groundY}:${rs.toFixed(2)}:${q.detail ? 1 : 0}`;
       let chunk = this.chunks.get(key);
       if (!chunk) {
         chunk = document.createElement('canvas');
@@ -314,9 +404,10 @@ export class Parallax {
     }
     if (g.beams) {
       ctx.fillStyle = g.line;
-      ctx.globalAlpha = 0.35;
+      const base = ctx.globalAlpha;
+      ctx.globalAlpha = base * 0.35;
       for (let x = -mod(camX, 160); x < v.w; x += 160) ctx.fillRect(x, gy + 15, 10, v.h - gy);
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = base;
     }
     if (g.curb) {
       ctx.fillStyle = g.curb;
@@ -445,7 +536,7 @@ export class Parallax {
   }
 
   fgSprite(theme, kind, variant) {
-    const key = `${theme.id}:${kind}:${variant}`;
+    const key = `${theme.key ?? theme.id}:${kind}:${variant}`;
     if (!this.fg) this.fg = new Map();
     let c = this.fg.get(key);
     if (c) return c;

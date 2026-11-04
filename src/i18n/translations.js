@@ -34,6 +34,9 @@ export const TRANSLATIONS = {
     'zone.hills': 'Colinas Brisa',
     'zone.port': 'Puerto Ancla',
 
+    'zone.var.night': 'de noche',
+    'zone.var.rain': 'bajo la lluvia',
+    'zone.var.fog': 'entre la niebla',
     'zone.enter': 'Entrando en',
     'wanted.up': '¡BÚSQUEDA {n}★!',
     'wanted.warn': '¡LA POLICÍA SE ACERCA!',
@@ -724,6 +727,9 @@ export const TRANSLATIONS = {
     'zone.hills': 'Breeze Hills',
     'zone.port': 'Anchor Harbor',
 
+    'zone.var.night': 'by night',
+    'zone.var.rain': 'in the rain',
+    'zone.var.fog': 'in the fog',
     'zone.enter': 'Now entering',
     'wanted.up': 'WANTED {n}★!',
     'wanted.warn': 'POLICE CLOSING IN!',

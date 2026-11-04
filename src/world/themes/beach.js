@@ -33,9 +33,9 @@ export const beach = {
     const hy = v.h * HORIZON;
     const sy = v.h * SAND_TOP;
     sea(ctx, v, camX, t, hy, sy, '#d0708a', '#3b3c88', 'rgba(255, 220, 180, 0.6)');
-    sunReflection(ctx, v.w * this.celestial.x, hy, 8, t, 'rgba(255, 200, 120, 0.8)');
+    if (!this.celestial.hidden) sunReflection(ctx, v.w * this.celestial.x, hy, 8, t, 'rgba(255, 200, 120, 0.8)');
     if (q.detail) {
-      glints(ctx, v.w * this.celestial.x, hy + 4, 150, sy - hy - 10, t, 'rgba(255, 240, 200, 0.95)', 14);
+      if (!this.celestial.hidden) glints(ctx, v.w * this.celestial.x, hy + 4, 150, sy - hy - 10, t, 'rgba(255, 240, 200, 0.95)', 14);
       shoreWaves(ctx, v, camX, t, hy + 18, sy - 6, 'rgba(255, 236, 220, 0.5)');
     }
 

@@ -85,14 +85,15 @@ export function sea(ctx, v, camX, t, top, bottom, c1, c2, sparkle = 'rgba(255,25
 
 /** Reflejo del sol/luna en el agua: franjas brillantes que tiemblan. */
 export function sunReflection(ctx, x, top, rows, t, color) {
+  const base = ctx.globalAlpha;
   ctx.globalCompositeOperation = 'lighter';
   ctx.fillStyle = color;
   for (let k = 0; k < rows; k++) {
     const w = (80 - k * 8) * (0.8 + 0.2 * Math.sin(t * 2.3 + k * 1.7));
-    ctx.globalAlpha = 0.9 - k / rows * 0.6;
+    ctx.globalAlpha = base * (0.9 - k / rows * 0.6);
     ctx.fillRect(x - w / 2 + Math.sin(t * 1.4 + k) * 6, top + 6 + k * 10, w, 3);
   }
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = base;
   ctx.globalCompositeOperation = 'source-over';
 }
 
@@ -107,7 +108,8 @@ export function neonSign(ctx, x, y, text, color, rgba, t, size = 22, flickerSeed
   ctx.fillStyle = 'rgba(15, 8, 35, 0.85)';
   ctx.fillRect(x - w / 2, y - size * 0.8, w, size * 1.6);
   drawGlow(ctx, x, y, w * 0.75, rgba, 0.55 * flick, size * 1.5);
-  ctx.globalAlpha = flick;
+  const base = ctx.globalAlpha;
+  ctx.globalAlpha = base * flick;
   ctx.lineWidth = 4;
   ctx.strokeStyle = color;
   ctx.globalCompositeOperation = 'lighter';
@@ -115,7 +117,7 @@ export function neonSign(ctx, x, y, text, color, rgba, t, size = 22, flickerSeed
   ctx.fillStyle = '#ffffff';
   ctx.fillText(text, x, y);
   ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = 1;
+  ctx.globalAlpha = base;
   // marco de tubo
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
@@ -135,6 +137,7 @@ export function beacon(ctx, x, y, t, phase = 0) {
 /** Destellos del sol/luna en el agua: estrellitas que parpadean. */
 export function glints(ctx, cx, top, spread, height, t, color, n = 12) {
   ctx.save();
+  const base = ctx.globalAlpha;
   ctx.globalCompositeOperation = 'lighter';
   ctx.fillStyle = color;
   for (let k = 0; k < n; k++) {
@@ -145,7 +148,7 @@ export function glints(ctx, cx, top, spread, height, t, color, n = 12) {
     const x = cx + (((k * 53) % 100) / 100 - 0.5) * spread * (0.4 + yk);
     const y = top + yk * height;
     const sz = 1 + a * 2.6;
-    ctx.globalAlpha = a;
+    ctx.globalAlpha = base * a;
     ctx.fillRect(x - sz * 2, y - 0.6, sz * 4, 1.2);
     ctx.fillRect(x - 0.6, y - sz, 1.2, sz * 2);
   }
@@ -155,13 +158,14 @@ export function glints(ctx, cx, top, spread, height, t, color, n = 12) {
 /** Crestas de olas que avanzan hacia la orilla. */
 export function shoreWaves(ctx, v, camX, t, top, bottom, color) {
   ctx.save();
+  const base = ctx.globalAlpha;
   ctx.strokeStyle = color;
   ctx.lineWidth = 1.6;
   const rows = 3;
   for (let r = 0; r < rows; r++) {
     const k = ((t * 0.18 + r / rows) % 1);
     const y = top + (bottom - top) * k;
-    ctx.globalAlpha = Math.sin(k * Math.PI) * 0.9;
+    ctx.globalAlpha = base * Math.sin(k * Math.PI) * 0.9;
     const off = (camX * (0.16 + k * 0.1) + r * 140) % 220;
     for (let x = -off; x < v.w; x += 220) {
       ctx.beginPath();
@@ -176,13 +180,14 @@ export function shoreWaves(ctx, v, camX, t, top, bottom, color) {
 /** Rayos de sol suaves que giran despacio (modo 'lighter'). */
 export function sunRays(ctx, x, y, t, color, len = 900, n = 9) {
   ctx.save();
+  const base = ctx.globalAlpha;
   ctx.globalCompositeOperation = 'lighter';
   ctx.fillStyle = color;
   const rot = t * 0.03;
   for (let k = 0; k < n; k++) {
     const a = rot + (k / n) * Math.PI * 2;
     const w = 0.07 + 0.05 * Math.sin(k * 2.3 + t * 0.4);
-    ctx.globalAlpha = 0.6 + 0.4 * Math.sin(t * 0.5 + k);
+    ctx.globalAlpha = base * (0.6 + 0.4 * Math.sin(t * 0.5 + k));
     ctx.beginPath();
     ctx.moveTo(x, y);
     ctx.lineTo(x + Math.cos(a - w) * len, y + Math.sin(a - w) * len);

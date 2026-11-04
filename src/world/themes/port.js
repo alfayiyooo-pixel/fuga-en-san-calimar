@@ -24,8 +24,8 @@ export const port = {
   backdrop(ctx, v, camX, t, q) {
     const hy = v.h * HORIZON;
     sea(ctx, v, camX, t, hy, v.groundY, '#3d3a7e', '#0f1638', 'rgba(255, 200, 220, 0.5)');
-    sunReflection(ctx, v.w * this.celestial.x, hy, 6, t, 'rgba(255, 240, 230, 0.55)');
-    if (q.detail) glints(ctx, v.w * this.celestial.x, hy + 6, 220, v.groundY - hy - 40, t, 'rgba(255, 240, 250, 0.85)', 16);
+    if (!this.celestial.hidden) sunReflection(ctx, v.w * this.celestial.x, hy, 6, t, 'rgba(255, 240, 230, 0.55)');
+    if (q.detail && !this.celestial.hidden) glints(ctx, v.w * this.celestial.x, hy + 6, 220, v.groundY - hy - 40, t, 'rgba(255, 240, 250, 0.85)', 16);
     // reflejos de las luces del puerto en el agua
     if (q.detail) {
       ctx.globalCompositeOperation = 'lighter';

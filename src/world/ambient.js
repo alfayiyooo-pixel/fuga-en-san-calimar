@@ -360,7 +360,7 @@ export class Ambient {
     for (const a of this.list) {
       if (a.band !== band || a.zone !== zoneId) continue;
       ctx.save();
-      ctx.globalAlpha = CONFIG.ambient.alpha;
+      ctx.globalAlpha *= CONFIG.ambient.alpha;
       DRAW[a.kind]?.(ctx, a, time);
       ctx.restore();
     }

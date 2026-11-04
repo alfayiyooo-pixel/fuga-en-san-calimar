@@ -66,7 +66,6 @@ export class Game {
     this.onBossWin = () => this.radio.trigger('jefe', this.runTime, this);
     this.onHideout = () => this.radio.trigger('escondite', this.runTime, this);
     this.record = 0; // récord de distancia al empezar la partida (lo pone main.js)
-    this.buffer = document.createElement('canvas');
     this.t = 0;
     // Opciones de prueba: ?god (invulnerable) y ?start=1500 (empezar en esos metros)
     const q = new URLSearchParams(location.search);
@@ -390,7 +389,8 @@ export class Game {
     this.zone = zoneAt(this.distance);
     if (this.zone.n !== this.zoneIndex) {
       this.zoneIndex = this.zone.n;
-      this.hud.banner(t('zone.enter'), t(this.zone.current.nameKey));
+      const th = this.zone.current;
+      this.hud.banner(t('zone.enter'), th.variant ? `${t(th.nameKey)} · ${t(`zone.var.${th.variant}`)}` : t(th.nameKey));
       Sound.whoosh();
       Sound.music.play(this.musicTrack());
       if (!this.dead) this.radio.trigger('zona', this.runTime, this);
@@ -755,11 +755,6 @@ export class Game {
     }
   }
 
-  drawScenery(ctx, theme) {
-    this.parallax.drawBackground(ctx, this.view, this.camera.x, this.t, theme, (band) => this.ambient.draw(ctx, band, theme.id, this.t));
-    this.parallax.drawGround(ctx, this.view, this.camera.x, theme);
-  }
-
   render(ctx, { showPlayer, menu = false }) {
     const v = this.view;
     const cam = this.camera;
@@ -772,23 +767,8 @@ export class Game {
     ctx.save();
     ctx.translate(cam.offsetX, cam.offsetY);
 
-    this.drawScenery(ctx, zone.current);
-    // fundido hacia la zona siguiente (se pinta en un lienzo aparte)
-    if (zone.blend > 0) {
-      const b = this.buffer;
-      if (b.width !== ctx.canvas.width || b.height !== ctx.canvas.height) {
-        b.width = ctx.canvas.width;
-        b.height = ctx.canvas.height;
-      }
-      const bctx = b.getContext('2d');
-      bctx.setTransform(ctx.getTransform());
-      this.drawScenery(bctx, zone.next);
-      ctx.save();
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.globalAlpha = zone.blend;
-      ctx.drawImage(b, 0, 0);
-      ctx.restore();
-    }
+    // fondo, clima y suelo (en la transición entre zonas, cada capa cambia en su momento)
+    this.parallax.drawScene(ctx, v, cam.x, this.t, zone, (band, id) => this.ambient.draw(ctx, band, id, this.t));
 
     if (showPlayer) this.player.drawShadow(ctx, cam.x, v.groundY);
     if (!menu) this.drawRecordFlag(ctx, cam.x);
@@ -804,7 +784,7 @@ export class Game {
     if (!menu) this.boss.draw(ctx, cam.x, this);
     if (showPlayer && this.intro.playerVisible) this.player.draw(ctx, cam.x, this.t);
     for (const o of this.obstacles) o.front?.(ctx, cam.x, this);
-    this.parallax.drawForeground(ctx, v, cam.x, this.t, zone.current);
+    this.parallax.drawForegroundZone(ctx, v, cam.x, this.t, zone);
     for (const o of this.obstacles) o.overlay(ctx, this);
     this.arrest.overlay(ctx, this);
     this.boss.overlay(ctx, this);

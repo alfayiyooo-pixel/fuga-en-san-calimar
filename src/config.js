@@ -113,8 +113,39 @@ export const CONFIG = {
   },
 
   zones: {
-    length: 500,        // metros que dura cada zona
-    transition: 45,     // metros de fundido entre zonas
+    length: 450,        // metros que dura cada zona
+    transition: 100,    // metros de transición al final de cada zona
+    cycle: 5,           // zonas por vuelta (playa, centro, industrial, colinas, puerto)
+    // en la transición cada capa cambia en su tramo (0 = empieza, 1 = termina):
+    // primero el cielo y la luz, luego lo lejano, lo cercano y al final el suelo
+    stages: {
+      sky: [0, 0.5], far: [0.1, 0.55], backdrop: [0.2, 0.65],
+      layer0: [0.25, 0.7], layer1: [0.4, 0.8], layer2: [0.5, 0.9],
+      weather: [0.15, 0.7], ground: [0.65, 1],
+    },
+    // a partir de la 2.ª vuelta las zonas se repiten con una variación (van rotando)
+    variants: ['night', 'rain', 'fog'],
+    // sky/skyMix: color hacia el que se mezcla el cielo y cuánto · farMix: silueta lejana
+    // tint: tinte (multiplicar) del fondo · groundTint: del suelo · haze: bruma
+    variantDefs: {
+      night: {
+        sky: '#070a24', skyMix: 0.72, farMix: 0.6, haze: 'rgba(40, 40, 110, 0.4)',
+        clouds: 'rgba(60, 60, 110, 0.55)', cloudShade: 'rgba(20, 20, 50, 0.5)',
+        tint: 'rgba(70, 80, 170, 0.6)', groundTint: 'rgba(120, 125, 200, 0.75)',
+      },
+      rain: {
+        sky: '#4d5668', skyMix: 0.62, farMix: 0.5, haze: 'rgba(120, 130, 150, 0.5)',
+        clouds: 'rgba(96, 104, 122, 0.95)', cloudShade: 'rgba(55, 60, 75, 0.8)',
+        tint: 'rgba(150, 160, 185, 0.7)', groundTint: 'rgba(170, 180, 200, 0.85)',
+        sheen: 'rgba(210, 225, 255, 0.12)', reflect: ['rgba(200, 215, 255, 0.18)'],
+        rain: { drops: 90, speed: 900, slant: 0.18, len: 16, color: 'rgba(200, 215, 240, 0.4)' },
+      },
+      fog: {
+        sky: '#c9ccd8', skyMix: 0.55, farMix: 0.65, haze: 'rgba(215, 218, 228, 0.7)',
+        clouds: 'rgba(225, 228, 236, 0.7)', cloudShade: 'rgba(170, 175, 190, 0.5)',
+        fog: 'rgba(222, 225, 234, 0.42)',
+      },
+    },
   },
 
   difficulty: {
