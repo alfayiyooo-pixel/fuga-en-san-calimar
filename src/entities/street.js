@@ -27,7 +27,8 @@ class Street extends Obstacle {
   }
 
   dangerPath(ctx, camX) {
-    if (this.type === 'awning') return false; // no hace daño
+    // el toldo no hace daño y los coches son vehículos (sin borde: se ven como coches)
+    if (this.type === 'awning' || this.type === 'parked') return false;
     rectPath(ctx, this.x - camX + 2, this.y + 2, this.w - 4, this.h - 2, 6);
     return true;
   }

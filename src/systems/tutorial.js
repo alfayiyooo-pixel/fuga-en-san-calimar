@@ -15,6 +15,16 @@ import { Save } from '../core/storage.js';
 import { Sound } from '../core/audio.js';
 
 const INK = '#1b1030';
+/** ¿Lleva el borde de peligro? (solo los objetos: cables, peligros, vallas…) */
+function hasOutline(o, g) {
+  const probe = { moveTo() {}, lineTo() {}, closePath() {}, ellipse() {}, arc() {}, roundRect() {}, rect() {}, bezierCurveTo() {}, quadraticCurveTo() {} };
+  try {
+    return !!o.dangerPath?.(probe, g.camera.x, g);
+  } catch {
+    return false;
+  }
+}
+
 const ICON = { jump: '👆', double: '👆👆', hold: '✋', release: '🖐️', danger: '⚠️', capsule: '🧪', hideout: '🕳️' };
 
 export class Tutorial {
@@ -111,7 +121,7 @@ export class Tutorial {
     if (p.onFoot && D.jump && !D.double && this.jumps >= T.double.afterJumps && !p.onGround && p.vy < 0 && p.airJumps > 0) return 'double';
     if (!p.onFoot && !D.hold && !p.vehicle) return 'hold';
     if (!p.onFoot && D.hold && !D.release && p.y < g.view.groundY - T.release.height) return 'release';
-    if (!D.danger && D.jump && g.obstacles.some((o) => o.alive && !o.ko && o.police && g.centerOf(o).x < camR && g.centerOf(o).x > p.x)) return 'danger';
+    if (!D.danger && D.jump && g.obstacles.some((o) => o.alive && !o.ko && hasOutline(o, g) && g.centerOf(o).x < camR && g.centerOf(o).x > p.x)) return 'danger';
     if (!D.capsule && g.tokens.list.some((tk) => tk.alive && tk.kind === 'capsule' && tk.x < camR && tk.x > p.x)) return 'capsule';
     if (!D.hideout && g.obstacles.some((o) => o.alive && o.type === 'hideout' && o.x < camR && o.x > p.x)) return 'hideout';
     return null;

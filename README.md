@@ -58,7 +58,7 @@ El juego es una **app web instalable**: se abre a **pantalla completa** desde su
   - «Toca otra vez en el aire» desde el segundo salto.
   - «Mantén pulsado para volar» al coger el jetpack.
   - «Suelta para bajar» si subes mucho.
-  - «Borde rojo y amarillo: hace daño» al ver la primera policía.
+  - «Borde rojo y amarillo: hace daño» al ver el primer obstáculo con borde (cable, peligro o valla).
   - Pistas para la cápsula de personaje y el primer escondite.
 
   Cada pista se quita sola al hacerlo o a los pocos segundos. Se vuelve a activar en **Ajustes → Juego → Ver el tutorial otra vez** (`tutorial` en `config.js`).
@@ -98,12 +98,17 @@ Las zonas se suceden cada **450 m**: **Playa Coral → Distrito Lingote → Las 
 - **Variaciones:** al completar la vuelta, las zonas se repiten **de noche, bajo la lluvia o entre la niebla**. La variación va rotando por zona y por vuelta, así que la misma zona nunca sale igual dos vueltas seguidas; una zona que ya es de noche recibe lluvia en lugar de «noche». El clima solo se pinta en el fondo y nunca tapa obstáculos. El cartel de zona lo indica («Playa Coral · de noche»). Colores y cantidades en `zones.variantDefs`; código en [`src/world/variants.js`](src/world/variants.js).
 
 **Código visual de peligro.** Lo que hace daño y lo decorativo nunca se confunden:
-- **Todo lo que hace daño** (cables, patrullas, helicópteros, misiles, peligros de la ciudad, obstáculos de calle y enemigos menores mientras pueden golpearte) lleva un **borde amarillo con franjas rojas que avanzan** y un **brillo rojo que late**, siempre en la capa de juego. Se dibuja en un solo trazo para todos (barato en móvil). Lo que no hace daño no lo lleva: el toldo que te hace rebotar o el agente que ya te persigue.
+- **Objetos que hacen daño** (cables, neones, andamios, bola de demolición, toldos que se cierran, vallas, cubos y misiles): **borde amarillo con franjas rojas que avanzan** y **brillo rojo que late**, siempre en la capa de juego. Se dibuja en un solo trazo para todos (barato en móvil). El toldo para rebotar no hace daño y no lo lleva.
+- **Seres vivos y vehículos** (gaviotas, perros, guardias, agentes, matones en patinete, drones, patrullas, coches aparcados y helicópteros) **no llevan borde**: quedaba mal. Su peligro se ve en su propio diseño:
+  - **«!» sobre la cabeza al detectarte** (a 1,1 s de llegar a ellos; el perro, al lanzarse a por ti; el agente, al verte en su cono) con un **gesto de ataque**: se encogen y se inclinan hacia ti un instante.
+  - **Halo de su color**, cálido y saturado, que resalta sobre el fondo apagado (más fuerte durante el aviso).
+  - **Sombra en el suelo**, también si vuelan (más pequeña y suave cuanto más alto): se ve a qué altura están.
+  - Las patrullas siguen con sirena, faros y el aviso ◀ en el borde; el helicóptero, con su foco.
 - **Todo lo decorativo** (cielo, edificios, vida del fondo, clima) se pinta a menor resolución, así que queda algo desenfocado (y además es más rápido), con un velo que le quita color y lo oscurece un poco. El decorado nunca usa colores de peligro: los neones del fondo son fríos y apagados («JAZZ», «CINE», «CAFÉ», «VIP», «LINGOTE»), las balizas de las torres son blancas en vez de rojas, las franjas del suelo industrial están apagadas y los toldos para rebotar son verdes, azules o turquesa.
 - **Neones peligrosos:** solo colores cálidos y saturados, franjas de aviso amarillas y negras, y antes de encenderse **parpadean, chisporrotean y zumban** durante 0,6 s.
 - En el **centro de noche** los carteles decorativos ya no repiten las palabras ni los colores de los peligrosos (antes «HOTEL» o «BAR» podían ser de los dos tipos).
 
-Ajustes en el bloque `danger` de `config.js` (grosor, colores y latido del borde; resolución y velo del decorado) y en `hazards.neon` (colores y tiempo de aviso).
+Ajustes en el bloque `danger` de `config.js` (grosor, colores y latido del borde; `danger.creatures`: antelación y duración del «!», gesto, halo y sombra de los seres vivos; resolución y velo del decorado) y en `hazards.neon` (colores y tiempo de aviso).
 
 **Obstáculos:** cables eléctricos (fijos, dobles, en puerta o giratorios), patrullas que vienen de frente, helicópteros con foco que disparan si te detectan y misiles con aviso previo. **Peligros de la ciudad** (según la zona, sin repetir el anterior): bola de demolición de una grúa que se balancea (calcula el momento), neones que parpadean y solo dañan encendidos, andamios que se derrumban dejando hueco arriba o abajo, bocas de riego que revientan y te empujan hacia arriba, y toldos de fachada que se cierran de golpe (bloque `hazards` de `config.js`).
 

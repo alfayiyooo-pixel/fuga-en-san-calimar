@@ -53,16 +53,14 @@ class Minor extends Obstacle {
     if (this.right < camX - 250) this.alive = false;
   }
 
-  /** Borde de peligro: un óvalo alrededor (solo mientras puede hacerte daño). */
-  dangerPath(ctx, camX, g) {
-    if (this.ko || !this.harmful) return false;
-    const x = this.x - camX;
-    if (x < -150 || x > g.view.w + 150) return false;
-    const rx = this.w * 0.62;
-    const ry = this.h * 0.62;
-    ctx.moveTo(x + rx, this.y);
-    ctx.ellipse(x, this.y, rx, ry, 0, 0, Math.PI * 2);
-    return true;
+  // Sin borde de peligro (eso es solo para objetos): su peligro se ve en su
+  // diseño. Al detectarte: "!" sobre la cabeza y gesto de ataque; además un
+  // halo de su color (más saturado que el fondo) y sombra en el suelo.
+
+  /** ¿Te ha visto? (por defecto: estás a menos de CONFIG.danger.creatures.alertAhead s). */
+  detects(g) {
+    const d = this.x - g.player.x;
+    return d > 0 && d < Math.max(g.speed, 300) * CONFIG.danger.creatures.alertAhead;
   }
 
   get harmful() {
@@ -89,6 +87,8 @@ class Minor extends Obstacle {
     this.t += dt;
     if (this.ko) this.updateKo(dt, g);
     else this.act(dt, g);
+    if (this.alertT !== undefined) this.alertT += dt;
+    else if (!this.ko && !g.dead && this.harmful && this.detects(g)) this.alertT = 0;
   }
 
   act() {}
@@ -100,17 +100,72 @@ class Minor extends Obstacle {
     ctx.translate(x, this.y);
     if (this.ko) {
       ctx.rotate(this.rot);
-    } else if (this.grounded) {
-      // sombra en el suelo
-      ctx.fillStyle = 'rgba(10, 5, 30, 0.3)';
-      ctx.beginPath();
-      ctx.ellipse(0, g.view.groundY - this.y + 2, this.w * 0.45, 4, 0, 0, Math.PI * 2);
-      ctx.fill();
+    } else {
+      creatureShadow(ctx, this, g);
+      creatureHalo(ctx, this);
+      attackPose(ctx, this);
     }
     this.paint(ctx, g);
     if (this.ko) dizzy(ctx, this.h / 2 + 6, this.t);
     ctx.restore();
+    if (!this.ko) alertMark(ctx, x, this.y - this.h / 2 - 14, this);
   }
+}
+
+// ---------- lenguaje de peligro de los seres vivos (CONFIG.danger.creatures) ----------
+
+/** Sombra en el suelo: también si vuela (más pequeña y suave cuanto más alto). */
+export function creatureShadow(ctx, o, g, w = o.w) {
+  const C = CONFIG.danger.creatures.shadow;
+  const h = g.view.groundY - (o.y + o.h / 2);
+  const k = Math.max(0, 1 - h / C.fade);
+  if (k <= 0.02) return;
+  ctx.fillStyle = `rgba(10, 5, 30, ${(C.alpha * (0.35 + 0.65 * k)).toFixed(3)})`;
+  ctx.beginPath();
+  ctx.ellipse(0, g.view.groundY - o.y + 2, w * 0.45 * (0.55 + 0.45 * k), 4 + 1.5 * k, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** Halo de su color, saturado y cálido: resalta sobre el fondo apagado. */
+export function creatureHalo(ctx, o, color = CONFIG.danger.creatures.accent[o.type]) {
+  const C = CONFIG.danger.creatures;
+  if (!color) return;
+  const alert = o.alertT !== undefined && o.alertT < C.alertTime ? 1 : 0;
+  drawGlow(ctx, 0, 0, Math.max(o.w, o.h) * C.halo.size, color, C.halo.alpha + alert * C.halo.alert);
+}
+
+/** Gesto de ataque al detectarte: se encoge y se inclina hacia ti un instante. */
+export function attackPose(ctx, o) {
+  const C = CONFIG.danger.creatures;
+  if (o.alertT === undefined || o.alertT > C.alertTime) return;
+  const k = Math.sin((o.alertT / C.alertTime) * Math.PI);
+  ctx.rotate(-C.lean * k);
+  ctx.scale(1 + C.squash * k, 1 - C.squash * k);
+}
+
+/** "!" sobre la cabeza al detectarte (con un pequeño salto al aparecer). */
+export function alertMark(ctx, x, y, o) {
+  const C = CONFIG.danger.creatures;
+  const t = o.alertT;
+  if (t === undefined || t > C.alertTime) return;
+  const pop = t < 0.12 ? 0.5 + (t / 0.12) * 0.7 : 1.2 - Math.min(0.2, (t - 0.12) * 1.5);
+  const fade = Math.min(1, (C.alertTime - t) / 0.15);
+  ctx.save();
+  ctx.globalAlpha *= fade;
+  ctx.translate(x, y - (t < 0.12 ? (t / 0.12) * 6 : 6));
+  ctx.scale(pop, pop);
+  ctx.fillStyle = INK;
+  ctx.beginPath();
+  ctx.arc(0, 0, 12, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = C.markColor;
+  ctx.beginPath();
+  ctx.arc(0, 0, 9.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = INK;
+  ctx.fillRect(-1.8, -6.5, 3.6, 8);
+  ctx.fillRect(-1.8, 3.2, 3.6, 3.4);
+  ctx.restore();
 }
 
 /** Estrellitas de mareo dando vueltas sobre la cabeza. */
@@ -335,6 +390,10 @@ export class Dog extends Minor {
     this.rel = rand(this.cfg.overtake[0], this.cfg.overtake[1]);
     this.hopCd = rand(0.4, 1);
     Sound.bark();
+  }
+
+  detects() {
+    return this.state === 'run'; // viene por detrás: "!" al lanzarse a por ti
   }
 
   cull(camX) {
@@ -651,6 +710,10 @@ export class Cop extends Minor {
     return !(this.state === 'chase' || this.state === 'tired' || this.state === 'crash');
   }
 
+  detects() {
+    return this.state === 'spotted';
+  }
+
   get box() {
     const hw = this.w * 0.35;
     const hh = this.h * 0.45;
@@ -824,10 +887,9 @@ export class Cop extends Minor {
     if (this.ko) {
       ctx.rotate(this.rot);
     } else if (this.state !== 'crash' || this.grounded) {
-      ctx.fillStyle = 'rgba(10, 5, 30, 0.3)';
-      ctx.beginPath();
-      ctx.ellipse(0, g.view.groundY - this.y + 2, this.w * 0.45, 4, 0, 0, Math.PI * 2);
-      ctx.fill();
+      creatureShadow(ctx, this, g);
+      if (this.state !== 'crash') creatureHalo(ctx, this);
+      attackPose(ctx, this);
     }
     if (this.state === 'crash') {
       if (this.anim === 'splat' && this.stateT < 0.55) {
@@ -872,6 +934,7 @@ export class Cop extends Minor {
       ctx.globalAlpha = 1;
     }
     if (this.bubble) drawBubble(ctx, x, this.y - 52, this.bubble);
+    else if (!this.ko) alertMark(ctx, x, this.y - this.h / 2 - 14, this);
   }
 
   drawCone(ctx, x) {

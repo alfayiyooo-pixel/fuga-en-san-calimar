@@ -364,13 +364,6 @@ export class PatrolCar extends Obstacle {
     return boxOverlap(box, this.x + 8, this.x + this.w - 6, this.y + 10, this.y + this.h);
   }
 
-  dangerPath(ctx, camX) {
-    const x = this.x - camX;
-    if (x > 2000) return false;
-    rectPath(ctx, x + 2, this.y + 2, this.w - 4, this.h - 2, 12);
-    return true;
-  }
-
   overlay(ctx, g) {
     const sx = this.x - g.camera.x;
     if (sx < g.view.w) return;
@@ -577,13 +570,6 @@ export class Helicopter extends Obstacle {
     return boxOverlap(box, this.x - this.w / 2 + 6, this.x + this.w / 2 - 20, this.y - this.h / 2 + 6, this.y + this.h / 2);
   }
 
-  dangerPath(ctx, camX) {
-    const x = this.x - camX;
-    ctx.moveTo(x - 6 + 42, this.y);
-    ctx.ellipse(x - 6, this.y, 42, 24, 0, 0, Math.PI * 2);
-    return true;
-  }
-
   draw(ctx, camX, g) {
     const x = this.x - camX;
     const y = this.y;
@@ -633,6 +619,14 @@ export class Helicopter extends Obstacle {
       }
     }
 
+    // sombra en el suelo (muy suave: vuela alto)
+    {
+      const gy = g.view.groundY;
+      ctx.fillStyle = 'rgba(10, 5, 30, 0.16)';
+      ctx.beginPath();
+      ctx.ellipse(x, gy + 3, 46, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     // cola (a la derecha, mira a la izquierda)
     ctx.fillStyle = INK;
     ctx.fillRect(x + 18, y - 8, 66, 9);

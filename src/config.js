@@ -104,8 +104,8 @@ export const CONFIG = {
   },
 
   // ---------------- CÓDIGO VISUAL DE PELIGRO ----------------
-  // Lo que hace daño: borde amarillo con franjas rojas y brillo que late, siempre
-  // en la capa de juego. Lo decorativo: fondo a menor resolución (algo
+  // Los OBJETOS que hacen daño (cables, neones, andamios, bola de demolición, vallas,
+  // misiles…): borde amarillo con franjas rojas y brillo que late, siempre en la capa de juego. Lo decorativo: fondo a menor resolución (algo
   // desenfocado), menos saturado, algo más oscuro y sin colores de peligro.
   danger: {
     outline: {
@@ -114,6 +114,21 @@ export const CONFIG = {
       yellow: '#ffd23f', red: '#ff2d3d', ink: 'rgba(27, 16, 48, 0.85)', glowColor: '#ff4d3d',
       dash: [9, 9], dashSpeed: 28,      // franjas rojas que avanzan (px/s)
       pulseSpeed: 6.5, glow: [0.12, 0.42], // latido del brillo (rad/s, opacidad mín–máx)
+    },
+    // SERES VIVOS Y VEHÍCULOS (palomas, gaviotas, perros, agentes, drones, coches): sin borde.
+    // El peligro se ve en su diseño:
+    //   alertAhead: s de antelación (a tu velocidad) a la que te detectan · alertTime: s que dura el aviso
+    //   markColor: color del "!" · lean/squash: gesto de ataque (inclinarse hacia ti y encogerse)
+    //   halo: brillo de su color (saturado, resalta sobre el fondo apagado) · shadow: sombra en el suelo
+    //   (fade = px de altura a los que desaparece)
+    creatures: {
+      alertAhead: 1.1, alertTime: 0.75, markColor: '#ffd23f', lean: 0.16, squash: 0.08,
+      halo: { size: 0.85, alpha: 0.22, alert: 0.3 },
+      shadow: { alpha: 0.34, fade: 420 },
+      accent: {
+        guard: 'rgba(90, 140, 255, 0.9)', drone: 'rgba(25, 227, 208, 0.9)', dog: 'rgba(255, 150, 50, 0.9)',
+        gull: 'rgba(255, 220, 90, 0.9)', scooter: 'rgba(127, 247, 255, 0.9)', cop: 'rgba(70, 120, 255, 0.9)',
+      },
     },
     decor: {
       resolution: 0.62,                 // fracción de resolución del fondo (menos = más desenfocado y más rápido)

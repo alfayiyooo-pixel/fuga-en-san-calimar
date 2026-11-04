@@ -19,7 +19,7 @@
 // NO EDITES a mano el bloque <build>: ejecuta `node tools/build.js`.
 
 // <build>
-const BUILD = '0fcdfd14bf3f';
+const BUILD = 'a488f3656896';
 const ASSETS = [
   './',
   './index.html',
