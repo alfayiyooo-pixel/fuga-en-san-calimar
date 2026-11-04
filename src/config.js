@@ -659,6 +659,12 @@ export const CONFIG = {
     detransformInvuln: 1.8, // s invulnerable al perder el personaje
     transformSlowmo: 0.35,  // s de cámara lenta en la transformación
     hitPoliceHeat: true,    // chocar con policía protegido sube la búsqueda
+    // GADGETS DE DISPARO (pistola de Aurelio y cohete de Bruno): solo con dificultad media-alta.
+    //   fromDistance: m a partir de los que pueden salir… · fromStars: …o antes, con estas estrellas
+    //   every: m mínimos entre dos armas (que no sea constante) · threatWeight: se multiplica su
+    //   probabilidad cuando aprieta la policía (patrulla, misil o helicóptero por delante, jefe, o
+    //   threatStars estrellas): así llega como una ayuda en el momento justo
+    shooters: { items: ['pistol', 'rocket'], fromDistance: 1500, fromStars: 3, every: 450, threatWeight: 2.5, threatStars: 4 },
 
     // multiplicadores de física (1 = jetpack básico); ramp = inercia del empuje
     veteran: {

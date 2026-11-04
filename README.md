@@ -157,6 +157,8 @@ Las **cápsulas** aparecen dentro de los grupos de pavos. Al cogerla te transfor
 | **Vera "Chispa" Rivas** — conductora callejera, bomber naranja y trenza | Rápida y nerviosa: acelera y frena al instante, caja más pequeña | **Conducción perfecta**: baja al suelo en su deportivo "Rayo" y esquiva sola | **Nitro** (invulnerable y atraviesa todo) · **Rampa** (salto hacia un arco de pavos en lo alto) |
 | **Bruno "Petardo" Tramuntana** — caótico, camisa hawaiana y barba pelirroja | Pesado: mucha inercia, empuje brutal y rebota en el suelo | **Modo furia**: atraviesa y destruye todo | **Lanzacohetes** (limpia la pantalla) · **Moto** "Jabalina" (rebota sola y aguanta un golpe) |
 
+**Armas solo cuando hace falta.** La **pistola** de Aurelio y el **lanzacohetes** de Bruno (los gadgets de disparo) solo aparecen con dificultad media-alta: a partir de **1.500 m** o antes si tienes **3★ o más**. Entre dos armas pasan al menos 450 m, y cuando la policía aprieta (patrulla, misil o helicóptero por delante, el jefe o 4★+) su probabilidad se multiplica por 2,5, para que lleguen como una ayuda en el momento justo y no como algo constante. Umbrales en `characters.shooters` de `config.js`.
+
 La **barra de habilidad especial** (panel abajo a la izquierda) se carga con los **orbes azules de experiencia** que aparecen por el recorrido (bloque `orbs` de `config.js`) y la habilidad se activa sola al llenarse; también puede salir como icono. Cada personaje tiene su propia transformación (reloj dorado, derrape con chispas, explosión), su rastro y su sonido.
 
 Ajustes en el bloque `characters` de `config.js` (probabilidades, carga de la especial, duraciones y física de cada uno).

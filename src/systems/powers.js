@@ -35,6 +35,7 @@ export class Powers {
     this.slowmo = 0;
     this.capsuleCd = 0;
     this.itemCd = 0;
+    this.lastShooterAt = -1e9;
     this.shots = [];
     this.ramps = [];
     this.fireTimer = 0;
@@ -164,19 +165,47 @@ export class Powers {
     }
     if (this.itemCd > 0 || !chance(C.itemChance)) return null;
     const d = this.def;
-    const entries = [[d.special, C.specialWeight], ...d.gadgets.map((gd) => [gd, C.gadgetWeight])].filter(([it]) => {
-      if (this.has(it)) return false;
-      if (it === 'vest' && this.shields.includes('vest')) return false;
-      return true;
-    });
+    const S = C.shooters;
+    const threat = this.threat(g);
+    const entries = [[d.special, C.specialWeight], ...d.gadgets.map((gd) => [gd, C.gadgetWeight])]
+      .filter(([it]) => {
+        if (this.has(it)) return false;
+        if (it === 'vest' && this.shields.includes('vest')) return false;
+        if (S.items.includes(it) && !this.shooterAllowed(g)) return false;
+        return true;
+      })
+      // con mucha presión (policía en pantalla, helicóptero, 4★+), el arma sale más: ayuda en el momento justo
+      .map(([it, w]) => [it, S.items.includes(it) && threat ? w * S.threatWeight : w]);
     if (!entries.length) return null;
     this.itemCd = C.itemCooldown;
     let roll = Math.random() * entries.reduce((s, [, w]) => s + w, 0);
+    let item = entries[0][0];
     for (const [it, w] of entries) {
       roll -= w;
-      if (roll <= 0) return { kind: 'item', item: it };
+      if (roll <= 0) {
+        item = it;
+        break;
+      }
     }
-    return { kind: 'item', item: entries[0][0] };
+    if (S.items.includes(item)) this.lastShooterAt = g.distance;
+    return { kind: 'item', item };
+  }
+
+  /**
+   * Pistola y cohete (gadgets de disparo): solo con dificultad media-alta
+   * (CONFIG.characters.shooters) y nunca muy seguidos.
+   */
+  shooterAllowed(g) {
+    const S = CONFIG.characters.shooters;
+    const hard = g.distance >= S.fromDistance || g.wanted.stars >= S.fromStars;
+    return hard && g.distance - (this.lastShooterAt ?? -1e9) >= S.every;
+  }
+
+  /** ¿Está la cosa apretada? (policía por delante, helicóptero jefe o muchas estrellas) */
+  threat(g) {
+    if (g.boss?.active || g.wanted.stars >= CONFIG.characters.shooters.threatStars) return true;
+    const ahead = g.camera.x + g.view.w * 1.5;
+    return g.obstacles.some((o) => o.alive && !o.ko && o.police && g.centerOf(o).x > g.player.x && g.centerOf(o).x < ahead);
   }
 
   /** Se ha recogido una cápsula o un icono. */
