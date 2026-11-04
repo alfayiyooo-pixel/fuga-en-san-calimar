@@ -19,7 +19,7 @@
 // NO EDITES a mano el bloque <build>: ejecuta `node tools/build.js`.
 
 // <build>
-const BUILD = '80e3eae315c2';
+const BUILD = '3e8455042496';
 const ASSETS = [
   './',
   './index.html',
@@ -111,6 +111,7 @@ const ASSETS = [
   './src/ui/wardrobe.js',
   './src/world/ambient.js',
   './src/world/parallax.js',
+  './src/world/pathcheck.js',
   './src/world/patterns.js',
   './src/world/spawner.js',
   './src/world/themes/beach.js',

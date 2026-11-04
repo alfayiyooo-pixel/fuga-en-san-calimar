@@ -29,7 +29,7 @@ python3 -m http.server 8000
 
 Abre <http://localhost:8000>. (Con Node también vale `npx serve`.)
 
-**Antes de publicar** ejecuta `node tools/build.js` (actualiza la versión del service worker). Para que se compruebe solo en cada `git push`, activa el gancho una vez: `git config core.hooksPath .githooks`.
+**Antes de publicar** ejecuta `node tools/build.js` (actualiza la versión del service worker). Para que se compruebe solo en cada `git push`, activa el gancho una vez: `git config core.hooksPath .githooks`. El gancho también ejecuta la prueba de caminos (`node tools/test-caminos.js --quick`).
 
 ## Publicar en GitHub Pages
 
@@ -111,6 +111,23 @@ Las zonas se suceden cada **450 m**: **Playa Coral → Distrito Lingote → Las 
 Ajustes en el bloque `danger` de `config.js` (grosor, colores y latido del borde; `danger.creatures`: antelación y duración del «!», gesto, halo y sombra de los seres vivos; resolución y velo del decorado) y en `hazards.neon` (colores y tiempo de aviso).
 
 **Obstáculos:** cables eléctricos (fijos, dobles, en puerta o giratorios), patrullas que vienen de frente, helicópteros con foco que disparan si te detectan y misiles con aviso previo. **Peligros de la ciudad** (según la zona, sin repetir el anterior): bola de demolición de una grúa que se balancea (calcula el momento), neones que parpadean y solo dañan encendidos, andamios que se derrumban dejando hueco arriba o abajo, bocas de riego que revientan y te empujan hacia arriba, y toldos de fachada que se cierran de golpe (bloque `hazards` de `config.js`).
+
+**Nunca situaciones imposibles.** Antes de dar por bueno cada grupo de obstáculos, el generador comprueba que hay **al menos un camino** con la física real del juego ([`src/world/pathcheck.js`](src/world/pathcheck.js)):
+- Simula a la vez todos los jugadores posibles (altura, velocidad, en el suelo o en el aire, dobles saltos…) usando el propio código del jugador: salto, salto largo, doble salto, jetpack, la física de cada personaje, los vehículos y los techos de los coches. Avanza a la velocidad a la que irás y con copias de los obstáculos que **se mueven de verdad** (la bola se balancea, el neón se enciende, el andamio cae, el toldo se cierra, las patrullas vienen hacia ti…).
+- Solo puedes cambiar lo que haces cada 0,1 s (nadie reacciona a cada frame), y tu caja lleva 4 px de margen: el hueco tiene que sobrar. Lo fijo se comprueba desde todos los estados posibles al final del grupo anterior; lo que viene rápido hacia ti (patrullas, perros, patinetes), desde tu estado actual hasta que te ha pasado.
+- Si no hay camino, el grupo **se descarta y se prueba otro**; si tampoco, se deja hueco.
+- **Cambios de estado:** si pierdes el jetpack o el personaje, o montas en un vehículo, se vuelve a comprobar todo lo que ya hay delante desde tu estado nuevo. Lo que ya no tenga camino se retira (con una pequeña explosión si está en pantalla).
+- **Separación mínima** entre grupos: 0,5 s a tu velocidad (0,3 s de reacción + recuperarse), así que crece con la velocidad.
+- **Combinaciones prohibidas:** con un ataque en marcha (misiles avisando o en vuelo, balas, helicóptero patrullando o apuntando, ataque del jefe) no sale otro ataque ni nada que cierre el paso (puertas y parejas de cables, cables giratorios, andamios, bolas de demolición, toldos de fachada), los cables son sencillos y hay un 50 % más de separación. Y un misil o helicóptero no sale si hay algo que cierra el paso en pantalla.
+- **Huecos y avisos:** puertas de cables de 150-190 px (el personaje mide 50), andamios de 182 px, ráfaga del jefe de 150 px, y todos los avisos duran al menos 0,3 s.
+- **Qué se encontró:** el toldo de fachada, con jetpack, se podía colocar tan bajo que al cerrarse dejaba 20 px de hueco: imposible de pasar. Era el pico de muertes con toldos que ya se veía en el registro de muertes. En la prueba sin la garantía salían 14 puntos imposibles en 72 partidas, todos de ese tipo. Ahora el hueco es siempre de al menos 130 px.
+- Cuesta unos 4 ms por grupo en un ordenador (unos 10-16 ms en un móvil lento, una vez por segundo más o menos); en calidad baja sigue menos estados a la vez. Estadísticas en `?debug`: `game.spawner.pathStats` en la consola. Ajustes en `pathcheck` de `config.js`.
+
+**Prueba automática** ([`tools/test-caminos.js`](tools/test-caminos.js)): juega partidas reales en Node (la lógica del juego tal cual, sin dibujar) a distancias, estrellas y modos al azar (a pie, jetpack, personajes, perder el jetpack a mitad), graba cada obstáculo y un **verificador independiente y más fino** (pasos de 1/60 s, sin margen, más estados) busca camino de principio a fin. También comprueba las combinaciones prohibidas, los avisos y los huecos.
+```bash
+node tools/test-caminos.js
+```
+Comprueba unos 3.000 tramos en 1-2 minutos. Con `--quick` son unos 600 (10 s), con `--compare` también juega las mismas partidas sin la garantía, y con `--seed N` repite una partida concreta. Se ejecuta solo antes de cada `git push` (con `git config core.hooksPath .githooks`): si algún tramo no tiene camino, el push se para y dice dónde.
 
 **Coches como plataforma.** Los coches aparcados y las patrullas en marcha se pueden **pisar**: si caes encima aterrizas en el techo con un pequeño rebote, un «¡Pisotón!» y una **abolladura** (el coche se hunde un instante y le queda la marca), y puedes seguir corriendo por el techo o saltar desde ahí (el doble salto se recarga). La zona segura es generosa: cuenta el techo entero, el capó y el maletero, unos píxeles de más a cada lado y hasta 20 px por debajo del techo. **Chocar de frente o de lado** sigue haciendo daño (o te quita la capa actual: personaje → jetpack → a pie). Misión: «Salta sobre 10 coches en una partida». Ajustes en `cars` de `config.js`; código en [`src/systems/platforms.js`](src/systems/platforms.js).
 

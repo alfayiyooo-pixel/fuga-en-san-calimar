@@ -95,7 +95,8 @@ class AudioFx {
   }
 
   get ready() {
-    return this.ctx && !this.muted && this.ctx.state === 'running';
+    // silent: mientras la garantía de camino simula copias de los obstáculos
+    return this.ctx && !this.muted && !this.silent && this.ctx.state === 'running';
   }
 
   /**

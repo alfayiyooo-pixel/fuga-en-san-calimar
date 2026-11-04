@@ -247,7 +247,26 @@ export const CONFIG = {
     gapStart: 600,      // separación entre obstáculos al empezar (px)
     gapEnd: 260,        // separación con dificultad máxima (px)
     gapJitter: 0.35,    // variación aleatoria de la separación (±35%)
-    minGapTime: 0.42,   // separación mínima en segundos de reacción
+    minGapTime: 0.5,    // separación mínima en s a tu velocidad: reacción (0,3 s) + recuperarse (crece con la velocidad)
+  },
+
+  // ---------------- GARANTÍA DE CAMINO (nunca situaciones imposibles) ----------------
+  // Antes de colocar cada grupo se comprueba con la física real que hay al menos un
+  // camino (world/pathcheck.js). Si no, se recoloca o se descarta.
+  //   dt: paso de la simulación (s) · decision: cada cuánto puede cambiar lo que haces (s): nadie
+  //   reacciona a cada frame · margin: px de más alrededor de tu caja (el hueco tiene que sobrar) ·
+  //   maxStates: estados del jugador que se siguen a la vez (maxStatesLow en calidad baja: menos
+  //   trabajo en móviles lentos; solo puede rechazar de más, nunca dejar pasar un imposible) · tail: px que se comprueban tras el grupo ·
+  //   moverHorizon: s que se simulan los que vienen hacia ti · retries: intentos antes de dejar hueco ·
+  //   maxRemovals: obstáculos que se pueden retirar al cambiar de estado ·
+  //   attackGapMult: separación extra con un ataque en marcha · closing: peligros que "cierran el
+  //   paso" (no coinciden con ataques) · closingLook: px más allá de la pantalla en que se miran ·
+  //   minGapPlayers: hueco mínimo de una puerta de cables, en alturas del personaje · reaction: s de
+  //   reacción humana que se exigen en todos los avisos (ver tools/test-caminos.js)
+  pathcheck: {
+    enabled: true, dt: 1 / 30, decision: 0.1, margin: 4, maxStates: 48, maxStatesLow: 30, tail: 60, moverHorizon: 2.6,
+    retries: 3, maxRemovals: 8, attackGapMult: 1.5, closing: ['scaffold', 'shutter', 'wrecking'], closingLook: 300,
+    minGapPlayers: 2.6, reaction: 0.3,
   },
 
   obstacles: {
@@ -271,7 +290,7 @@ export const CONFIG = {
     //   ramp: dificultad que tarda en llegar a esa prob. (entrada gradual, sin picos)
     cable: {
       minLen: 110, maxLen: 230, thickness: 10, spinFrom: 0.4, spinChance: 0.3,
-      gate: { from: 0.55, chance: 0.25, ramp: 0.3 },
+      gate: { from: 0.55, chance: 0.25, ramp: 0.3, gap: [190, 150] }, // gap: hueco (px) al empezar y con dificultad máxima
       double: { from: 0.25, chance: 0.3, ramp: 0.2 },
     },
     billboard: { gravity: 2100, triggerTime: 0.75, wobble: 0.28 },

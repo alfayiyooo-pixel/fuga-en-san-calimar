@@ -558,7 +558,10 @@ export class Shutter extends Hazard {
     const C = this.cfg;
     this.x = x;
     this.len = C.length;
-    this.ay = g.player.onFoot ? g.view.groundY - 70 - this.len : rand(CONFIG.world.ceiling + 90, g.view.groundY - this.len - 20);
+    // cerrado solo se pasa por debajo: el hueco siempre claramente mayor que el personaje
+    // (antes podía quedar en 20 px con el jetpack: un punto imposible)
+    const minGap = CONFIG.player.height * CONFIG.pathcheck.minGapPlayers;
+    this.ay = g.player.onFoot ? g.view.groundY - 70 - this.len : rand(CONFIG.world.ceiling + 90, g.view.groundY - this.len - minGap);
     this.angle = 0; // 0 = abierto (horizontal); π/2 = cerrado (colgando)
     this.state = 'open';
     this.colors = pick([['#ff3d4f', '#fff4dc'], ['#2a9d8f', '#fff4dc'], ['#6a4cff', '#ffd23f']]);
