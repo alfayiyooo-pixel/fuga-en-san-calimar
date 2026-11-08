@@ -1,7 +1,8 @@
 // RADIO CALIMAR: un locutor comenta la huida de vez en cuando.
-// Archivos: audio/voces/radio_<momento>_<idioma>.mp3 (y variantes
-// radio_<momento>_2_<idioma>.mp3 … _4_). Si no hay, voz del navegador con
-// una de las frases de translations.js (radio.<momento>.<n>).
+// Archivos: audio/voces/radio_<momento>_<idioma>.mp3 es la frase 1 de ese
+// momento y radio_<momento>_<n>_<idioma>.mp3 la frase n (2…4), así el audio
+// coincide con el rótulo. Si falta el archivo de esa frase, voz del navegador
+// con su texto de translations.js (radio.<momento>.<n>). Guion: voces.csv.
 // Comparte la cola de voces con los personajes (nunca se solapan) y baja la
 // música mientras habla.
 
@@ -11,10 +12,15 @@ import { Voice } from '../core/voice.js';
 
 export const RADIO_MOMENTS = ['inicio', 'estrellas', 'zona', 'record', 'helicoptero', 'jefe', 'escondite', 'detenido'];
 
+/** Archivo (sin .mp3) de la frase n de un momento. */
+export function radioFile(moment, n, lang) {
+  return n === 1 ? `radio_${moment}_${lang}` : `radio_${moment}_${n}_${lang}`;
+}
+
 /** Lista de archivos que busca el juego para la radio. */
 export function radioFileList(langs = ['es', 'en']) {
   const out = [];
-  for (const m of RADIO_MOMENTS) for (const l of langs) out.push(`radio_${m}_${l}.mp3`);
+  for (const m of RADIO_MOMENTS) for (let n = 1; n <= CONFIG.radio.moments[m].lines; n++) for (const l of langs) out.push(`${radioFile(m, n, l)}.mp3`);
   return out;
 }
 
@@ -45,7 +51,6 @@ export class Radio {
     if (n === this.lastLine[moment] && M.lines > 1) n = (n % M.lines) + 1;
     this.lastLine[moment] = n;
     const text = t(`radio.${moment}.${n}`);
-    const keys = [`radio_${moment}_${lang}`, ...[2, 3, 4].map((k) => `radio_${moment}_${k}_${lang}`)];
-    Voice.radio(keys, lang, text, () => g?.hud.radio(text));
+    Voice.radio([radioFile(moment, n, lang)], lang, text, () => g?.hud.radio(text));
   }
 }

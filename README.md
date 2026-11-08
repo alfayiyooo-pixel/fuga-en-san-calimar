@@ -304,6 +304,10 @@ Los **temas de personaje** suenan mientras vas transformado: entran con un fundi
 
 **Sustituirla por archivos:** copia MP3 en [`audio/musica/`](audio/musica/) con los nombres `playa.mp3`, `centro.mp3`, `industrial.mp3`, `mansiones.mp3`, `puerto.mp3`, `aurelio.mp3`, `vera.mp3`, `bruno.mp3` (el menú usa `serenata_mexicana.mp3`, ver `music.files` en `config.js`). El service worker las guarda para que suenen sin conexión. Si existe el archivo se usa (en bucle sin cortes); si no, el tema generado. Detalles del bucle exacto en [`audio/musica/LEEME.md`](audio/musica/LEEME.md). Si la licencia pide atribución, añade autor y licencia en [`src/credits.js`](src/credits.js): salen en **⚙ Ajustes → 📜 Créditos**.
 
+### Guion de grabación: [`voces.csv`](voces.csv)
+
+Una fila por cada audio de voz que usa el juego (94: personajes, locutor de la radio y agentes), con **archivo, personaje, idioma, texto exacto y tono**, ordenado por personaje para grabarlo seguido. Se abre con Excel, LibreOffice o Google Sheets. Graba cada frase con el nombre de la columna `archivo` y cópiala en `audio/voces/`. Los textos salen de `translations.js`: si cambias una frase, ejecuta `node tools/voces.mjs` para regenerar el guion (el gancho de `git push` comprueba que está al día; los tonos están en el propio script).
+
 ### Voces de los personajes (añadir tus propios audios)
 
 Cada personaje habla en tres momentos: **al cogerlo**, **al activar su habilidad especial** y **al perderlo por un golpe**. Por defecto se usa la **voz del navegador** (Web Speech API) con tono y velocidad propios de cada personaje y momento (`audio.voices` en `config.js`). Las frases nunca se solapan: si una suena, la siguiente espera como mucho `audio.voiceQueueWait` segundos o se descarta.
@@ -341,16 +345,16 @@ De vez en cuando un locutor comenta la huida (con un rótulo de noticias abajo).
 
 | Momento | Cuándo | Archivos (`audio/voces/`) |
 |---|---|---|
-| `inicio` | al empezar (escena del furgón) | `radio_inicio_es.mp3` · `radio_inicio_en.mp3` |
-| `estrellas` | al subir de estrellas (desde 2★) | `radio_estrellas_es.mp3` · `radio_estrellas_en.mp3` |
-| `zona` | al cambiar de zona | `radio_zona_es.mp3` · `radio_zona_en.mp3` |
-| `record` | al pasar tu récord | `radio_record_es.mp3` · `radio_record_en.mp3` |
-| `helicoptero` | cuando aparece el helicóptero jefe | `radio_helicoptero_es.mp3` · `radio_helicoptero_en.mp3` |
-| `jefe` | al vencer al helicóptero | `radio_jefe_es.mp3` · `radio_jefe_en.mp3` |
-| `escondite` | al esconderte | `radio_escondite_es.mp3` · `radio_escondite_en.mp3` |
-| `detenido` | al ser detenido | `radio_detenido_es.mp3` · `radio_detenido_en.mp3` |
+| `inicio` | al empezar (escena del furgón) | `radio_inicio_es.mp3` · `radio_inicio_2_es.mp3` … `_4_` |
+| `estrellas` | al subir de estrellas (desde 2★) | `radio_estrellas_es.mp3` … `_4_` |
+| `zona` | al cambiar de zona | `radio_zona_es.mp3` … `_4_` |
+| `record` | al pasar tu récord | `radio_record_es.mp3` … `_4_` |
+| `helicoptero` | cuando aparece el helicóptero jefe | `radio_helicoptero_es.mp3` … `_3_` |
+| `jefe` | al vencer al helicóptero | `radio_jefe_es.mp3` … `_4_` |
+| `escondite` | al esconderte | `radio_escondite_es.mp3` … `_3_` |
+| `detenido` | al ser detenido | `radio_detenido_es.mp3` … `_4_` |
 
-Opcional: variantes `radio_<momento>_2_<idioma>.mp3`, `_3_`, `_4_`; el juego elige una al azar entre las que existan.
+Cada archivo es **una frase concreta**: `radio_<momento>_<idioma>.mp3` es la frase 1 y `radio_<momento>_<n>_<idioma>.mp3` la frase n, para que el audio coincida con el rótulo de noticias. Si falta el archivo de la frase que toca, esa frase la dice la voz del navegador. Lista completa con textos en [`voces.csv`](voces.csv).
 
 ## Ranking mundial y cuentas
 

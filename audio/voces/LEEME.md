@@ -1,5 +1,7 @@
 # Voces de los personajes
 
+**Guion completo para grabar** (personajes, radio y agentes, con texto y tono): [`voces.csv`](../../voces.csv) en la raíz del proyecto.
+
 Pon aquí tus grabaciones en **MP3** con este patrón de nombre:
 
 ```
@@ -37,7 +39,12 @@ Las frases nunca se solapan: si una está sonando, la siguiente espera un moment
 
 ## Radio Calimar (locutor)
 
-Patrón: `radio_[momento]_[idioma].mp3` (y variantes opcionales `radio_[momento]_2_[idioma].mp3`, `_3_`, `_4_`).
+Patrón: `radio_[momento]_[idioma].mp3` es la frase 1 y `radio_[momento]_[n]_[idioma].mp3` la frase n (2-4),
+para que el audio coincida con el rótulo.
 Momentos: `inicio`, `estrellas`, `zona`, `record`, `helicoptero`, `jefe`, `escondite`, `detenido`.
 Se reproducen con un filtro de "radio" y la música baja mientras suenan. Las frases de respaldo
 están en `src/i18n/translations.js` (claves `radio.<momento>.<n>`).
+
+## Agentes a pie
+
+Patrón: `policia_grito_[n]_[idioma].mp3` (n de 1 a 8). Frases en `voces.csv`.
